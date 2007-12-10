@@ -1,0 +1,112 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use Getopt::Long;
+use PerlIO::gzip;
+
+my $pagesFile="";
+my $pagelinksFile="";
+my $langlinksFile="";
+my $redirectsFile="";
+
+GetOptions('pagesFile=s' => \$pagesFile, 'pagelinksFile=s' => \$pagelinksFile, 'langlinksFile=s' => \$langlinksFile, 'redirectsFile=s' => \$redirectsFile);
+
+if (!$pagesFile || !$pagelinksFile || !$langlinksFile || !$redirectsFile) {
+    print "usage: ./build_counts.pl --pagesFile=main_pages_sort_by_ids.lst.gz --pagelinksFile=pagelinks.lst.gz --langlinksFile=langlinks_sort_by_ids.lst.gz --redirectsFile=redirects_sort_by_ids.lst.gz\n";
+    exit;
+};
+
+my ($pageId, $pageNamespace, $pageName, $redirect);
+my ($redirectSourcePageId, $redirectTargetNamespace, $redirectTargetPageName);
+my ($pagelinkSourcePageId, $pagelinkTargetNamespace, $pagelinkTargetPageName);
+my ($langlinkTargetPageId, $langlinkSourceWiki, $langlinkSourcePageName);
+my (%pagelinks_hash, %langlinks_hash);
+
+open( PAGES_FILE, '<:gzip', $pagesFile ) or die("Unable to open file $pagesFile.\n");
+while( <PAGES_FILE> ) {
+    ($pageId, $pageNamespace, $pageName, $redirect) = split(" ", $_);
+    unless ($pageNamespace) {
+	$pagelinks_hash{$pageName} = 0;
+	$langlinks_hash{$pageId} = 0;
+    }
+}
+close( PAGES_FILE );
+
+open( PAGELINKS_FILE, '<:gzip', $pagelinksFile ) or die("Unable to open file $pagelinksFile.\n");
+while( <PAGELINKS_FILE> ) {
+    ($pagelinkSourcePageId, $pagelinkTargetNamespace, $pagelinkTargetPageName) = split(" ", $_);
+    unless ($pagelinkTargetNamespace) {
+	if (exists($pagelinks_hash{$pagelinkTargetPageName}) && exists($langlinks_hash{$pagelinkSourcePageId}) ) {
+	    $pagelinks_hash{$pagelinkTargetPageName} += 1;
+	}
+    }
+}
+close( PAGELINKS_FILE );
+
+open( LANGLINKS_FILE, '<:gzip', $langlinksFile ) or die("Unable to open file $langlinksFile.\n");
+my $langlinks_line = readline(*LANGLINKS_FILE);
+open( PAGES_FILE, '<:gzip', $pagesFile ) or die("Unable to open file $pagesFile.\n");
+while( <PAGES_FILE> ) {
+    ($pageId, $pageNamespace, $pageName, $redirect) = split(" ", $_);
+    unless($pageNamespace || $redirect) {
+	updateLanglinkCount();
+    }
+}
+close( PAGES_FILE );
+close( LANGLINKS_FILE );
+
+sub updateLanglinkCount {
+    do {
+        return unless $langlinks_line;
+        ($langlinkTargetPageId, $langlinkSourceWiki, $langlinkSourcePageName) = split(" ", $langlinks_line);
+
+        if ($langlinkTargetPageId >= $pageId ) {
+            if ($pageId == $langlinkTargetPageId) {
+                $langlinks_hash{$pageId} += 1;
+            } else {
+                return;
+            }
+        }
+    } while ( $langlinks_line = readline( *LANGLINKS_FILE) );
+}
+
+open( REDIRECTS_FILE, '<:gzip', $redirectsFile ) or die("Unable to open file $redirectsFile.\n");
+my $redirects_line = readline(*REDIRECTS_FILE);
+open( PAGES_FILE, '<:gzip', $pagesFile ) or die("Unable to open file $pagesFile.\n");
+while( <PAGES_FILE> ) {
+    ($pageId, $pageNamespace, $pageName, $redirect) = split(" ", $_);
+    if(!$pageNamespace && $redirect) {
+        updatePagelinkCount();
+    }
+}
+close( PAGES_FILE );
+close( LANGLINKS_FILE );
+
+sub updatePagelinkCount {
+    do {
+        return unless $redirects_line;
+        ($redirectSourcePageId, $redirectTargetNamespace, $redirectTargetPageName) = split(" ", $redirects_line);
+
+        if ($redirectSourcePageId >= $pageId && !$redirectTargetNamespace) {
+            if ($pageId == $redirectSourcePageId) {
+                $pagelinks_hash{$redirectTargetPageName} += $pagelinks_hash{$pageName};
+            } else {
+                return;
+            }
+        }
+    } while ( $redirects_line = readline( *REDIRECTS_FILE) );
+}
+
+open( PAGES_FILE, '<:gzip', $pagesFile ) or die("Unable to open file $pagesFile.\n");
+while( <PAGES_FILE> ) {
+    ($pageId, $pageNamespace, $pageName, $redirect) = split(" ", $_);
+    unless ($pageNamespace || $redirect) {
+	print $pageId." ".$pageName." ".$langlinks_hash{$pageId}." ".$pagelinks_hash{$pageName}."\n";
+    }
+}
+close( PAGES_FILE );
+
+
+
+
