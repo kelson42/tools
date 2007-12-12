@@ -1,25 +1,53 @@
 #!/bin/bash
 
 WIKI=$1
-EMPTY=''
 
-if [ "$WIKI" = "$EMPTY" ];
+if [ "$WIKI" = '' ];
 then
     echo "usage: WP1.sh <wikiname> (enwiki for example)"
     exit
 fi
 
-rm -rf $WIKI
-mkdir $WIKI
-mkdir $WIKI/source
-mkdir $WIKI/target
+CURRENT_VERSION=`curl -s http://download.wikimedia.org/$WIKI/latest/$WIKI-latest-abstract.xml-rss.xml | grep "</link>" | tail -n 1 | sed -e 's/<//g' | cut -d "/" -f 5`
+
+if [ "$CURRENT_VERSION" = '' ];
+then
+    echo "error: no dump are available for this name."
+    exit
+fi
+
+createDirIfNecessary()
+{
+  if [ ! -e $1 ]
+  then
+    mkdir $1
+  fi
+}
+
+createDirIfNecessary ./$WIKI
+createDirIfNecessary ./$WIKI/source
+createDirIfNecessary ./$WIKI/target
+
+if [ -e ./$WIKI/date ]
+then
+    LAST_VERSION=`cat ./$WIKI/date`
+    if [ ! $LAST_VERSION = $CURRENT_VERSION ]
+	then
+	rm ./$WIKI/date
+	rm ./$WIKI/source/* >& /dev/null
+    fi
+fi
+
+echo $CURRENT_VERSION > ./$WIKI/date
 
 ## GET SQL DUMPS FROM download.wikimedia.org
-wget -O ./$WIKI/source/$WIKI-latest-page.sql.gz http://download.wikimedia.org/$WIKI/latest/$WIKI-latest-page.sql.gz
-wget -O ./$WIKI/source/$WIKI-latest-pagelinks.sql.gz http://download.wikimedia.org/$WIKI/latest/$WIKI-latest-pagelinks.sql.gz
-wget -O ./$WIKI/source/$WIKI-latest-langlinks.sql.gz http://download.wikimedia.org/$WIKI/latest/$WIKI-latest-langlinks.sql.gz
-wget -O ./$WIKI/source/$WIKI-latest-redirect.sql.gz http://download.wikimedia.org/$WIKI/latest/$WIKI-latest-redirect.sql.gz
-wget -O ./$WIKI/source/$WIKI-latest-categorylinks.sql.gz http://download.wikimedia.org/$WIKI/latest/$WIKI-latest-categorylinks.sql.gz
+wget --continue -O ./$WIKI/source/$WIKI-latest-page.sql.gz http://download.wikimedia.org/$WIKI/latest/$WIKI-latest-page.sql.gz
+wget --continue -O ./$WIKI/source/$WIKI-latest-pagelinks.sql.gz http://download.wikimedia.org/$WIKI/latest/$WIKI-latest-pagelinks.sql.gz
+wget --continue -O ./$WIKI/source/$WIKI-latest-langlinks.sql.gz http://download.wikimedia.org/$WIKI/latest/$WIKI-latest-langlinks.sql.gz
+wget --continue -O ./$WIKI/source/$WIKI-latest-redirect.sql.gz http://download.wikimedia.org/$WIKI/latest/$WIKI-latest-redirect.sql.gz
+wget --continue -O ./$WIKI/source/$WIKI-latest-categorylinks.sql.gz http://download.wikimedia.org/$WIKI/latest/$WIKI-latest-categorylinks.sql.gz
+
+rm ./$WIKI/target/* >& /dev/null
 
 ## BUILD PAGES INDEXES
 cat ./$WIKI/source/$WIKI-latest-page.sql.gz | gzip -d | tail -n +38 | ./bin/pages_parser | egrep "^[0-9]+ 0 " | sort -n -t " " -k 1,1 | gzip > ./$WIKI/target/main_pages_sort_by_ids.lst.gz
