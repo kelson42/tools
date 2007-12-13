@@ -9,11 +9,12 @@ my $pagesFile="";
 my $pagelinksFile="";
 my $langlinksFile="";
 my $redirectsFile="";
+my $chartsFile="";
 
-GetOptions('pagesFile=s' => \$pagesFile, 'pagelinksFile=s' => \$pagelinksFile, 'langlinksFile=s' => \$langlinksFile, 'redirectsFile=s' => \$redirectsFile);
+GetOptions('chartsFile=s' => \$chartsFile, 'pagesFile=s' => \$pagesFile, 'pagelinksFile=s' => \$pagelinksFile, 'langlinksFile=s' => \$langlinksFile, 'redirectsFile=s' => \$redirectsFile);
 
 if (!$pagesFile || !$pagelinksFile || !$langlinksFile || !$redirectsFile) {
-    print "usage: ./build_counts.pl --pagesFile=main_pages_sort_by_ids.lst.gz --pagelinksFile=pagelinks.lst.gz --langlinksFile=langlinks_sort_by_ids.lst.gz --redirectsFile=redirects_sort_by_ids.lst.gz\n";
+    print "usage: ./build_counts.pl --pagesFile=main_pages_sort_by_ids.lst.gz --pagelinksFile=pagelinks.lst.gz --langlinksFile=langlinks_sort_by_ids.lst.gz --redirectsFile=redirects_sort_by_ids.lst.gz [--chartsFile=charts.lst.gz]\n";
     exit;
 };
 
@@ -21,7 +22,8 @@ my ($pageId, $pageNamespace, $pageName, $redirect);
 my ($redirectSourcePageId, $redirectTargetNamespace, $redirectTargetPageName);
 my ($pagelinkSourcePageId, $pagelinkTargetNamespace, $pagelinkTargetPageName);
 my ($langlinkTargetPageId, $langlinkSourceWiki, $langlinkSourcePageName);
-my (%pagelinks_hash, %langlinks_hash);
+my ($chartPageNamespace, $chartPageName, $chartPageHit);
+my (%pagelinks_hash, %langlinks_hash, %charts_hash);
 
 open( PAGES_FILE, '<:gzip', $pagesFile ) or die("Unable to open file $pagesFile.\n");
 while( <PAGES_FILE> ) {
@@ -98,11 +100,20 @@ sub updatePagelinkCount {
     } while ( $redirects_line = readline( *REDIRECTS_FILE) );
 }
 
+if ($chartsFile) {
+    open( CHARTS_FILE, '<:gzip', $chartsFile ) or die("Unable to open file $chartsFile.\n");
+    while( <CHARTS_FILE> ) {
+	($chartPageNamespace, $chartPageName, $chartPageHit) = split(" ", $_);
+	$charts_hash{$chartPageName} = $chartPageHit;
+    }
+    close( CHARTS_FILE );
+}
+
 open( PAGES_FILE, '<:gzip', $pagesFile ) or die("Unable to open file $pagesFile.\n");
 while( <PAGES_FILE> ) {
     ($pageId, $pageNamespace, $pageName, $redirect) = split(" ", $_);
     unless ($pageNamespace || $redirect) {
-	print $pageId." ".$pageName." ".$langlinks_hash{$pageId}." ".$pagelinks_hash{$pageName}."\n";
+	print $pageId." ".$pageName." ".$langlinks_hash{$pageId}." ".$pagelinks_hash{$pageName}." ".($charts_hash{$pageName} || "0" )."\n";
     }
 }
 close( PAGES_FILE );

@@ -35,6 +35,7 @@ then
 	then
 	rm ./$WIKI/date
 	rm ./$WIKI/source/* >& /dev/null
+	wget --continue -O ./$WIKI/source/wikicharts_cur_$WIKI.sql.gz http://tools.wikimedia.de/~cbm/dumps/u_leon_wikistats_p/2007-12-10/wikicharts_cur_$WIKI.sql.gz
     fi
 fi
 
@@ -64,5 +65,8 @@ cat ./$WIKI/source/$WIKI-latest-redirect.sql.gz | gzip -d | tail -n +28 | ./bin/
 ## BUILD CATEGORYLINKS INDEXES
 cat ./$WIKI/source/$WIKI-latest-categorylinks.sql.gz | gzip -d | tail -n +28 | ./bin/categorylinks_parser | sort -n -t " " -k 1,1 | gzip > ./$WIKI/target/categorylinks_sort_by_ids.lst.gz
 
+## BUILD CHARTS INDEXES
+cat ./$WIKI/source/wikicharts_cur_$WIKI.sql.gz | gzip -d | tail -n +40 | ./bin/charts_parser | egrep "^0 " | gzip > ./$WIKI/target/charts.lst.gz
+
 ## BUILD COUNTS
-./bin/build_counts.pl --pagesFile=./$WIKI/target/main_pages_sort_by_ids.lst.gz --pagelinksFile=./$WIKI/target/pagelinks.lst.gz --langlinksFile=./$WIKI/target/langlinks_sort_by_ids.lst.gz --redirectsFile=./$WIKI/target/redirects_sort_by_ids.lst.gz | gzip > ./$WIKI/target/counts_sort_by_ids.lst.gz
+./bin/build_counts.pl --pagesFile=./$WIKI/target/main_pages_sort_by_ids.lst.gz --pagelinksFile=./$WIKI/target/pagelinks.lst.gz --langlinksFile=./$WIKI/target/langlinks_sort_by_ids.lst.gz --redirectsFile=./$WIKI/target/redirects_sort_by_ids.lst.gz --chartsFile=./$WIKI/target/charts.lst.gz | gzip > ./$WIKI/target/counts_sort_by_ids.lst.gz
