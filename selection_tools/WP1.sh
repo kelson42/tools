@@ -35,8 +35,8 @@ then
 	then
 	rm ./$WIKI/date
 	rm ./$WIKI/source/* >& /dev/null
-	wget --continue -O ./$WIKI/source/wikicharts_cur_$WIKI.sql.gz http://tools.wikimedia.de/~cbm/dumps/u_leon_wikistats_p/2007-12-10/wikicharts_cur_$WIKI.sql.gz
     fi
+    wget --continue -O ./$WIKI/source/wikicharts_cur_$WIKI.sql.gz http://tools.wikimedia.de/~cbm/dumps/u_leon_wikistats_p/2007-12-10/wikicharts_cur_$WIKI.sql.gz
 fi
 
 echo $CURRENT_VERSION > ./$WIKI/date
@@ -57,7 +57,7 @@ cat ./$WIKI/source/$WIKI-latest-page.sql.gz | gzip -d | tail -n +38 | ./bin/page
 cat ./$WIKI/source/$WIKI-latest-pagelinks.sql.gz| gzip -d | tail -n +28 | ./bin/pagelinks_parser | gzip > ./$WIKI/target/pagelinks.lst.gz
 
 ## BUILD LANGLINKS INDEXES
-cat ./$WIKI/source/$WIKI-latest-langlinks.sql.gz | gzip -d | tail -n +28 | ./bin/langlinks_parser | sort -n -t " " -k 1,1 | gzip > ./$WIKI/target/langlinks_sort_by_ids.lst.gz
+#cat ./$WIKI/source/$WIKI-latest-langlinks.sql.gz | gzip -d | tail -n +28 | ./bin/langlinks_parser | sort -n -t " " -k 1,1 | gzip > ./$WIKI/target/langlinks_sort_by_ids.lst.gz
 
 ## BUILD REDIRECT INDEXES
 cat ./$WIKI/source/$WIKI-latest-redirect.sql.gz | gzip -d | tail -n +28 | ./bin/redirects_parser | sort -n -t " " -k 1,1 | gzip > ./$WIKI/target/redirects_sort_by_ids.lst.gz
