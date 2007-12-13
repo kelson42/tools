@@ -10,6 +10,17 @@
 char n = 'A';
 char h1, h2;
 
+char hex2int(char c) 
+{
+  if(c >= '0' && c <= '9')
+    return c - '0';
+  if(c >= 'A' && c <= 'F')
+    return c - 'A' + 10;
+  if(c >= 'a' && c <= 'f')
+    return c - 'a' + 10;
+  return -1;
+}
+
 int main ()
 {
   char c;
@@ -18,14 +29,16 @@ int main ()
     if ( c == '\\') {
       fscanf(stdin,"%c",&c);
       fprintf(stdout, "%c", c);
-    } else if ( c == '%') {
+    }
+    else if ( c == '%') {
       fscanf(stdin,"%c",&h1);
       fscanf(stdin,"%c",&h2);
-      c = (h1-'0')*16+(h2-'0');
+      c = hex2int(h1)*16 + hex2int(h2);
       if (c == ' ')
       	c = '_';
       fprintf(stdout, "%c", c );
-    } else {
+    } 
+    else {
       switch( n ) {
       case 'A' :
 	if (c == '(') {
