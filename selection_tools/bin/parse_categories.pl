@@ -2,7 +2,6 @@
 
 use strict;
 use warnings;
-use Graph;
 use Data::Dumper;
 use Getopt::Long;
 use PerlIO::gzip;
@@ -19,15 +18,18 @@ my @todo;
 
 GetOptions('categoriesFile=s' => \$categoriesFile, 'pagesFile=s' => \$pagesFile, 'categorylinksFile=s' => \$categorylinksFile, 'redirectsFile=s' => \$redirectsFile, 'modus=s' => \$modus, 'start=s' => \$start );
 
-if (!$pagesFile || !$categoriesFile || !$categorylinksFile || !$redirectsFile || !$modus || !($modus eq "get_parents" || $modus eq "get_children" ) || !$start) {
-    print "usage: ./parse_categories.pl --pagesFile=main_pages_sort_by_ids.lst.gz --categoriesFile=categories_sort_by_ids.lst.gz  --categorylinksFile=categorylinks.lst.gz --redirectsFile=redirects_sort_by_ids.lst.gz --modus=[get_children|get_parents] --start=my_start_page\n";
+if (!$pagesFile || !$categoriesFile || !$categorylinksFile || !$redirectsFile || !$modus || !($modus eq "get_parents" || $modus eq "get_children" ) ) {
+    print "usage: ./parse_categories.pl --pagesFile=main_pages_sort_by_ids.lst.gz --categoriesFile=categories_sort_by_ids.lst.gz  --categorylinksFile=categorylinks_sort_by_ids.lst.gz --redirectsFile=redirects_sort_by_ids.lst.gz --modus=[get_children|get_parents] --start=my_start_page\n";
     exit;
 };
 
-$start =~ s/ /_/g;
-$start = ucfirst($start);
+if ($modus eq "get_children") {
+    $modus = 1;
+} else {
+    $modus = undef;
+}
 
-my $categories_graph = Graph->new(directed=>1);
+my %graph;
 
 my ($pageId, $pageNamespace, $pageName, $pageRedirect);
 my ($categoryId, $categoryNamespace, $categoryName, $categoryRedirect);
@@ -39,10 +41,8 @@ my (%pages_hash, %revert_pages_hash, %categories_hash, %revert_categories_hash, 
 open( PAGES_FILE, '<:gzip', $pagesFile ) or die("Unable to open file $pagesFile.\n");
 while( <PAGES_FILE> ) {
     ($pageId, $pageNamespace, $pageName, $pageRedirect) = split(" ", $_);
-    unless ($pageNamespace) {
-	$pages_hash{$pageId} = $pageName;
-	$revert_pages_hash{$pageName} = $pageId;
-    }
+    $pages_hash{$pageId} = $pageName;
+    $revert_pages_hash{$pageName} = $pageId;
 }
 close( PAGES_FILE );
 
@@ -52,53 +52,67 @@ while( <CATEGORIES_FILE> ) {
     if ($categoryNamespace eq "14") {
         $categories_hash{$categoryId} = $categoryName;
         $revert_categories_hash{$categoryName} = $categoryId;
+	$graph{$categoryId} = [()];
     }
 }
 close( CATEGORIES_FILE );
 
 open( CATEGORYLINKS_FILE, '<:gzip', $categorylinksFile ) or die("Unable to open file $categorylinksFile.\n");
-while( <CATEGORYLINKS_FILE> ) {
-    ($categorylinkSourceId, $categorylinkTargetName) = split(" ", $_);
-    my $categorylinkTargetId = $revert_categories_hash{$categorylinkTargetName};
-    if (defined($categorylinkTargetId)) {
-	$categories_graph->add_edge($categorylinkTargetId, $categorylinkSourceId);
+
+if ( defined($modus) ) {
+    while( <CATEGORYLINKS_FILE> ) {
+        ($categorylinkSourceId, $categorylinkTargetName) = split(" ", $_);
+        my $categorylinkTargetId = $revert_categories_hash{$categorylinkTargetName};
+        if (defined($categorylinkTargetId)) {
+	    push(@{$graph{$categorylinkTargetId}}, $categorylinkSourceId);
+        }
+    }
+} else {
+    while( <CATEGORYLINKS_FILE> ) {
+	($categorylinkSourceId, $categorylinkTargetName) = split(" ", $_);
+	my $categorylinkTargetId = $revert_categories_hash{$categorylinkTargetName};
+	if (defined($categorylinkTargetId)) {
+	    push(@{$graph{$categorylinkSourceId}}, $categorylinkTargetId);
+	}
     }
 }
+
 close( CATEGORYLINKS_FILE );
 
-my $start_id = revertResolve(ucfirst($start));
-push(@todo, $start_id);
+$start =~ s/ /_/g;
+$start = ucfirst($start);
 
-while (my $id = shift(@todo)) {
-    next unless (defined($id));
-    next if (exists($done{$id}));
-    $done{$id} = 1;
- #   print "--------------------".$id."\n";    
+if ($start) {
+    push(@todo, revertResolve($start));
+} else {
+    while ($start = <STDIN>) {
+	$start =~ s/\n//;
+	$start =~ s/ /_/g;
+	$start = ucfirst($start);
+	push(@todo, revertResolve($start));
+    }
+}
 
-    if ( $modus eq "get_parents") {
-	my @edges = $categories_graph->edges_to($start_id);
-	foreach my $edge (@edges) {
-	    print resolve($edge->[0])."\n";
+while (my $current_id = shift(@todo)) {
+    next unless (defined($current_id));
+    next if (exists($done{$current_id}));
+    my $current_result = resolve($current_id);
+    $done{$current_id} = 1;
+
+    foreach my $id (@{$graph{$current_id}}) {
+	my $result;
+	if (isCategoryId($id)) {
+	    $result = resolveCategory($id);
+	    unless (exists($done{$id})) {
+		push(@todo, $id);
+	    }
 	}
-    } else {
-	my @edges = $categories_graph->edges_from($start_id);
-	foreach my $edge (@edges) {
-	    my $result;
-	    if (isCategoryId($edge->[1])) {
-		$result = resolveCategory($edge->[1]);
-#		print "====".$result."\n";
-		unless (exists($done{$edge->[1]})) {
-#		print "+++++++".$result."\n";
-		    push(@todo, $edge->[1]);
-		}
-	    }
-	    else {
-		$result = resolvePage($edge->[1]);
-	    }
-
-	    if ($result) {
-		print $result."\n";
-	    }
+	else {
+	    $result = resolvePage($id);
+	}
+	
+	if ($result) {
+	    print "$current_id $id $current_result $result\n";
 	}
     }
 }    
