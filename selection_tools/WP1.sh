@@ -76,3 +76,6 @@ cat ./$WIKI/source/wikicharts_cur_$WIKI.sql.gz | gzip -d | tail -n +40 | ./bin/c
 
 ## BUILD COUNTS
 ./bin/build_counts.pl --pagesFile=./$WIKI/target/main_pages_sort_by_ids.lst.gz --pagelinksFile=./$WIKI/target/pagelinks.lst.gz --langlinksFile=./$WIKI/target/langlinks_sort_by_ids.lst.gz --redirectsFile=./$WIKI/target/redirects_sort_by_ids.lst.gz --chartsFile=./$WIKI/target/charts.lst.gz | gzip > ./$WIKI/target/counts_sort_by_ids.lst.gz
+
+## BUILD IMPORTANCE SCORES
+./bin/build_importance_scores.pl --countsFile=./$WIKI/target/counts_sort_by_ids.lst.gz | gzip > ./$WIKI/target/importance_scores.lst.gz
