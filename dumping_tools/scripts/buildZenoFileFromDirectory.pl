@@ -27,7 +27,7 @@ GetOptions('indexerPath=s' => \$indexerPath,
 	   );
 
 if (!$indexerPath || !$htmlPath || !$zenoFilePath) {
-    print "usage: ./builZenoFileFromDirectory.pl --indexerPath=./zenoindexer --htmlPath=./html zenoFilePath=articles.zeno\n";
+    print "usage: ./builZenoFileFromDirectory.pl --indexerPath=./zenoindexer --htmlPath=./html --zenoFilePath=articles.zeno\n";
     exit;
 }
 
@@ -37,3 +37,6 @@ $indexer->indexerPath($indexerPath);
 $indexer->htmlPath($htmlPath);
 $indexer->zenoFilePath($zenoFilePath);
 $indexer->exploreHtmlPath();
+$indexer->buildDatabase("dbname=zeno");
+
+`$indexerPath --db "sqlite:dbname=zeno" wikipedia.zeno`
