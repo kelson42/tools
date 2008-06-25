@@ -5,11 +5,13 @@ use File::Find;
 use Kiwix::MimeDetector;
 use DBI;
 use Cwd 'abs_path';
+use Compress::Zlib ;
 
 my $logger;
 my $indexerPath;
 my $htmlPath;
 my $zenoFilePath;
+my $textCompression;
 
 my @files;
 
@@ -106,10 +108,10 @@ create table zenoarticles
 
     # fill the article table
     foreach my $hash (@files) {
-       my $sql = "insert into article (namespace, title, url, compression, data) 
-    values (?, ?, ?, ?, ?)";
+       my $sql = "insert into article (namespace, title, url, redirect, mimetype, data, compression) 
+    values (?, ?, ?, ?, ?, ?, ?)";
        my $sth = $dbh->prepare($sql);
-       $sth->execute($hash->{namespace}, $hash->{title}, $hash->{url}, $hash->{compression}, $hash->{data});
+       $sth->execute($hash->{namespace}, $hash->{title}, $hash->{url}, $hash->{redirect}, $hash->{mimetype}, $hash->{data}, $hash->{compression});
        if ($dbh->err()) { die "$DBI::errstr\n"; }
     }
 
@@ -130,29 +132,56 @@ sub analyzeFile {
     my $file = shift;
 
     $self->log("info", "Analyze ".$file);
+
     my %hash;
-    $hash{path} = $file;
-    $hash{data} = $self->readFile($file)."\n";
+    my $data = $self->readFile($file);
+
+    # url
+    $hash{url} = substr($file, length($self->htmlPath()) + 1);
+   
+    # mime-type
     $hash{mimetype} = $self->mimeDetector()->getMimeType($file);
 
+    # namespace
     if ($hash{mimetype} eq "text/html") {
 	$hash{namespace} = 0;
     } else {
 	$hash{namespace} = 6;
     }
 
-    $hash{compression} = 0;
-
+    # compression
+    if ($self->textCompression eq "gzip") {
+	if ($hash{mimetype} =~ /^text\/.*/) {
+	    $hash{compression} = 1;
+	}
+	else {
+	    $hash{compression} = 0;
+	}
+    } else {
+	$hash{compression} = 0;
+    }
+    
+    # title
     if ($hash{mimetype} eq "text/html") {
-	if ($hash{data} =~ /<title>(.*)<\/title>/mi ) {
+	if ($data =~ /<title>(.*)<\/title>/mi ) {
 	    $hash{title} = $1;
 	}
     }
     if (!$hash{title}) {
-	    $hash{title} = $file;
+	$hash{title} = $hash{url};
     }
 
-    $hash{url} = substr($file, length($self->htmlPath()) + 1);
+    # data
+    if ($hash{compression} == 0) {
+	$hash{data} = $data;
+    } elsif ($hash{compression} == 1) {
+	$hash{data} = Compress::Zlib::memGzip($data);
+    } else {
+	$hash{data} = $data;
+    }
+
+    # redirect
+    $hash{redirect} = 0;
 
     return \%hash;
 }
@@ -219,6 +248,12 @@ sub indexerPath {
     my $self = shift;
     if (@_) { $indexerPath = shift } 
     return $indexerPath;
+}
+
+sub textCompression {
+    my $self = shift;
+    if (@_) { $textCompression = shift } 
+    return $textCompression;
 }
 
 sub logger {
