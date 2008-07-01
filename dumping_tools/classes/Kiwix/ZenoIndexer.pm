@@ -1,11 +1,14 @@
 package Kiwix::ZenoIndexer;
 
+use strict;
+use warnings;
 use Data::Dumper;
 use File::Find;
 use Kiwix::MimeDetector;
-use DBI;
+use DBI qw(:sql_types);
 use Cwd 'abs_path';
-use Compress::Zlib ;
+use IO::Compress::Deflate;
+use HTML::Clean;
 
 my $logger;
 my $indexerPath;
@@ -16,6 +19,18 @@ my $textCompression;
 my @files;
 
 my $mimeDetector;
+
+my %mimeTypes = (
+    "text/html" => 0,
+    "text/plain" => 1,
+    "image/jpeg" => 2,
+    "image/png" => 3,
+    "image/tiff" => 4,
+    "text/css" => 5,
+    "image/gif" => 6,
+    "application/javascript" => 8,
+    "image/icon" => 9 
+    );
 
 sub new {
     my $class = shift;
@@ -64,6 +79,7 @@ sub buildDatabase {
 
     # connect to the db
     my $dbh = DBI->connect("dbi:SQLite:dbname=".$db,"","", {AutoCommit => 0, PrintError => 1});
+    $dbh->{unicode} = 1;
 
     # create article table
     executeSql($dbh, "
@@ -108,10 +124,21 @@ create table zenoarticles
 
     # fill the article table
     foreach my $hash (@files) {
+
        my $sql = "insert into article (namespace, title, url, redirect, mimetype, data, compression) 
     values (?, ?, ?, ?, ?, ?, ?)";
        my $sth = $dbh->prepare($sql);
-       $sth->execute($hash->{namespace}, $hash->{title}, $hash->{url}, $hash->{redirect}, $hash->{mimetype}, $hash->{data}, $hash->{compression});
+
+       $sth->bind_param(1, $hash->{namespace});
+       $sth->bind_param(2, $hash->{title});
+       $sth->bind_param(3, $hash->{url});
+       $sth->bind_param(4, $hash->{redirect});
+       $sth->bind_param(5, $mimeTypes{ $hash->{mimetype} });
+       $sth->bind_param(6, $hash->{data}, SQL_BLOB);
+       $sth->bind_param(7, $hash->{compression});
+
+       $sth->execute();
+
        if ($dbh->err()) { die "$DBI::errstr\n"; }
     }
 
@@ -152,13 +179,13 @@ sub analyzeFile {
     # compression
     if ($self->textCompression eq "gzip") {
 	if ($hash{mimetype} =~ /^text\/.*/) {
-	    $hash{compression} = 1;
+	    $hash{compression} = 2;
 	}
 	else {
-	    $hash{compression} = 0;
+	    $hash{compression} = 1;
 	}
     } else {
-	$hash{compression} = 0;
+	$hash{compression} = 1;
     }
     
     # title
@@ -172,17 +199,34 @@ sub analyzeFile {
     }
 
     # data
-    if ($hash{compression} == 0) {
+    if ($hash{mimetype} eq "text/html") {
+	my $oldData = $data;
+	my $cleaner = new HTML::Clean(\$oldData);
+	if ($cleaner) {
+	    $cleaner->compat();
+
+	    if ($data =~ /\<pre\>/gmi ) {
+		$cleaner->strip( { "whitespace"  => 0 } );
+	    } else {
+		$cleaner->strip();
+	    }
+	    $data = $cleaner->data();
+	}
+    }
+
+    if ($hash{compression} == 1) {
 	$hash{data} = $data;
-    } elsif ($hash{compression} == 1) {
-	$hash{data} = Compress::Zlib::memGzip($data);
+    } elsif ($hash{compression} == 2) {
+	my $compressor = new IO::Compress::Deflate(\$hash{data});
+	$compressor->write($data);
+	$compressor->flush();
     } else {
 	$hash{data} = $data;
     }
 
     # redirect
-    $hash{redirect} = 0;
-
+    # $hash{redirect} = 0;
+    
     return \%hash;
 }
 
