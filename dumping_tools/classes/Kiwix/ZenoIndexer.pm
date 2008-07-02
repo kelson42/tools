@@ -217,7 +217,7 @@ sub analyzeFile {
     if ($hash{compression} == 1) {
 	$hash{data} = $data;
     } elsif ($hash{compression} == 2) {
-	my $compressor = new IO::Compress::Deflate(\$hash{data});
+	my $compressor = new IO::Compress::Deflate(\$hash{data}, {-Level => IO::Compress::Deflate::Z_BEST_COMPRESSION } );
 	$compressor->write($data);
 	$compressor->flush();
     } else {
