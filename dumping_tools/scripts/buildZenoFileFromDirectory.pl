@@ -10,6 +10,9 @@ use Getopt::Long;
 use Data::Dumper;
 use Kiwix::ZenoIndexer;
 
+# sqlite DB path
+my $dbFile="/tmp/dbname=".time();
+
 # log
 use Log::Log4perl;
 Log::Log4perl->init("../conf/log4perl");
@@ -21,7 +24,7 @@ my $htmlPath;
 my $zenoFilePath;
 my $textCompression="none";
 
-## Get console line arguments
+# Get console line arguments
 GetOptions('indexerPath=s' => \$indexerPath, 
 	   'htmlPath=s' => \$htmlPath,
 	   'zenoFilePath=s' => \$zenoFilePath,
@@ -33,13 +36,25 @@ if (!$indexerPath || !$htmlPath || !$zenoFilePath) {
     exit;
 }
 
+# initialization
 my $indexer = Kiwix::ZenoIndexer->new();
 $indexer->logger($logger);
 $indexer->indexerPath($indexerPath);
 $indexer->htmlPath($htmlPath);
 $indexer->zenoFilePath($zenoFilePath);
 $indexer->textCompression($textCompression);
-$indexer->exploreHtmlPath();
-$indexer->buildDatabase("dbname=zeno");
 
-`$indexerPath --db "sqlite:dbname=zeno" wikipedia.zeno`
+# loads the data from the directory to the db
+$indexer->exploreHtmlPath();
+$indexer->buildDatabase($dbFile);
+
+# call the zeno indexer
+`$indexerPath --db "sqlite:$dbFile" wikipedia.zeno`;
+
+# delete temporary dbFile
+if ( unlink($dbFile) == 0 ) {
+    $logger->info("File $dbFile deleted successfully.");
+} else {
+    $logger->error("File $dbFile was not deleted.");
+}
+
