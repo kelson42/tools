@@ -5,6 +5,8 @@ use warnings;
 use MIME::Types;
 use Data::Dumper;
 
+my $logger;
+
 my MIME::Types $types = MIME::Types->new;
 
 sub new {
@@ -26,8 +28,21 @@ sub getMimeType {
 	return $mime->type();
     }
     else {
-	print "Unable to determine type of $file\n";
+	$self->log("error", "Unable to determine type of $file.");
     }
+}
+
+sub logger {
+    my $self = shift;
+    if (@_) { $logger = shift }
+    return $logger;
+}
+
+sub log {
+    my $self = shift;
+    return unless $logger;
+    my ($method, $text) = @_;
+    $logger->$method($text);
 }
 
 1;

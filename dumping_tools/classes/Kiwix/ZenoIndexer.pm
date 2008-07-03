@@ -302,7 +302,10 @@ sub textCompression {
 
 sub logger {
     my $self = shift;
-    if (@_) { $logger = shift } 
+    if (@_) { 
+	$logger = shift;
+	$self->mimeDetector->logger($logger);
+    } 
     return $logger;
 }
 
