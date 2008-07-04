@@ -8,12 +8,12 @@ use threads;
 use threads::shared;
 
 my $path : shared = "";
-my @files : shared;
-
-my $thread;
-
-my $loggerMutex : shared = 1;
 my $filesMutex : shared = 1;
+my @files : shared;
+my $bufferSize : shared = 10000;
+my $exploring : shared = -1;
+my $thread;
+my $loggerMutex : shared = 1;
 my $logger;
 
 sub new {
@@ -29,18 +29,29 @@ sub getNext {
     my $self = shift;
     my @threads;
 
-    unless ($thread) {
+    lock($exploring);
+
+    if ($exploring == -1) {
 	$self->log("info", "Start find on ".$self->path().".");
 	$thread = threads->new(\&explore, $self);
+	$exploring = 1;
+    } else {
+	if ($exploring == 0){
+	    foreach my $thr (threads->list) {
+		if ($thr->tid && !threads::equal($thr, threads->self)) {
+		    $thr->join();
+		}
+	    }
+	}
     }
 
     lock($filesMutex);
-    while (!scalar(@files) && $thread) {
-	cond_timedwait($filesMutex, time() + 1);
-	print "titi\n";
+
+    while (!scalar(@files) && $exploring == 1) {
+	cond_timedwait($filesMutex, time() + 0.1);
+	cond_timedwait($exploring, time() + 0.1);
     }
 
-    lock($filesMutex);
     return shift(@files);
 }
 
@@ -53,15 +64,29 @@ sub explore {
     }
 
     find(\&getFiles, $self->path());
+
+    lock($exploring);
+    $exploring = 0;
+}
+
+sub stop {
+    my $self = shift;
     $thread->join();
-    $thread = undef;
+    lock($exploring);
+    $exploring = -1;
+    lock($filesMutex);
+    @files = ();
+}
+
+sub reset {
+    my $self = shift;
+    $self->stop();
 }
 
 sub getFiles {
     lock($filesMutex);
-    while (scalar(@files) > 10000 ) {
-	cond_timedwait($filesMutex, time() + 1);
-	print "toto\n";
+    while (scalar(@files) > $bufferSize ) {
+	cond_timedwait($filesMutex, time() + 0.1);
     }
     push(@files, $File::Find::name);
 }
@@ -71,6 +96,13 @@ sub path {
     lock($path);
     if (@_) { $path = shift }
     return $path;
+}
+
+sub bufferSize {
+    my $self = shift;
+    lock($bufferSize);
+    if (@_) { $bufferSize = shift }
+    return $bufferSize;
 }
 
 # loggin

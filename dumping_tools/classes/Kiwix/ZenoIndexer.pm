@@ -3,7 +3,7 @@ package Kiwix::ZenoIndexer;
 use strict;
 use warnings;
 use Data::Dumper;
-use File::Find;
+use Kiwix::PathExplorer;
 use Kiwix::MimeDetector;
 use DBI qw(:sql_types);
 use Cwd 'abs_path';
@@ -47,7 +47,11 @@ sub exploreHtmlPath {
     my $self = shift;
 
     $self->log("info", "List files in the directory ".$self->htmlPath());
-    find(\&getFiles, $self->htmlPath());
+    my $explorer = new Kiwix::PathExplorer();
+    $explorer->path($self->htmlPath());
+    while (my $file = $explorer->getNext()) {
+	push(@files, $file);
+    }
 
     $self->log("info", "Remove unwanted files in the directory ".$self->htmlPath());
     $self->removeUnwantedFiles();
@@ -148,10 +152,6 @@ create table zenoarticles
     # commit und disconnect
     $dbh->commit();
     $dbh->disconnect();
-}
-
-sub getFiles {
-    push(@files, $File::Find::name);
 }
 
 sub analyzeFile {
