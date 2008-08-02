@@ -76,7 +76,7 @@ $indexer->textCompression($textCompression);
 # loads the data from the directory to the db
 $indexer->exploreHtmlPath();
 $indexer->buildDatabase($dbFile);
-exit;
+
 # call the zeno indexer
 `$indexerPath --db "sqlite:$dbFile" $zenoFilePath`;
 
