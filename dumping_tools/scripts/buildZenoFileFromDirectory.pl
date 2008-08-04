@@ -20,19 +20,17 @@ my $logger = Log::Log4perl->get_logger("builZenoFileFromDirectory.pl");
 my $indexerPath;
 my $htmlPath;
 my $zenoFilePath="./articles.zeno";
-my $textCompression="gzip";
 my $tmpDirectoryPath;
 
 # Get console line arguments
 GetOptions('indexerPath=s' => \$indexerPath, 
 	   'htmlPath=s' => \$htmlPath,
 	   'zenoFilePath=s' => \$zenoFilePath,
-	   'textCompression=s' => \$textCompression,
 	   'tmpDirectoryPath=s' => \$tmpDirectoryPath
 	   );
 
 if (!$htmlPath) {
-    print "usage: ./builZenoFileFromDirectory.pl --htmlPath=./html [--indexerPath=./zenoindexer] [--zenoFilePath=articles.zeno] [--textCompression={none|gzip}] [--tmpDirectoryPath=/tmp]\n";
+    print "usage: ./builZenoFileFromDirectory.pl --htmlPath=./html [--indexerPath=./zenoindexer] [--zenoFilePath=articles.zeno] [--tmpDirectoryPath=/tmp]\n";
     exit;
 }
 
@@ -71,10 +69,8 @@ $indexer->logger($logger);
 $indexer->indexerPath($indexerPath);
 $indexer->htmlPath($htmlPath);
 $indexer->zenoFilePath($zenoFilePath);
-$indexer->textCompression($textCompression);
 
 # loads the data from the directory to the db
-$indexer->exploreHtmlPath();
 $indexer->buildDatabase($dbFile);
 $indexer->buildZenoFile($dbFile);
 

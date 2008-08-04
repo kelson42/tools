@@ -13,7 +13,7 @@ my $logger;
 my $indexerPath;
 my $htmlPath;
 my $zenoFilePath;
-my $textCompression;
+my $dbh;
 
 my @files;
 
@@ -42,7 +42,7 @@ sub new {
     return $self;
 }
 
-sub exploreHtmlPath {
+sub fillDatabase {
     my $self = shift;
 
     $self->log("info", "List files in the directory ".$self->htmlPath());
@@ -74,28 +74,29 @@ sub buildZenoFile {
     `$indexerPath -s 1024 -C 100000 --db "sqlite:$dbFile" $zenoFilePath`;
 }
 
+sub executeSql {
+    my $self = shift;
+    my $sql = shift;
+    
+    $self->dbh()->do($sql);
+    if ($self->dbh()->err()) { die "$DBI::errstr\n"; }
+}
+
 sub buildDatabase {
     my $self = shift;
     my $db = shift;
 
-    sub executeSql {
-	my $dbh = shift;
-	my $sql = shift;
-
-	$dbh->do($sql);
-	if ($dbh->err()) { die "$DBI::errstr\n"; }
-    }
-
     $self->log("info", "Write to Database ".$db);
+
     # remove old database
     unlink($db);
 
     # connect to the db
-    my $dbh = DBI->connect("dbi:SQLite:dbname=".$db,"","", {AutoCommit => 0, PrintError => 1});
-    $dbh->{unicode} = 1;
+    $self->dbh(DBI->connect("dbi:SQLite:dbname=".$db,"","", {AutoCommit => 0, PrintError => 1}));
+    $self->dbh()->{unicode} = 1;
 
     # create article table
-    executeSql($dbh, "
+    $self->executeSql("
 create table article
 (
   aid          integer primary key autoincrement,
@@ -106,10 +107,10 @@ create table article
   mimetype     integer,
   data         bytea
  )");
-    executeSql($dbh, "create index article_ix1 on article(namespace, title)");
+    $self->executeSql("create index article_ix1 on article(namespace, title)");
 
     # create zenofile table
-    executeSql($dbh, "
+    $self->executeSql("
 create table zenofile
 (
   zid          integer primary key autoincrement,
@@ -117,7 +118,7 @@ create table zenofile
  )");
 
     # create table zenodata
-    executeSql($dbh, "
+    $self->executeSql("
 create table zenodata
 (
   zid          integer not null,
@@ -127,7 +128,7 @@ create table zenodata
 )");
 
     # create zenoarticles table
-    executeSql($dbh, "
+    $self->executeSql("
 create table zenoarticles
 (
   zid          integer not null,
@@ -145,36 +146,21 @@ create table zenoarticles
  )");
 
     # create indexes
-    executeSql($dbh, "create index zenoarticles_ix1 on zenoarticles(zid, direntlen)");
-    executeSql($dbh, "create index zenoarticles_ix2 on zenoarticles(zid, sort)");
+    $self->executeSql("create index zenoarticles_ix1 on zenoarticles(zid, direntlen)");
+    $self->executeSql("create index zenoarticles_ix2 on zenoarticles(zid, sort)");
 
     # fill the zenofile table
-    executeSql($dbh, "insert into zenofile (filename) values ('".$self->zenoFilePath()."')");
+    $self->executeSql("insert into zenofile (filename) values ('".$self->zenoFilePath()."')");
 
     # fill the article table
-    foreach my $hash (@files) {
-       my $sql = "insert into article (namespace, title, url, redirect, mimetype, data) 
-    values (?, ?, ?, ?, ?, ?)";
-       my $sth = $dbh->prepare($sql);
-
-       $sth->bind_param(1, $hash->{namespace});
-       $sth->bind_param(2, $hash->{title});
-       $sth->bind_param(3, $hash->{url});
-       $sth->bind_param(4, $hash->{redirect});
-       $sth->bind_param(5, $mimeTypes{ $hash->{mimetype} });
-       $sth->bind_param(6, $hash->{data}, SQL_BLOB);
-
-       $sth->execute();
-
-       if ($dbh->err()) { die "$DBI::errstr\n"; }
-    }
+    $self->fillDatabase();
 
     # fill the zenoarticle table
-    executeSql($dbh, "insert into zenoarticles (zid, aid) select 1, aid from article");
+    $self->executeSql("insert into zenoarticles (zid, aid) select 1, aid from article");
 
     # commit und disconnect
-    $dbh->commit();
-    $dbh->disconnect();
+    $self->dbh()->commit();
+    $self->dbh()->disconnect();
 }
 
 sub analyzeFile {
@@ -197,18 +183,6 @@ sub analyzeFile {
 	$hash{namespace} = 0;
     } else {
 	$hash{namespace} = 6;
-    }
-
-    # compression
-    if ($self->textCompression eq "gzip") {
-	if ($hash{mimetype} =~ /^text\/.*/) {
-	    $hash{compression} = 2;
-	}
-	else {
-	    $hash{compression} = 1;
-	}
-    } else {
-	$hash{compression} = 1;
     }
     
     # title
@@ -237,6 +211,19 @@ sub analyzeFile {
 	}
     }
     $hash{data} = $data;
+
+    my $sql = "insert into article (namespace, title, url, redirect, mimetype, data) values (?, ?, ?, ?, ?, ?)";
+    my $sth = $self->dbh()->prepare($sql);
+
+    $sth->bind_param(1, $hash{namespace});
+    $sth->bind_param(2, $hash{title});
+    $sth->bind_param(3, $hash{url});
+    $sth->bind_param(4, $hash{redirect});
+    $sth->bind_param(5, $mimeTypes{ $hash{mimetype} });
+    $sth->bind_param(6, $hash{data}, SQL_BLOB);
+    
+    $sth->execute();
+    if ($self->dbh()->err()) { die "$DBI::errstr\n"; }
     
     return \%hash;
 }
@@ -299,16 +286,16 @@ sub zenoFilePath {
     return $zenoFilePath;
 }
 
+sub dbh {
+    my $self = shift;
+    if (@_) { $dbh = shift } 
+    return $dbh;
+}
+
 sub indexerPath {
     my $self = shift;
     if (@_) { $indexerPath = shift } 
     return $indexerPath;
-}
-
-sub textCompression {
-    my $self = shift;
-    if (@_) { $textCompression = shift } 
-    return $textCompression;
 }
 
 sub logger {
