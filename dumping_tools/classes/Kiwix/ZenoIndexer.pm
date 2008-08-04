@@ -7,7 +7,6 @@ use Kiwix::PathExplorer;
 use Kiwix::MimeDetector;
 use DBI qw(:sql_types);
 use Cwd 'abs_path';
-use IO::Compress::Deflate;
 use HTML::Clean;
 
 my $logger;
@@ -65,6 +64,16 @@ sub exploreHtmlPath {
     @files = @filesWithInformations;
 }
 
+sub buildZenoFile {
+    my $self = shift;
+    my $dbFile = shift;
+    my $indexerPath = $self->indexerPath();
+    my $zenoFilePath = $self->zenoFilePath();
+
+    # call the zeno indexer
+    `$indexerPath -s 1024 -C 100000 --db "sqlite:$dbFile" $zenoFilePath`;
+}
+
 sub buildDatabase {
     my $self = shift;
     my $db = shift;
@@ -95,8 +104,7 @@ create table article
   url          text    not null,
   redirect     text,     -- title of redirect target
   mimetype     integer,
-  data         bytea,
-  compression  integer   -- 0: unknown/not specified, 1: none, 2: zip
+  data         bytea
  )");
     executeSql($dbh, "create index article_ix1 on article(namespace, title)");
 
@@ -105,9 +113,18 @@ create table article
 create table zenofile
 (
   zid          integer primary key autoincrement,
-  filename     text    not null,
-  count        integer
+  filename     text    not null
  )");
+
+    # create table zenodata
+    executeSql($dbh, "
+create table zenodata
+(
+  zid          integer not null,
+  did          integer not null,
+  data         bytea not null,
+  primary key (zid, did)
+)");
 
     # create zenoarticles table
     executeSql($dbh, "
@@ -115,22 +132,29 @@ create table zenoarticles
 (
   zid          integer not null,
   aid          integer not null,
-  direntpos    bigint,
+  sort         integer,
+  direntlen    bigint,
   datapos      bigint,
+  dataoffset   bigint,
+  datasize     bigint,
+  did          bigint,
 
   primary key (zid, aid),
   foreign key (zid) references zenofile,
   foreign key (aid) references article
  )");
 
+    # create indexes
+    executeSql($dbh, "create index zenoarticles_ix1 on zenoarticles(zid, direntlen)");
+    executeSql($dbh, "create index zenoarticles_ix2 on zenoarticles(zid, sort)");
+
     # fill the zenofile table
     executeSql($dbh, "insert into zenofile (filename) values ('".$self->zenoFilePath()."')");
 
     # fill the article table
     foreach my $hash (@files) {
-
-       my $sql = "insert into article (namespace, title, url, redirect, mimetype, data, compression) 
-    values (?, ?, ?, ?, ?, ?, ?)";
+       my $sql = "insert into article (namespace, title, url, redirect, mimetype, data) 
+    values (?, ?, ?, ?, ?, ?)";
        my $sth = $dbh->prepare($sql);
 
        $sth->bind_param(1, $hash->{namespace});
@@ -139,7 +163,6 @@ create table zenoarticles
        $sth->bind_param(4, $hash->{redirect});
        $sth->bind_param(5, $mimeTypes{ $hash->{mimetype} });
        $sth->bind_param(6, $hash->{data}, SQL_BLOB);
-       $sth->bind_param(7, $hash->{compression});
 
        $sth->execute();
 
@@ -199,7 +222,7 @@ sub analyzeFile {
     }
 
     # data
-    if ($hash{mimetype} eq "text/html") {
+    if ($hash{mimetype} eq "text/html__") {
 	my $oldData = $data;
 	my $cleaner = new HTML::Clean(\$oldData);
 	if ($cleaner) {
@@ -210,22 +233,10 @@ sub analyzeFile {
 	    } else {
 		$cleaner->strip();
 	    }
-	    $data = $cleaner->data();
+	    $data = \$cleaner->data();
 	}
     }
-
-    if ($hash{compression} == 1) {
-	$hash{data} = $data;
-    } elsif ($hash{compression} == 2) {
-	my $compressor = new IO::Compress::Deflate(\$hash{data}, {-Level => IO::Compress::Deflate::Z_BEST_COMPRESSION } );
-	$compressor->write($data);
-	$compressor->flush();
-    } else {
-	$hash{data} = $data;
-    }
-
-    # redirect
-    # $hash{redirect} = 0;
+    $hash{data} = $data;
     
     return \%hash;
 }
