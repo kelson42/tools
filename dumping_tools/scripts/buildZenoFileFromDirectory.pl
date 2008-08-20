@@ -75,7 +75,7 @@ $indexer->buildDatabase($dbFile);
 $indexer->buildZenoFile($dbFile);
 
 # delete temporary dbFile
-if ( unlink($dbFile) == 0 ) {
+if ( unlink($dbFile) != 0 ) {
     $logger->info("File $dbFile deleted successfully.");
 } else {
     $logger->error("File $dbFile was not deleted.");
