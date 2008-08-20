@@ -28,7 +28,11 @@ sub getMimeType {
 	return $mime->type();
     }
     else {
-	$self->log("error", "Unable to determine type of $file.");
+	if (-d $file) {
+	    $self->log("info", "$file is a directory");
+	} else {
+	    $self->log("error", "Unable to determine type of $file.");
+	} 
     }
 }
 
