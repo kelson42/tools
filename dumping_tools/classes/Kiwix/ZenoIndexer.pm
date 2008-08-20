@@ -7,7 +7,6 @@ use Kiwix::PathExplorer;
 use Kiwix::MimeDetector;
 use DBI qw(:sql_types);
 use Cwd 'abs_path';
-use HTML::Clean;
 
 my $logger;
 my $indexerPath;
@@ -196,20 +195,6 @@ sub analyzeFile {
     }
 
     # data
-    if ($hash{mimetype} eq "text/html__") {
-	my $oldData = $data;
-	my $cleaner = new HTML::Clean(\$oldData);
-	if ($cleaner) {
-	    $cleaner->compat();
-
-	    if ($data =~ /\<pre\>/gmi ) {
-		$cleaner->strip( { "whitespace"  => 0 } );
-	    } else {
-		$cleaner->strip();
-	    }
-	    $data = \$cleaner->data();
-	}
-    }
     $hash{data} = $data;
 
     my $sql = "insert into article (namespace, title, url, redirect, mimetype, data) values (?, ?, ?, ?, ?, ?)";
