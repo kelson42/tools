@@ -63,11 +63,11 @@ sub optimizeFile {
     } elsif ($mimeType eq "image/png") {
 	$self->optimizePng($file);
     } elsif ($mimeType eq "image/gif") {     
-	$self->optimizePng($file); 
+	$self->optimizeGif($file); 
     } elsif ($mimeType eq "image/jpeg") {
-	$self->optimizePng($file);
+	$self->optimizeJpg($file);
     } else {
-	$self->log("info", "Nothing ca be done.");
+	$self->log("info", "Nothing to be done.");
     }
 }
 
