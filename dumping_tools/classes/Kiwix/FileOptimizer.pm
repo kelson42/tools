@@ -116,6 +116,9 @@ sub optimizeHtml {
 	# remove titles
 	$$data =~ s/title=\"[^\"]*\"//ig;
 
+	# remove spaces
+	$$data =~ s/[ ]+\/>/\/>/ig;
+
 	if ($$data =~ /\<pre\>/i ) {
 	    $cleaner->strip( {whitespace => 0} );
 	} else {
