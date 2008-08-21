@@ -106,6 +106,16 @@ sub optimizeHtml {
     my $cleaner = new HTML::Clean($data);
 
     if ($cleaner) {
+
+	# remove longdesc attributes
+	$$data =~ s/longdesc=\"[^\"]*\"//ig;
+
+	# remove the nofollow
+	$$data =~ s/rel=\"nofollow\"//ig;
+
+	# remove titles
+	$$data =~ s/title=\"[^\"]*\"//ig;
+
 	if ($$data =~ /\<pre\>/i ) {
 	    $cleaner->strip( {whitespace => 0} );
 	} else {
