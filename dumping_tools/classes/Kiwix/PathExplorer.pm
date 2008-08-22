@@ -15,6 +15,7 @@ my $exploring : shared = -1;
 my $thread;
 my $loggerMutex : shared = 1;
 my $logger;
+my $filterRegexp : shared;
 
 sub new {
     my $class = shift;
@@ -88,7 +89,13 @@ sub getFiles {
     while (scalar(@files) > $bufferSize ) {
 	cond_timedwait($filesMutex, time() + 0.1);
     }
-    push(@files, $File::Find::name);
+
+    if ($filterRegexp) {
+	push(@files, $File::Find::name)
+	    if ($File::Find::name =~ /$filterRegexp/i );
+    } else {
+	push(@files, $File::Find::name);
+    }
 }
 
 sub path {
@@ -103,6 +110,13 @@ sub bufferSize {
     lock($bufferSize);
     if (@_) { $bufferSize = shift }
     return $bufferSize;
+}
+
+sub filterRegexp {
+    my $self = shift;
+    lock($filterRegexp);
+    if (@_) { $filterRegexp = shift }
+    return $filterRegexp;
 }
 
 # loggin
