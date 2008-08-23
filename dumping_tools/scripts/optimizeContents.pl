@@ -29,7 +29,7 @@ if (!$contentPath) {
 }
 
 # initialization
-my $dumper = Kiwix::FileOptimizer->new();
-$dumper->logger($logger);
-$dumper->contentPath($contentPath);
-$dumper->optimize();
+my $optimizer = Kiwix::FileOptimizer->new();
+$optimizer->logger($logger);
+$optimizer->contentPath($contentPath);
+$optimizer->optimize();
