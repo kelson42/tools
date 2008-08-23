@@ -70,6 +70,9 @@ $indexer->indexerPath($indexerPath);
 $indexer->htmlPath($htmlPath);
 $indexer->zenoFilePath($zenoFilePath);
 
+# prepare urls rewreting
+$indexer->prepareUrlRewriting();
+
 # loads the data from the directory to the db
 $indexer->buildDatabase($dbFile);
 $indexer->buildZenoFile($dbFile);

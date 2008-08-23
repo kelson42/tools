@@ -16,6 +16,7 @@ my $thread;
 my $loggerMutex : shared = 1;
 my $logger;
 my $filterRegexp : shared;
+my $ignoreDirectories : shared = 1;
 
 sub new {
     my $class = shift;
@@ -72,7 +73,6 @@ sub explore {
 
 sub stop {
     my $self = shift;
-    $thread->join();
     lock($exploring);
     $exploring = -1;
     lock($filesMutex);
@@ -88,6 +88,10 @@ sub getFiles {
     lock($filesMutex);
     while (scalar(@files) > $bufferSize ) {
 	cond_timedwait($filesMutex, time() + 0.1);
+    }
+
+    if ($ignoreDirectories && -d $File::Find::name) {
+	return;
     }
 
     if ($filterRegexp) {

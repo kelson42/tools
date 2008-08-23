@@ -5,6 +5,9 @@ use warnings;
 use Data::Dumper;
 use Kiwix::PathExplorer;
 use Kiwix::MimeDetector;
+use Kiwix::UrlRewriter;
+use HTML::LinkExtor;
+use Math::BaseArith;
 use DBI qw(:sql_types);
 use Cwd 'abs_path';
 
@@ -13,8 +16,10 @@ my $indexerPath;
 my $htmlPath;
 my $zenoFilePath;
 my $dbh;
-
+my %urls;
 my @files;
+my $file;
+my $htmlFilterRegexp = "^.*\.(html|htm)\$";
 
 my $mimeDetector;
 
@@ -41,13 +46,191 @@ sub new {
     return $self;
 }
 
+sub prepareUrlRewriting {
+    my $self = shift;
+    $self->getUrlCounts();
+    $self->checkDeadUrls();
+    $self->computeNewUrls();
+}
+
+sub getUrlCounts {
+    my $self = shift;
+
+    my $explorer = new Kiwix::PathExplorer();
+    $explorer->path($self->htmlPath());
+
+    while (my $file = $explorer->getNext()) {
+	# push the file itself
+	$self->incrementCount(substr($file, length($self->htmlPath())));
+
+	unless ($file =~ /$htmlFilterRegexp/i ) {
+	    next;
+	}
+
+	$self->log("info", "Count links in the (x)html file ".$file);
+
+	# push the link contained in the file
+	my $linkExtractor = HTML::LinkExtor->new();
+	my $links = $linkExtractor->parse_file($file)->{links};
+	foreach my $link (@$links) {
+	    my $url = $link->[2];
+	    if (isLocalUrl($url) && !isSelfUrl($url)) {
+		$url = removeLocalTagFromUrl($url);
+		$self->incrementCount(getAbsoluteUrl($file, $self->htmlPath(), $url));
+	    }
+	}
+    }
+
+    $explorer->stop();
+}
+
+sub checkDeadUrls {
+    my $self = shift;
+    
+    foreach my $url (keys(%urls)) {
+	unless (-f $self->htmlPath().$url) {
+	    $self->log("error", "[".$self->htmlPath()."]".$url." is a dead url. It should be removed.");
+	}
+    }
+}
+
+sub computeNewUrls {
+    my $self = shift;
+    my @urls = keys(%urls);
+
+    # Sort urls
+    $self->log("info", "Sorting ".scalar(@urls)." urls.");
+    my @sortedUrls = sort { $urls{$b} <=> $urls{$a} } (@urls);
+
+    # new url base
+    my $baseString = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    my $baseSize = length($baseString);
+
+    my @baseString;
+    for (my $i=0; $i<$baseSize; $i++) {
+	push(@baseString, substr($baseString, $i, 1));
+    }
+
+    my @base;
+    for (my $i=0; $i<$baseSize; $i++) {
+	push(@base, $baseSize);
+    }
+
+    # compute the new url
+    $self->log("info", "Computing new urls.");
+    my $nameIndex=0;
+    foreach my $url (@sortedUrls) {
+	$nameIndex++;
+	my @newUrl = encode( $nameIndex, \@base );
+	my $newUrl = "";
+	my $trail = 1;
+	foreach (@newUrl) {
+	    if ($trail) {
+		if ($_ == 0) {
+		    next;
+		} else {
+		    $trail = 0;
+		}
+	    }
+
+	    $newUrl .= $baseString[$_];
+	}
+
+	$urls{$url} = $newUrl;
+    }
+}
+
+sub getNamespace {
+    my $file = shift;
+
+    if ($file =~ /$htmlFilterRegexp/i) {
+	return "0";
+    } else {
+	return "6";
+    }
+}
+
+sub getAbsoluteUrl {
+    my $file = shift;
+    my $path = shift;
+    my $url = shift;
+    my $i;
+
+    if ( $url =~ /^\/.*$/ ) {
+	return $url;
+    }
+
+    $file = substr($file, length($htmlPath) );
+    $url =~ s/^\.\///mg ;
+    $url =~ s/\/\///mg ;
+    
+    my @fileParts = split(/\//, $file);
+    my @urlParts = split(/\//, $url);
+    
+    my $offset = scalar(@fileParts) - 1;
+
+    $i = 0;
+    while ($i < scalar(@urlParts) && $urlParts[$i++] eq "..") {
+	$offset -= 1;
+    }
+
+    my $newUrl = "";
+    for ($i=0; $i<$offset; $i++) {
+	$newUrl .= $fileParts[$i] . "/";
+    }
+
+    for ($i=0; $i<scalar(@urlParts); $i++) {
+	unless ($urlParts[$i] eq ".." ) {
+	    $newUrl .= $urlParts[$i];
+
+	    if ($i < scalar(@urlParts) - 1) {
+		$newUrl .=  "/";
+	    }
+	}
+    }
+    
+    return $newUrl;
+}
+
+sub incrementCount {
+    my $self = shift;
+    my $url = shift;
+
+    if (exists($urls{$url})) {
+	$urls{$url} += 1;
+    } else {
+	$urls{$url} = 1;
+    }
+}
+
+sub isLocalUrl {
+    my $url = shift;
+    $url =~ /^[\w]{1,8}\:\/\/.*$/ ? 0 : 1 ;
+}
+
+sub removeLocalTagFromUrl {
+    my $url = shift;
+
+    $url =~ s/^[^\#]*(\#.*)$// ;
+
+    return $url;
+}
+
+sub isSelfUrl {
+    my $url = shift;
+    $url =~ /^\#.*$/ ? 1 : 0 ;
+}
+
 sub fillDatabase {
     my $self = shift;
+    my $file;
 
     $self->log("info", "List files in the directory ".$self->htmlPath());
     my $explorer = new Kiwix::PathExplorer();
     $explorer->path($self->htmlPath());
-    while (my $file = $explorer->getNext()) {
+    $explorer->filterRegexp("");
+  
+    while ($file = $explorer->getNext()) {
 	push(@files, $file);
     }
 
@@ -55,9 +238,9 @@ sub fillDatabase {
     $self->removeUnwantedFiles();
 
     my @filesWithInformations;
-    $self->log("info", "Analyze file by file");
-    foreach my $file (@files) {
-	push (@filesWithInformations, $self->analyzeFile($file));
+    $self->log("info", "Copying files to the DB (".scalar(@files)." files)");
+    foreach $file (@files) {
+	push(@filesWithInformations, $self->copyFileToDb($file));
     }
 
     @files = @filesWithInformations;
@@ -70,6 +253,7 @@ sub buildZenoFile {
     my $zenoFilePath = $self->zenoFilePath();
 
     # call the zeno indexer
+    $self->log("info", "Creating the zeno file...");
     `$indexerPath -s 1024 -C 100000 --db "sqlite:$dbFile" $zenoFilePath`;
 }
 
@@ -162,27 +346,28 @@ create table zenoarticles
     $self->dbh()->disconnect();
 }
 
-sub analyzeFile {
+sub copyFileToDb {
     my $self = shift;
-    my $file = shift;
-
-    $self->log("info", "Analyze ".$file);
+    $file = shift;
 
     my %hash;
     my $data = $self->readFile($file);
 
     # url
-    $hash{url} = substr($file, length($self->htmlPath()) + 1);
-   
+    if (scalar(%urls)) {
+	$hash{url} = $urls{substr($file, length($self->htmlPath()))};
+	unless ($hash{url}) {
+	    die ("Not url found for file".$file);
+	}
+    } else {
+	$hash{url} = substr($file, length($self->htmlPath()));
+    }
+
     # mime-type
     $hash{mimetype} = $self->mimeDetector()->getMimeType($file);
 
     # namespace
-    if ($hash{mimetype} eq "text/html") {
-	$hash{namespace} = 0;
-    } else {
-	$hash{namespace} = 6;
-    }
+    $hash{namespace} = getNamespace($file);
     
     # title
     if ($hash{mimetype} eq "text/html") {
@@ -190,13 +375,49 @@ sub analyzeFile {
 	    $hash{title} = $1;
 	}
     }
+
     if (!$hash{title}) {
 	$hash{title} = $hash{url};
+    }
+
+    # rewriting (for HTML)
+    if ($hash{mimetype} eq "text/html" && scalar(%urls)) {
+	$self->log("info", "Rewriting url in ".$file);
+
+	sub urlRewriterCallback {
+	    my $url = shift;
+
+	    if (isLocalUrl($url) && !isSelfUrl($url)) {
+		my $absUrl;
+
+		if ($url =~ /\#/ ) {
+		    $absUrl = getAbsoluteUrl($file, $htmlPath, removeLocalTagFromUrl($url));
+		} else  {
+		    $absUrl = getAbsoluteUrl($file, $htmlPath, $url);
+		}
+
+		print $absUrl."\n";
+		my $newUrl = "/".getNamespace($absUrl)."/".$urls{$absUrl};
+		
+		if ($url =~ /\#/ ) {
+		    my @urlParts = split( /\#/, $url );
+		    $newUrl .= "#".$urlParts[1];
+		}
+
+		return $newUrl;
+	    } else {
+		return $url;
+	    }
+	}
+
+	my $rewriter = new Kiwix::UrlRewriter(\&urlRewriterCallback);
+	$data = $rewriter->resolve($data);
     }
 
     # data
     $hash{data} = $data;
 
+    $self->log("info", "Adding to DB ".$file);
     my $sql = "insert into article (namespace, title, url, redirect, mimetype, data) values (?, ?, ?, ?, ?, ?)";
     my $sth = $self->dbh()->prepare($sql);
 
@@ -258,8 +479,8 @@ sub htmlPath {
     my $self = shift;
     if (@_) { 
 	$htmlPath = abs_path(shift) ;
-	if (! substr($htmlPath, length($htmlPath)-1) eq "/" ) {
-	    $htmlPath = $htmlPath + "/";
+	if (! (substr($htmlPath, length($htmlPath)-1) eq "/" )) {
+	    $htmlPath .= "/";
 	}
     } 
     return $htmlPath;
