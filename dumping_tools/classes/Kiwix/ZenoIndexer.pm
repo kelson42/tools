@@ -251,10 +251,11 @@ sub buildZenoFile {
     my $dbFile = shift;
     my $indexerPath = $self->indexerPath();
     my $zenoFilePath = $self->zenoFilePath();
+    my $command = "$indexerPath -s 1024 -C 100000 --db \"sqlite:$dbFile\" $zenoFilePath";
 
     # call the zeno indexer
-    $self->log("info", "Creating the zeno file...");
-    `$indexerPath -s 1024 -C 100000 --db "sqlite:$dbFile" $zenoFilePath`;
+    $self->log("info", "Creating the zeno file : $command");
+    `$command`;
 }
 
 sub executeSql {
@@ -285,12 +286,34 @@ create table article
   aid          integer primary key autoincrement,
   namespace    text    not null,
   title        text    not null,
-  url          text    not null,
+  url          text,
   redirect     text,     -- title of redirect target
   mimetype     integer,
   data         bytea
- )");
+)
+");
     $self->executeSql("create index article_ix1 on article(namespace, title)");
+
+    # create category tables
+$self->executeSql("
+create table category
+(
+  cid          integer primary key autoincrement,
+  title        text    not null,
+  description  bytea   not null
+)
+");
+
+$self->executeSql("
+create table categoryarticles
+(
+  cid          integer not null,
+  aid          integer not null,
+  primary key  (cid, aid),
+  foreign key  (cid) references category,
+  foreign key  (aid) references article
+)
+");
 
     # create zenofile table
     $self->executeSql("
@@ -322,6 +345,7 @@ create table zenoarticles
   dataoffset   bigint,
   datasize     bigint,
   did          bigint,
+  parameter    bytea,
 
   primary key (zid, aid),
   foreign key (zid) references zenofile,
@@ -331,6 +355,51 @@ create table zenoarticles
     # create indexes
     $self->executeSql("create index zenoarticles_ix1 on zenoarticles(zid, direntlen)");
     $self->executeSql("create index zenoarticles_ix2 on zenoarticles(zid, sort)");
+
+    # create search engine tables
+    $self->executeSql("
+create table indexarticle
+(
+  zid          integer not null,
+  xid          integer not null,
+  namespace    text    not null,
+  title        text    not null,
+  data         bytea,
+  sort         integer,
+  direntlen    bigint,
+  datapos      bigint,
+  dataoffset   bigint,
+  datasize     bigint,
+  did          bigint,
+  parameter    bytea,
+
+  primary key (zid, namespace, title),
+  foreign key (zid) references zenofile
+)
+");
+
+$self->executeSql("create index indexarticle_ix1 on indexarticle(zid, xid)") ;
+$self->executeSql("create index indexarticle_ix2 on indexarticle(zid, sort)");
+
+$self->executeSql("
+create table words
+(
+  word     text not null,
+  pos      integer not null,
+  aid      integer not null,
+  weight   integer not null,
+
+  primary key (word, aid, pos),
+  foreign key (aid) references article
+)") ;
+
+$self->executeSql("create index words_ix1 on words(aid)");
+
+$self->executeSql("
+create table trivialwords
+(
+  word     text not null primary key
+)");
 
     # fill the zenofile table
     $self->executeSql("insert into zenofile (filename) values ('".$self->zenoFilePath()."')");
