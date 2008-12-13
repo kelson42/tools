@@ -26,6 +26,18 @@ sub new {
     $self->optGifPath(whereis("opt-gif"));
     $self->optJpgPath(whereis("opt-jpg"));
 
+    if (!$self->optPngPath()) {
+	die("Sorry, but opt-png does not seems not be installed on your system.");
+    }
+
+    if (!$self->optGifPath()) {
+	die("Sorry, but opt-gif does not seems not be installed on your system.");
+    }
+
+    if (!$self->optJpgPath()) {
+	die("Sorry, but opt-jpg does not seems not be installed on your system.");
+    }
+
     return $self;
 }
 
