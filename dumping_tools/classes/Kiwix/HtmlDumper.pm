@@ -18,6 +18,23 @@ sub new {
 }
 
 sub dump {
+    my $self = shift;
+    my $cmd;
+
+    # remove old 
+    $cmd = "rm -rf ".$self->mediawikiPath()."/static/";
+    `$cmd`;
+
+    # start PHP dump command
+    $cmd = "php ".$self->mediawikiPath()."/extensions/DumpHTML/dumpHTML.php -k kiwixoffline --image-snapshot";
+    $self->log("info", $cmd);
+    `$cmd`;
+
+    # remove unsed stuf
+    $cmd = "rm ".$self->mediawikiPath()."/static/skins/monobook/headbg.jpg" ; `$cmd`;
+    $cmd = "rm ".$self->mediawikiPath()."/static/*version" ; `$cmd`;
+    $cmd = "rm ".$self->mediawikiPath()."/static/raw/gen.css" ; `$cmd`;
+    $cmd = "rm -rf ".$self->mediawikiPath()."/static/misc" ; `$cmd`;
 }
 
 sub htmlPath {
