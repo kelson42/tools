@@ -96,7 +96,7 @@ sub getFiles {
 
     if ($filterRegexp) {
 	push(@files, $File::Find::name)
-	    if ($File::Find::name =~ /$filterRegexp/i );
+	    if ($File::Find::name =~ m/\Q$filterRegexp\E/ig );
     } else {
 	push(@files, $File::Find::name);
     }
