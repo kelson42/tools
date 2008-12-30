@@ -27,7 +27,7 @@ sub dump {
     $cmd = "rm -rf ".$self->mediawikiPath()."/static/"; `$cmd`;
 
     # start PHP dump command
-    $cmd = "php ".$self->mediawikiPath()."/extensions/DumpHTML/dumpHTML.php -k kiwixoffline -s 44109 -e 44109";
+    $cmd = "php ".$self->mediawikiPath()."/extensions/DumpHTML/dumpHTML.php -k kiwixoffline";
     $self->log("info", $cmd); `$cmd`;
 
     # remove unsed stuf
