@@ -3,12 +3,14 @@ package Kiwix::HtmlDumper;
 use strict;
 use warnings;
 use Data::Dumper;
+use HTML::LinkExtractor;
 use Kiwix::PathExplorer;
 use Cwd 'abs_path';
 
 my $logger;
 my $mediawikiPath;
 my $htmlPath;
+my %imgs;
 
 sub new {
     my $class = shift;
@@ -22,19 +24,80 @@ sub dump {
     my $cmd;
 
     # remove old 
-    $cmd = "rm -rf ".$self->mediawikiPath()."/static/";
-    `$cmd`;
+    $cmd = "rm -rf ".$self->mediawikiPath()."/static/"; `$cmd`;
 
     # start PHP dump command
-    $cmd = "php ".$self->mediawikiPath()."/extensions/DumpHTML/dumpHTML.php -k kiwixoffline --image-snapshot";
-    $self->log("info", $cmd);
-    `$cmd`;
+    $cmd = "php ".$self->mediawikiPath()."/extensions/DumpHTML/dumpHTML.php -k kiwixoffline -s 44109 -e 44109";
+    $self->log("info", $cmd); `$cmd`;
 
     # remove unsed stuf
     $cmd = "rm ".$self->mediawikiPath()."/static/skins/monobook/headbg.jpg" ; `$cmd`;
     $cmd = "rm ".$self->mediawikiPath()."/static/*version" ; `$cmd`;
     $cmd = "rm ".$self->mediawikiPath()."/static/raw/gen.css" ; `$cmd`;
     $cmd = "rm -rf ".$self->mediawikiPath()."/static/misc" ; `$cmd`;
+
+    # copy the static rep to the destination folder
+    $cmd = "rm -rf  ".$self->htmlPath() ; `$cmd`;
+    $cmd = "cp -rf ".$self->mediawikiPath()."/static/ ".$self->htmlPath()."/" ; `$cmd`;
+
+    # mv the 'article' one level deeper
+    $cmd = "mkdir ".$self->htmlPath()."/html/" ; `$cmd`;
+    $cmd = "mv ".$self->htmlPath()."/articles ".$self->htmlPath()."/html/"  ; `$cmd`;
+    $cmd = "mv ".$self->htmlPath()."/raw ".$self->htmlPath()."/html/"  ; `$cmd`;
+    $cmd = "mv ".$self->htmlPath()."/skins ".$self->htmlPath()."/html/"  ; `$cmd`;
+
+    my $explorer = new Kiwix::PathExplorer();
+    $explorer->path($self->htmlPath());
+    $explorer->filterRegexp('.html');
+    while (my $file = $explorer->getNext()) {
+	$self->log("info", "Analyze images to copy for ".$file);
+
+	# read file
+	my $content = $self->readFile($file);
+
+	# setup the parser
+	my $LX = new HTML::LinkExtractor();
+	$LX->strip(1); # just anchor text, not entire tag
+	$LX->parse($content);
+
+	# print anchor text and href
+	for my $Link (@{$LX->links}) {
+	    my $tag = $$Link{tag};
+	    # only img links
+	    next unless $tag eq 'img';
+	    my $src = $$Link{src};
+	    $src =~ s/\.\.\/\.\.\/\.\.\/\.\.\/\.\.\///;
+	    $imgs{$src} = 1;
+	} 
+    }
+
+    $explorer->stop();
+
+    foreach my $img (keys(%imgs)) {
+	$img =~ /(^.*\/)([^\/]*)$/ ;
+	my $dir = $1;
+	
+	my $originalPath = $self->mediawikiPath()."/".$img;
+	my $destinationPath = $self->htmlPath()."/".$img;
+	my $destinationDir = $self->htmlPath()."/".$dir;
+
+	$cmd = "mkdir -p \"$destinationDir\"" ; `$cmd`;
+	$cmd = "cp \"$originalPath\" \"$destinationPath\"" ; `$cmd`;
+    }
+}
+
+sub readFile {
+    my $self = shift;
+    my $path = shift;
+    my $data = "";
+
+    open FILE, $path or die "Couldn't open file: $path";
+    while (<FILE>) {
+	$data .= $_;
+    }
+    close FILE;
+
+    return \$data;
 }
 
 sub htmlPath {
