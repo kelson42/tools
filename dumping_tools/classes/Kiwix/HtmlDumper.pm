@@ -5,6 +5,10 @@ use warnings;
 use Data::Dumper;
 use HTML::LinkExtractor;
 use Kiwix::PathExplorer;
+use URI::Escape;
+use File::Path qw(mkpath);
+use File::Copy;
+
 use Cwd 'abs_path';
 
 my $logger;
@@ -74,6 +78,7 @@ sub dump {
     $explorer->stop();
 
     foreach my $img (keys(%imgs)) {
+	$img = uri_unescape($img);
 	$img =~ /(^.*\/)([^\/]*)$/ ;
 	my $dir = $1;
 	
@@ -81,8 +86,14 @@ sub dump {
 	my $destinationPath = $self->htmlPath()."/".$img;
 	my $destinationDir = $self->htmlPath()."/".$dir;
 
-	$cmd = "mkdir -p \"$destinationDir\"" ; `$cmd`;
-	$cmd = "cp \"$originalPath\" \"$destinationPath\"" ; `$cmd`;
+	# create the directory if necessary
+	unless (-d $destinationDir) {
+	    mkpath($destinationDir);
+	}
+
+	# copy the image file itself
+	copy($originalPath, $destinationPath);
+	$self->log("info", "cp \"$originalPath\" \"$destinationPath\"");
     }
 }
 
