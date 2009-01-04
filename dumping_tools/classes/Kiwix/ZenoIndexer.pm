@@ -7,6 +7,7 @@ use Kiwix::PathExplorer;
 use Kiwix::MimeDetector;
 use Kiwix::UrlRewriter;
 use HTML::LinkExtor;
+use URI::Escape;
 use Math::BaseArith;
 use DBI qw(:sql_types);
 use Cwd 'abs_path';
@@ -20,6 +21,8 @@ my %urls;
 my @files;
 my $file;
 my $htmlFilterRegexp = "^.*\.(html|htm)\$";
+my $jsFilterRegexp = "^.*\.(js)\$";
+my $cssFilterRegexp = "^.*\.(css)\$";
 
 my $mimeDetector;
 
@@ -124,6 +127,7 @@ sub computeNewUrls {
 	my @newUrl = encode( $nameIndex, \@base );
 	my $newUrl = "";
 	my $trail = 1;
+
 	foreach (@newUrl) {
 	    if ($trail) {
 		if ($_ == 0) {
@@ -145,6 +149,8 @@ sub getNamespace {
 
     if ($file =~ /$htmlFilterRegexp/i) {
 	return "0";
+    } elsif ($file =~ /$cssFilterRegexp/i || $file =~ /$jsFilterRegexp/i) {
+	return "8";
     } else {
 	return "6";
     }
@@ -195,6 +201,8 @@ sub getAbsoluteUrl {
 sub incrementCount {
     my $self = shift;
     my $url = shift;
+
+    $url = uri_unescape($url);
 
     if (exists($urls{$url})) {
 	$urls{$url} += 1;
@@ -455,6 +463,7 @@ sub copyFileToDb {
 
 	sub urlRewriterCallback {
 	    my $url = shift;
+	    $url = uri_unescape($url);
 
 	    if (isLocalUrl($url) && !isSelfUrl($url)) {
 		my $absUrl;
@@ -465,9 +474,8 @@ sub copyFileToDb {
 		    $absUrl = getAbsoluteUrl($file, $htmlPath, $url);
 		}
 
-		print $absUrl."\n";
 		my $newUrl = "/".getNamespace($absUrl)."/".$urls{$absUrl};
-		
+
 		if ($url =~ /\#/ ) {
 		    my @urlParts = split( /\#/, $url );
 		    $newUrl .= "#".$urlParts[1];
