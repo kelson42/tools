@@ -7,16 +7,32 @@ use File::Find;
 use threads;
 use threads::shared;
 
+# path to explore
 my $path : shared = "";
+
+# files
 my $filesMutex : shared = 1;
 my @files : shared;
+
+# max file in @files
 my $bufferSize : shared = 10000;
-my $exploring : shared = -1;
+
+# exploring thread
+my $exploring : shared = 0;
 my $thread;
+
+# logger
 my $loggerMutex : shared = 1;
 my $logger;
+
+# filter on file names
 my $filterRegexp : shared;
+
+# do not serve directories
 my $ignoreDirectories : shared = 1;
+
+# ready to start again
+my $resetFlag : shared = 1;
 
 sub new {
     my $class = shift;
@@ -29,77 +45,104 @@ sub new {
 
 sub getNext {
     my $self = shift;
-    my @threads;
 
-    lock($exploring);
-
-    if ($exploring == -1) {
-	$self->log("info", "Start find on ".$self->path().".");
-	$thread = threads->new(\&explore, $self);
-	$exploring = 1;
-    } else {
-	if ($exploring == 0){
-	    foreach my $thr (threads->list) {
-		if ($thr->tid && !threads::equal($thr, threads->self)) {
-		    $thr->join();
-		}
-	    }
-	}
-    }
-
-    lock($filesMutex);
-
-    while (!scalar(@files) && $exploring == 1) {
-	cond_timedwait($filesMutex, time() + 0.1);
-	cond_timedwait($exploring, time() + 0.1);
-    }
-
-    return shift(@files);
-}
-
-sub explore {
-    my $self = shift;
-    
-    unless ($self->path) {
+    # check path
+    unless ($self->path()) {
 	$self->log("error", "Please specify a path before exploring it.");
 	return;
     }
 
-    find(\&getFiles, $self->path());
+    # explore thread management
+    if (!exploring()) {
+	if (fileCount()) { # file to serve, the explore thread should be finished
+	    eval { $thread->join() };
+	} elsif (resetFlag()) { # no file to serve the explore thread should be started
+	    $self->log("info", "Start find on ".$self->path().".");
+	    exploring(1);
+	    $thread = threads->new(\&explore, $self);
 
-    lock($exploring);
-    $exploring = 0;
+	    # wait that find() delivers the first files
+	    do {
+		sleep(0.1);
+	    } while (!fileCount() && exploring());
+	}
+    }
+
+    # check if we have to wait
+    while (!fileCount() && exploring()) {
+	sleep(0.1);
+    }
+
+    # return a file path
+    do {
+	my $filename = "";
+	$filename = shiftFile();
+
+	# check if the file is a directory
+	unless (!$filename || ($self->ignoreDirectories() && -d $filename)) {
+	    if ($self->filterRegexp()) {
+		return $filename
+		    if ($filename =~ m/\Q$filterRegexp\E/ig );
+	    } else {
+		return $filename;
+	    }
+	}
+    } while (exploring() || fileCount());
+    
+    eval { $thread->join() };
+
+    return;
 }
 
-sub stop {
+sub explore {
     my $self = shift;
-    lock($exploring);
-    $exploring = -1;
+
+    # call find()
+    find(\&exploreCallback, $self->path());
+
+    # set the exploring flag
+    exploring(0);
+
+    # set the reset
+    resetFlag(0);
+}
+
+sub exploreCallback {
+    # sleep is the buffer is full
+
+    while (fileCount() > bufferSize() ) {
+	sleep(0.1);
+    }
+
     lock($filesMutex);
-    @files = ();
+    push(@files, $File::Find::name);
 }
 
 sub reset {
     my $self = shift;
-    $self->stop();
+
+    # set flag to 0
+    exploring(0);
+
+    # set file to empty list
+    lock($filesMutex);
+    @files = ();
+
+    # remove thread
+    eval { $thread->join() };
+
+    # resetFlag
+    resetFlag(0);
 }
 
-sub getFiles {
-    lock($filesMutex);
-    while (scalar(@files) > $bufferSize ) {
-	cond_timedwait($filesMutex, time() + 0.1);
-    }
+sub DESTROY { 
+    eval { $thread->join() };
+}  
 
-    if ($ignoreDirectories && -d $File::Find::name) {
-	return;
-    }
-
-    if ($filterRegexp) {
-	push(@files, $File::Find::name)
-	    if ($File::Find::name =~ m/\Q$filterRegexp\E/ig );
-    } else {
-	push(@files, $File::Find::name);
-    }
+sub resetFlag {
+    lock($resetFlag);
+    if (@_) { $resetFlag = shift }
+    return $resetFlag;
 }
 
 sub path {
@@ -109,8 +152,23 @@ sub path {
     return $path;
 }
 
+sub shiftFile() {
+    lock($filesMutex);
+    return shift(@files);    
+}
+
+sub fileCount {
+    lock($filesMutex);
+    return scalar(@files);
+}
+
+sub exploring {
+    lock($exploring);
+    if (@_) { $exploring = shift }
+    return $exploring;
+}
+
 sub bufferSize {
-    my $self = shift;
     lock($bufferSize);
     if (@_) { $bufferSize = shift }
     return $bufferSize;
@@ -121,6 +179,13 @@ sub filterRegexp {
     lock($filterRegexp);
     if (@_) { $filterRegexp = shift }
     return $filterRegexp;
+}
+
+sub ignoreDirectories {
+    my $self = shift;
+    lock($ignoreDirectories);
+    if (@_) { $ignoreDirectories = shift }
+    return $ignoreDirectories;
 }
 
 # loggin
