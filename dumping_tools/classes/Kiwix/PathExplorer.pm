@@ -132,7 +132,7 @@ sub reset {
     eval { $thread->join() };
 
     # resetFlag
-    resetFlag(0);
+    resetFlag(1);
 }
 
 sub DESTROY { 
