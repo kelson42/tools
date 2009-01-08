@@ -84,7 +84,7 @@ sub getUrlCounts {
 	}
     }
 
-    $explorer->stop();
+    $explorer->reset();
 }
 
 sub checkDeadUrls {
@@ -245,13 +245,12 @@ sub fillDatabase {
     $self->log("info", "Remove unwanted files in the directory ".$self->htmlPath());
     $self->removeUnwantedFiles();
 
-    my @filesWithInformations;
     $self->log("info", "Copying files to the DB (".scalar(@files)." files)");
-    foreach $file (@files) {
-	push(@filesWithInformations, $self->copyFileToDb($file));
-    }
 
-    @files = @filesWithInformations;
+    my $count = 0;
+    foreach $file (@files) {
+	$self->copyFileToDb($file);
+    }
 }
 
 sub buildZenoFile {
@@ -457,6 +456,9 @@ sub copyFileToDb {
 	$hash{title} = $hash{url};
     }
 
+    # url is deprecated
+    $hash{title} = $hash{url};
+
     # rewriting (for HTML)
     if ($hash{mimetype} eq "text/html" && scalar(%urls)) {
 	$self->log("info", "Rewriting url in ".$file);
@@ -598,7 +600,7 @@ sub mimeDetector {
 
 sub log {
     my $self = shift; 
-   return unless $logger;
+    return unless $logger;
     my ($method, $text) = @_;
     $logger->$method($text);
 }
