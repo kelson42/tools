@@ -7,6 +7,7 @@ use Kiwix::PathExplorer;
 use Kiwix::MimeDetector;
 use Kiwix::UrlRewriter;
 use HTML::LinkExtor;
+use HTML::LinkExtractor;
 use URI::Escape;
 use Math::BaseArith;
 use DBI qw(:sql_types);
@@ -251,6 +252,8 @@ sub fillDatabase {
     foreach $file (@files) {
 	$self->copyFileToDb($file);
     }
+
+    $self->dbh()->commit();
 }
 
 sub buildZenoFile {
@@ -459,46 +462,65 @@ sub copyFileToDb {
     # url is deprecated
     $hash{title} = $hash{url};
 
-    # rewriting (for HTML)
-    if ($hash{mimetype} eq "text/html" && scalar(%urls)) {
-	$self->log("info", "Rewriting url in ".$file);
-
-	sub urlRewriterCallback {
-	    my $url = shift;
-	    $url = uri_unescape($url);
-
-	    if (isLocalUrl($url) && !isSelfUrl($url)) {
-		my $absUrl;
-
-		if ($url =~ /\#/ ) {
-		    $absUrl = getAbsoluteUrl($file, $htmlPath, removeLocalTagFromUrl($url));
-		} else  {
-		    $absUrl = getAbsoluteUrl($file, $htmlPath, $url);
-		}
-
-		my $newUrl = "/".getNamespace($absUrl)."/".$urls{$absUrl};
-
-		if ($url =~ /\#/ ) {
-		    my @urlParts = split( /\#/, $url );
-		    $newUrl .= "#".$urlParts[1];
-		}
-
-		return $newUrl;
-	    } else {
-		return $url;
+    # url rewrite callback
+    sub urlRewriterCallback {
+	my $url = shift;
+	$url = uri_unescape($url);
+	
+	if (isLocalUrl($url) && !isSelfUrl($url)) {
+	    my $absUrl;
+	    
+	    if ($url =~ /\#/ ) {
+		$absUrl = getAbsoluteUrl($file, $htmlPath, removeLocalTagFromUrl($url));
+	    } else  {
+		$absUrl = getAbsoluteUrl($file, $htmlPath, $url);
 	    }
-	}
+	    
+	    my $newUrl = "/".getNamespace($absUrl)."/".$urls{$absUrl};
+	    
+	    if ($url =~ /\#/ ) {
+		my @urlParts = split( /\#/, $url );
+		$newUrl .= "#".$urlParts[1];
+	    }
+	    
+	    return $newUrl;
+       } else {
+	   return $url;
+       }
+    }
+    
+    # redirect
+    my $linkExtractor = HTML::LinkExtractor->new();
+    $linkExtractor->parse(\$data);
+    my $links = $linkExtractor->links();
+    foreach my $link (@$links) {
+	next unless (exists($link->{'http-equiv'}) && $link->{'http-equiv'} =~ /Refresh/i );
+	$hash{redirect} = urlRewriterCallback($link->{'url'});
+	last;
+    }
 
+    # rewriting (for HTML)
+    if (!$hash{redirect} && $hash{mimetype} eq "text/html" && scalar(%urls)) {
+	$self->log("info", "Rewriting url in ".$file);
+	
 	my $rewriter = new Kiwix::UrlRewriter(\&urlRewriterCallback);
 	$data = $rewriter->resolve($data);
     }
 
     # data
-    $hash{data} = $data;
-
+    if (!$hash{redirect}) {
+	$hash{data} = $data;
+    }
+    
     $self->log("info", "Adding to DB ".$file);
     my $sql = "insert into article (namespace, title, url, redirect, mimetype, data) values (?, ?, ?, ?, ?, ?)";
     my $sth = $self->dbh()->prepare($sql);
+
+    # check empty data
+    unless ($hash{data}) {
+	$self->log("info", "'".$file."' has is an empty file, will be skiped.");
+	return;
+    }
 
     $sth->bind_param(1, $hash{namespace});
     $sth->bind_param(2, $hash{title});
