@@ -82,7 +82,7 @@ sub getNext {
 	unless (!$filename || ($self->ignoreDirectories() && -d $filename)) {
 	    if ($self->filterRegexp()) {
 		return $filename
-		    if ($filename =~ m/\Q$filterRegexp\E/ig );
+		    if ($filename =~ m/$filterRegexp/ig );
 	    } else {
 		return $filename;
 	    }
