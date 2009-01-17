@@ -20,30 +20,18 @@ my $logger = Log::Log4perl->get_logger("builZenoFileFromDirectory.pl");
 my $indexerPath;
 my $htmlPath;
 my $zenoFilePath="./articles.zeno";
-my $tmpDirectoryPath;
+my $dbType="postgres";
+my $dbName=time();
 
 # Get console line arguments
 GetOptions('indexerPath=s' => \$indexerPath, 
 	   'htmlPath=s' => \$htmlPath,
 	   'zenoFilePath=s' => \$zenoFilePath,
-	   'tmpDirectoryPath=s' => \$tmpDirectoryPath
+	   'dbName=s' => \$dbName,
 	   );
 
 if (!$htmlPath) {
-    print "usage: ./builZenoFileFromDirectory.pl --htmlPath=./html [--indexerPath=./zenoindexer] [--zenoFilePath=articles.zeno] [--tmpDirectoryPath=/tmp]\n";
-    exit;
-}
-
-# sqlite DB path
-my $dbFile;
-if ($tmpDirectoryPath && -w $tmpDirectoryPath ) {
-    $dbFile= $tmpDirectoryPath."/.dbname=".time();
-} elsif (-w "/tmp") {
-    $dbFile="/tmp/.dbname=".time();
-} elsif (-w "./") {
-    $dbFile="./.dbname=".time();
-} else {
-    $logger->error("You need a writable temp directory, please specify one.");
+    print "usage: ./builZenoFileFromDirectory.pl --htmlPath=./html [--indexerPath=./zenoindexer] [--zenoFilePath=articles.zeno] [--dbName=kiwix_db]\n";
     exit;
 }
 
@@ -69,18 +57,16 @@ $indexer->logger($logger);
 $indexer->indexerPath($indexerPath);
 $indexer->htmlPath($htmlPath);
 $indexer->zenoFilePath($zenoFilePath);
+$indexer->dbType($dbType);
+$indexer->dbName($dbName);
 
 # prepare urls rewreting
 $indexer->prepareUrlRewriting();
 
 # loads the data from the directory to the db
-$indexer->buildDatabase($dbFile);
-$indexer->buildZenoFile($dbFile);
+$indexer->buildDatabase();
+$indexer->buildZenoFile();
 
-# delete temporary dbFile
-if ( unlink($dbFile) != 0 ) {
-    $logger->info("File $dbFile deleted successfully.");
-} else {
-    $logger->error("File $dbFile was not deleted.");
-}
+# delete database
+$indexer->deleteDb();
 
