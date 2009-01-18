@@ -34,7 +34,7 @@ sub dump {
     $cmd = "php ".$self->mediawikiPath()."/extensions/DumpHTML/dumpHTML.php -k kiwixoffline";
     $self->log("info", $cmd); `$cmd`;
 
-    # remove unsed stuf
+    # remove unsed stuff
     $cmd = "rm ".$self->mediawikiPath()."/static/skins/monobook/headbg.jpg" ; `$cmd`;
     $cmd = "rm ".$self->mediawikiPath()."/static/*version" ; `$cmd`;
     $cmd = "rm ".$self->mediawikiPath()."/static/raw/gen.css" ; `$cmd`;
@@ -52,7 +52,7 @@ sub dump {
 
     my $explorer = new Kiwix::PathExplorer();
     $explorer->path($self->htmlPath());
-    $explorer->filterRegexp('.html');
+    $explorer->filterRegexp('^.*html$');
     while (my $file = $explorer->getNext()) {
 	$self->log("info", "Analyze images to copy for ".$file);
 
@@ -75,13 +75,13 @@ sub dump {
 	} 
     }
 
-    $explorer->stop();
+    $explorer->reset();
 
     foreach my $img (keys(%imgs)) {
 	$img = uri_unescape($img);
 	$img =~ /(^.*\/)([^\/]*)$/ ;
 	my $dir = $1;
-	
+
 	my $originalPath = $self->mediawikiPath()."/".$img;
 	my $destinationPath = $self->htmlPath()."/".$img;
 	my $destinationDir = $self->htmlPath()."/".$dir;
