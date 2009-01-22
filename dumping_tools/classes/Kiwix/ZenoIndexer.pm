@@ -222,9 +222,7 @@ sub isLocalUrl {
 
 sub removeLocalTagFromUrl {
     my $url = shift;
-
-    $url =~ s/^[^\#]*(\#.*)$// ;
-
+    $url =~ s/(\#.*)$// ;
     return $url;
 }
 
@@ -772,7 +770,7 @@ sub ignoreFile {
     if ( $file =~ /^.*\.htm$/i || $file =~ /^.*\.html$/i || 
 	 $file =~ /^.*\.jpeg$/i || $file =~ /^.*\.jpg$/i ||
 	 $file =~ /^.*\.png$/i || $file =~ /^.*\.css$/i ||
-	 $file =~ /^.*\.svg$/i || $file =~ /^.*\.js$/i 
+	 $file =~ /^.*\.svg$/i || $file =~ /^.*\.js$/i || $file =~ /^.*\.gif$/i
 	 ) 
     {
 	return 0;
