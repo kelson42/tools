@@ -5,7 +5,6 @@ use warnings;
 use Data::Dumper;
 use Kiwix::PathExplorer;
 use Kiwix::MimeDetector;
-use HTML::Clean;
 use Whereis;
 use Cwd 'abs_path';
 
@@ -89,7 +88,7 @@ sub optimizePng {
     
     my $bin = $self->optPngPath();
     
-    `$bin $file`;
+    `$bin "$file"`;
 }
 
 sub optimizeGif {
@@ -98,7 +97,7 @@ sub optimizeGif {
     
     my $bin = $self->optGifPath();
     
-    `$bin $file`;
+    `$bin "$file"`;
 }
 
 sub optimizeJpg {
@@ -107,7 +106,7 @@ sub optimizeJpg {
     
     my $bin = $self->optJpgPath();
     
-    `$bin $file`;
+    `$bin "$file"`;
 }
 
 sub optimizeHtml {
@@ -115,31 +114,20 @@ sub optimizeHtml {
     my $file = shift;
 
     my $data = $self->readFile($file);
-    my $cleaner = new HTML::Clean($data);
 
-    if ($cleaner) {
-
-	# remove longdesc attributes
-	$$data =~ s/longdesc=\"[^\"]*\"//ig;
-
-	# remove the nofollow
-	$$data =~ s/rel=\"nofollow\"//ig;
-
-	# remove titles
-	$$data =~ s/title=\"[^\"]*\"//ig;
-
-	# remove spaces
-	$$data =~ s/[ ]+\/>/\/>/ig;
-
-	if ($$data =~ /\<pre\>/i ) {
-	    $cleaner->strip( {whitespace => 0} );
-	} else {
-	    $cleaner->strip();
-	}
-
-	$self->writeFile($file, $cleaner->data());
-    }
+    # remove longdesc attributes
+    $$data =~ s/longdesc=\"[^\"]*\"//ig;
     
+    # remove the nofollow
+    $$data =~ s/rel=\"nofollow\"//ig;
+    
+    # remove titles
+    $$data =~ s/title=\"[^\"]*\"//ig;
+    
+    # remove spaces
+    $$data =~ s/[ ]+\/>/\/>/ig;
+    
+    $self->writeFile($file, $data);
 }
 
 sub writeFile {
