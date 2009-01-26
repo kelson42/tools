@@ -15,19 +15,19 @@ Log::Log4perl->init("../conf/log4perl");
 my $logger = Log::Log4perl->get_logger("launchTntreader.pl");
 
 # get the params
-my $filePath;
+my $directory;
 my $onlyLocal = 0;
 my $port = "8080";
 
 # Get console line arguments
 GetOptions(
-	   'filePath=s' => \$filePath,
+	   'directory=s' => \$directory,
 	   'port=i' => \$port,
            'onlyLocal' => \$onlyLocal,
 	   );
 
-if (!$filePath) {
-    print "usage: ./launchTntreader.pl --filePath=articles.zeno [--port=8080] [--onlyLocal]\n";
+if (!$directory) {
+    print "usage: ./launchTntreader.pl --directory=./ [--port=8080] [--onlyLocal]\n";
     exit;
 }
 
@@ -37,9 +37,13 @@ my $home = $ENV{HOME};
 # write the TntReader config file
 my $configTxt = "[TntReader]
 port=$port
-localonly=$onlyLocal
-fixfile=$filePath
 ";
+
+if ($onlyLocal) {
+    $configTxt .= "localonly=1\n";
+}
+$configTxt .= "directory=$directory\n";
+
 writeFile($home."/.TntReader", \$configTxt);
 
 # launch TntReader
