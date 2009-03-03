@@ -1,4 +1,4 @@
-package Kiwix::ZenoIndexer;
+package Kiwix::ZimIndexer;
 
 use strict;
 use warnings;
@@ -17,7 +17,7 @@ use DBD::Pg;
 my $logger;
 my $indexerPath;
 my $htmlPath;
-my $zenoFilePath;
+my $zimFilePath;
 my $dbHandler;
 my $dbType = "postgres"; # or sqlite
 my $dbName;
@@ -253,25 +253,23 @@ sub fillDb {
     foreach $file (@files) {
 	$self->copyFileToDb($file);
     }
-
-    $self->dbHandler()->commit();
 }
 
-sub buildZenoFile {
+sub buildZimFile {
     my $self = shift;
     my $dbName = $self->dbName();
     my $indexerPath = $self->indexerPath();
-    my $zenoFilePath = $self->zenoFilePath();
+    my $zimFilePath = $self->zimFilePath();
 
     my $command;
     if ($self->isSqliteDb()) {
-	$command = "$indexerPath -s 1024 -C 100000 --db \"sqlite:$dbName\" $zenoFilePath";
+	$command = "$indexerPath -s 1024 -C 100000 --db \"sqlite:$dbName\" $zimFilePath";
     } else {
-	$command = "$indexerPath -s 1024 -C 100000 --db \"postgresql:dbname=$dbName user=kiwix\" $zenoFilePath";
+	$command = "$indexerPath -s 1024 -C 100000 --db \"postgresql:dbname=$dbName user=kiwix\" $zimFilePath";
     }
 
-    # call the zeno indexer
-    $self->log("info", "Creating the zeno file : $command");
+    # call the zim indexer
+    $self->log("info", "Creating the zim file : $command");
     `$command`;
 }
 
@@ -334,17 +332,17 @@ create table categoryarticles
 )
 ");
 
-    # create zenofile table
+    # create zimfile table
     $self->executeSql("
-create table zenofile
+create table zimfile
 (
   zid          integer primary key autoincrement,
   filename     text    not null
  )");
 
-    # create table zenodata
+    # create table zimdata
     $self->executeSql("
-create table zenodata
+create table zimdata
 (
   zid          integer not null,
   did          integer not null,
@@ -352,9 +350,9 @@ create table zenodata
   primary key (zid, did)
 )");
 
-    # create zenoarticles table
+    # create zimarticles table
     $self->executeSql("
-create table zenoarticles
+create table zimarticles
 (
   zid          integer not null,
   aid          integer not null,
@@ -367,13 +365,13 @@ create table zenoarticles
   parameter    bytea,
 
   primary key (zid, aid),
-  foreign key (zid) references zenofile,
+  foreign key (zid) references zimfile,
   foreign key (aid) references article
  )");
 
     # create indexes
-    $self->executeSql("create index zenoarticles_ix1 on zenoarticles(zid, direntlen)");
-    $self->executeSql("create index zenoarticles_ix2 on zenoarticles(zid, sort)");
+    $self->executeSql("create index zimarticles_ix1 on zimarticles(zid, direntlen)");
+    $self->executeSql("create index zimarticles_ix2 on zimarticles(zid, sort)");
 
     # create search engine tables
     $self->executeSql("
@@ -393,7 +391,7 @@ create table indexarticle
   parameter    bytea,
 
   primary key (zid, namespace, title),
-  foreign key (zid) references zenofile
+  foreign key (zid) references zimfile
 )
 ");
 
@@ -460,14 +458,14 @@ create table categoryarticles
 )");
 
 $self->executeSql("
-create table zenofile
+create table zimfile
 (
   zid          serial  not null primary key,
   filename     text    not null
 )");
 
 $self->executeSql("
-create table zenodata
+create table zimdata
 (
   zid          integer not null,
   did          integer not null,
@@ -476,7 +474,7 @@ create table zenodata
 )");
 
 $self->executeSql("
-create table zenoarticles
+create table zimarticles
 (
   zid          integer not null,
   aid          integer not null,
@@ -489,12 +487,12 @@ create table zenoarticles
   parameter    bytea,
 
   primary key (zid, aid),
-  foreign key (zid) references zenofile,
+  foreign key (zid) references zimfile,
   foreign key (aid) references article
 )");
 
-$self->executeSql("create index zenoarticles_ix1 on zenoarticles(zid, direntlen)");
-$self->executeSql("create index zenoarticles_ix2 on zenoarticles(zid, sort)");
+$self->executeSql("create index zimarticles_ix1 on zimarticles(zid, direntlen)");
+$self->executeSql("create index zimarticles_ix2 on zimarticles(zid, sort)");
 
 $self->executeSql("
 create table indexarticle
@@ -513,7 +511,7 @@ create table indexarticle
   parameter    bytea,
 
   primary key (zid, namespace, title),
-  foreign key (zid) references zenofile
+  foreign key (zid) references zimfile
 )");
 
 $self->executeSql("create index indexarticle_ix1 on indexarticle(zid, xid)");
@@ -591,9 +589,9 @@ sub connectToDb {
     my $dbName = $self->dbName();
 
     if ($self->isSqliteDb()) {
-	$self->dbHandler(DBI->connect("dbi:SQLite:dbname=".$dbName,"","", {AutoCommit => 0, PrintError => 1}));
+	$self->dbHandler(DBI->connect("dbi:SQLite:dbname=".$dbName,"","", {AutoCommit => 1, PrintError => 1}));
     } else {
-	$self->dbHandler(DBI->connect("dbi:Pg:dbname=".$dbName, "kiwix","", {AutoCommit => 0, PrintError => 1}));
+	$self->dbHandler(DBI->connect("dbi:Pg:dbname=".$dbName, "kiwix","", {AutoCommit => 1, PrintError => 1}));
     }
 
     # set unicode flag
@@ -619,16 +617,16 @@ sub buildDatabase {
     $self->createDbSchema();
     $self->dbHandler()->commit();
 
-    # fill the zenofile table
-    $self->executeSql("insert into zenofile (filename) values ('".$self->zenoFilePath()."')");
+    # fill the zimfile table
+    $self->executeSql("insert into zimfile (filename) values ('".$self->zimFilePath()."')");
     $self->dbHandler()->commit();
 
     # fill the article table
     $self->fillDb();
     $self->dbHandler()->commit();
 
-    # fill the zenoarticle table
-    $self->executeSql("insert into zenoarticles (zid, aid) select 1, aid from article");
+    # fill the zimarticle table
+    $self->executeSql("insert into zimarticles (zid, aid) select 1, aid from article");
     $self->dbHandler()->commit();
 
     # commit und disconnect
@@ -804,10 +802,10 @@ sub htmlPath {
     return $htmlPath;
 }
 
-sub zenoFilePath {
+sub zimFilePath {
     my $self = shift;
-    if (@_) { $zenoFilePath = shift } 
-    return $zenoFilePath;
+    if (@_) { $zimFilePath = shift } 
+    return $zimFilePath;
 }
 
 sub dbName {
