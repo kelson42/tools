@@ -263,9 +263,9 @@ sub buildZimFile {
 
     my $command;
     if ($self->isSqliteDb()) {
-	$command = "$indexerPath -s 1024 -C 100000 --db \"sqlite:$dbName\" $zimFilePath";
+	$command = "$indexerPath -s 1024 --db \"sqlite:$dbName\" $zimFilePath";
     } else {
-	$command = "$indexerPath -s 1024 -C 100000 --db \"postgresql:dbname=$dbName user=kiwix\" $zimFilePath";
+	$command = "$indexerPath -s 1024 --db \"postgresql:dbname=$dbName user=kiwix\" $zimFilePath";
     }
 
     # call the zim indexer
