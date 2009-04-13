@@ -461,7 +461,11 @@ $self->executeSql("
 create table zimfile
 (
   zid          serial  not null primary key,
-  filename     text    not null
+  filename     text    not null,
+  mainpage     integer,
+  layoutpage   integer,
+  foreign key (mainpage) references article,
+  foreign key (layoutpage) references article
 )");
 
 $self->executeSql("
@@ -731,6 +735,9 @@ sub copyFileToDb {
 	$self->log("info", "'".$file."' is an empty file, will be skiped.");
 	return;
     }
+
+    # if no predefined mimetype
+    return unless (defined($mimeTypes{ $hash{mimetype} }));
 
     $sth->bind_param(1, $hash{namespace});
     $sth->bind_param(2, $hash{title});
