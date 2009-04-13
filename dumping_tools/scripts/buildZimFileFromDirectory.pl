@@ -51,6 +51,9 @@ unless (-d $htmlPath) {
     exit;
 }
 
+# remove the ".zim" at the end of the zimFilePath
+$zimFilePath =~ s/\.zim$//;
+
 # initialization
 my $indexer = Kiwix::ZimIndexer->new();
 $indexer->logger($logger);
