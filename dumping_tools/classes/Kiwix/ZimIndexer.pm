@@ -152,11 +152,11 @@ sub getNamespace {
     my $file = shift;
 
     if ($file =~ /$htmlFilterRegexp/i) {
-	return "0";
+	return "A";
     } elsif ($file =~ /$cssFilterRegexp/i || $file =~ /$jsFilterRegexp/i) {
-	return "8";
+	return "I";
     } else {
-	return "6";
+	return "I";
     }
 }
 
