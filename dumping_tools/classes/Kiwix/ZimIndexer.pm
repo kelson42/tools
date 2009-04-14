@@ -678,9 +678,12 @@ sub copyFileToDb {
     sub urlRewriterCallback {
 	my $url = shift;
 	$url = uri_unescape($url);
-	
+
 	if (isLocalUrl($url) && !isSelfUrl($url)) {
 	    my $absUrl;
+
+	    # remove parameter if necessary
+	    $url =~ s/(\?.*$)//;
 	    
 	    if ($url =~ /\#/ ) {
 		$absUrl = getAbsoluteUrl($file, $htmlPath, removeLocalTagFromUrl($url));
