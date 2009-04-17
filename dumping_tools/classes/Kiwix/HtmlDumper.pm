@@ -47,6 +47,7 @@ sub dump {
     # mv the 'article' one level deeper
     $cmd = "mkdir ".$self->htmlPath()."/html/" ; `$cmd`;
     $cmd = "mv ".$self->htmlPath()."/articles ".$self->htmlPath()."/html/"  ; `$cmd`;
+    $cmd = "mv ".$self->htmlPath()."/index.html ".$self->htmlPath()."/html/"  ; `$cmd`;
     $cmd = "mv ".$self->htmlPath()."/raw ".$self->htmlPath()."/html/"  ; `$cmd`;
     $cmd = "mv ".$self->htmlPath()."/skins ".$self->htmlPath()."/html/"  ; `$cmd`;
 
@@ -67,6 +68,7 @@ sub dump {
 	# print anchor text and href
 	for my $Link (@{$LX->links}) {
 	    my $tag = $$Link{tag};
+
 	    # only img links
 	    next unless $tag eq 'img';
 	    my $src = $$Link{src};
