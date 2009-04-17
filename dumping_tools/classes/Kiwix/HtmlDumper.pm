@@ -113,8 +113,19 @@ sub readFile {
 
 sub htmlPath {
     my $self = shift;
-    if (@_) { 
-	$htmlPath = abs_path(shift) ;
+
+    if (@_) {
+	$htmlPath = shift;
+
+	# remove the leading / if necessary
+	$htmlPath =~ s/(\/$)//;
+
+	# get the absolute path in case of a relative path
+	if (! (substr($htmlPath, 0, 1) eq '/') )  { 
+	    $htmlPath = abs_path($htmlPath);
+	}
+
+	# add a leading /
 	if (! substr($htmlPath, length($htmlPath)-1) eq "/" ) {
 	    $htmlPath = $htmlPath + "/";
 	}
