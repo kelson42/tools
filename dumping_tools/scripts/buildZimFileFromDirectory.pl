@@ -19,6 +19,7 @@ my $logger = Log::Log4perl->get_logger("builZimFileFromDirectory.pl");
 # get the params
 my $indexerPath;
 my $htmlPath;
+my $welcomePage;
 my $zimFilePath="./articles";
 my $dbType="postgres";
 my $dbName=time();
@@ -28,10 +29,11 @@ GetOptions('indexerPath=s' => \$indexerPath,
 	   'htmlPath=s' => \$htmlPath,
 	   'zimFilePath=s' => \$zimFilePath,
 	   'dbName=s' => \$dbName,
+	   'welcomePage=s' => \$welcomePage,
 	   );
 
-if (!$htmlPath) {
-    print "usage: ./builZimFileFromDirectory.pl --htmlPath=./html [--indexerPath=./zimindexer] [--zimFilePath=articles.zim] [--dbName=kiwix_db]\n";
+if (!$htmlPath || !$welcomePage) {
+    print "usage: ./builZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html [--indexerPath=./zimindexer] [--zimFilePath=articles.zim] [--dbName=kiwix_db]\n";
     exit;
 }
 
@@ -62,6 +64,7 @@ $indexer->htmlPath($htmlPath);
 $indexer->zimFilePath($zimFilePath);
 $indexer->dbType($dbType);
 $indexer->dbName($dbName);
+$indexer->welcomePage($welcomePage);
 
 # prepare urls rewreting
 $indexer->prepareUrlRewriting();

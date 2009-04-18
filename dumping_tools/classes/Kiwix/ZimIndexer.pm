@@ -17,6 +17,7 @@ use DBD::Pg;
 my $logger;
 my $indexerPath;
 my $htmlPath;
+my $welcomePage;
 my $zimFilePath;
 my $dbHandler;
 my $dbType = "postgres"; # or sqlite
@@ -127,7 +128,6 @@ sub computeNewUrls {
     $self->log("info", "Computing new urls.");
     my $nameIndex=0;
     foreach my $url (@sortedUrls) {
-	$nameIndex++;
 	my @newUrl = encode( $nameIndex, \@base );
 	my $newUrl = "";
 	my $trail = 1;
@@ -144,7 +144,19 @@ sub computeNewUrls {
 	    $newUrl .= $baseString[$_];
 	}
 
+	if ($newUrl eq "") {
+	    $newUrl = $baseString[0];
+	}
+
 	$urls{$url} = $newUrl;
+	$nameIndex++;
+    }
+
+    # update the welcome page
+    if (exists($urls{$welcomePage})) {
+	$welcomePage = $urls{$welcomePage};
+    } else {
+	$self->log("error", "Unable to find the welcome page '$welcomePage'.");
     }
 }
 
@@ -608,9 +620,6 @@ sub buildDatabase {
 
     $self->log("info", "Will create and fill the '".$self->dbType()."' database '".$dbName."'.");
 
-    # remove old database
-    $self->deleteDb();
-
     # create database
     $self->createDb();
     
@@ -619,19 +628,22 @@ sub buildDatabase {
 
     # create db schema
     $self->createDbSchema();
-    $self->dbHandler()->commit();
-
-    # fill the zimfile table
-    $self->executeSql("insert into zimfile (filename) values ('".$self->zimFilePath()."')");
-    $self->dbHandler()->commit();
 
     # fill the article table
     $self->fillDb();
-    $self->dbHandler()->commit();
+
+    # Fill with the mainpage
+    my $sth = $self->dbHandler()->prepare("select aid from article where namespace='A' and url='$welcomePage'");
+    $sth->execute();
+    my $result = $sth->fetchrow_hashref();
+    $welcomePage = $result->{'aid'};
+    $sth->finish();
+
+    # fill the zimfile table
+    $self->executeSql("insert into zimfile (filename, mainpage) values ('".$self->zimFilePath()."', '".$welcomePage."')");
 
     # fill the zimarticle table
     $self->executeSql("insert into zimarticles (zid, aid) select 1, aid from article");
-    $self->dbHandler()->commit();
 
     # commit und disconnect
     $self->dbHandler()->disconnect();
@@ -647,7 +659,7 @@ sub copyFileToDb {
     # url
     if (scalar(%urls)) {
 	$hash{url} = $urls{substr($file, length($self->htmlPath()))};
-	unless ($hash{url}) {
+	unless (exists($hash{url})) {
 	    die ("Not url found for file".$file);
 	}
     } else {
@@ -840,6 +852,12 @@ sub indexerPath {
     my $self = shift;
     if (@_) { $indexerPath = shift } 
     return $indexerPath;
+}
+
+sub welcomePage {
+    my $self = shift;
+    if (@_) { $welcomePage = shift } 
+    return $welcomePage;
 }
 
 sub logger {
