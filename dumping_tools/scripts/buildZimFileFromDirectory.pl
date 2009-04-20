@@ -22,6 +22,8 @@ my $htmlPath;
 my $welcomePage;
 my $zimFilePath="./articles";
 my $dbType="postgres";
+my $dbUser="kiwix";
+my $dbPassword="";
 my $dbName=time();
 
 # Get console line arguments
@@ -29,11 +31,13 @@ GetOptions('indexerPath=s' => \$indexerPath,
 	   'htmlPath=s' => \$htmlPath,
 	   'zimFilePath=s' => \$zimFilePath,
 	   'dbName=s' => \$dbName,
+	   'dbUser=s' => \$dbUser,
+	   'dbPassword=s' => \$dbPassword,
 	   'welcomePage=s' => \$welcomePage,
 	   );
 
-if (!$htmlPath || !$welcomePage) {
-    print "usage: ./builZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html [--indexerPath=./zimindexer] [--zimFilePath=articles.zim] [--dbName=kiwix_db]\n";
+if (!$htmlPath || !$welcomePage ) {
+    print "usage: ./builZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html [--dbUser=foobar] [--dbPassword=testpass] [--indexerPath=./zimindexer] [--zimFilePath=articles.zim] [--dbName=kiwix_db]\n";
     exit;
 }
 
@@ -64,6 +68,8 @@ $indexer->htmlPath($htmlPath);
 $indexer->zimFilePath($zimFilePath);
 $indexer->dbType($dbType);
 $indexer->dbName($dbName);
+$indexer->dbUser($dbUser);
+$indexer->dbPassword($dbPassword);
 $indexer->welcomePage($welcomePage);
 
 # prepare urls rewreting

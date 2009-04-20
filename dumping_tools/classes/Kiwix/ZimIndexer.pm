@@ -22,6 +22,8 @@ my $zimFilePath;
 my $dbHandler;
 my $dbType = "postgres"; # or sqlite
 my $dbName;
+my $dbUser;
+my $dbPassword;
 my %urls;
 my @files;
 my $file;
@@ -571,9 +573,11 @@ sub createDbSchema {
 sub createDb {
     my $self = shift;
     my $dbName = $self->dbName();
-    
+    my $dbUser = $self->dbUser();
+
     if ($self->isPostgresDb()) {
-	`createdb -U kiwix $dbName`;
+	$ENV{'PGPASSWORD'} = $self->dbPassword();
+	`createdb -U $dbUser $dbName `;
     }
 }
 
@@ -586,7 +590,9 @@ sub deleteSqliteDb {
 sub deletePostgresDb {
     my $self = shift;
     my $dbName = $self->dbName();
-    `dropdb -U kiwix $dbName`;
+    my $dbUser = $self->dbUser();
+    $ENV{'PGPASSWORD'} = $self->dbPassword();
+    `dropdb -U $dbUser $dbName`;
 }
 
 sub deleteDb {
@@ -607,11 +613,14 @@ sub connectToDb {
     if ($self->isSqliteDb()) {
 	$self->dbHandler(DBI->connect("dbi:SQLite:dbname=".$dbName,"","", {AutoCommit => 1, PrintError => 1}));
     } else {
-	$self->dbHandler(DBI->connect("dbi:Pg:dbname=".$dbName, "kiwix","", {AutoCommit => 1, PrintError => 1}));
+	$self->dbHandler(DBI->connect("dbi:Pg:dbname=".$dbName, $self->dbUser(), $self->dbPassword(), {AutoCommit => 1, PrintError => 1}));
     }
 
     # set unicode flag
-    $self->dbHandler()->{unicode} = 1;
+    if ($self->dbHandler()) {
+	$self->dbHandler()->{unicode} = 1;
+	return 1;
+    }
 }
 
 sub buildDatabase {
@@ -622,9 +631,12 @@ sub buildDatabase {
 
     # create database
     $self->createDb();
-    
+
     # connect to the db
-    $self->connectToDb();
+    unless ($self->connectToDb()) {
+	$self->log("error", "Unable to connect to the database.");
+	return;
+    } 
 
     # create db schema
     $self->createDbSchema();
@@ -846,6 +858,18 @@ sub dbType {
     my $self = shift;
     if (@_) { $dbType = shift } 
     return $dbType;
+}
+
+sub dbUser {
+    my $self = shift;
+    if (@_) { $dbUser = shift } 
+    return $dbUser;
+}
+
+sub dbPassword {
+    my $self = shift;
+    if (@_) { $dbPassword = shift } 
+    return $dbPassword;
 }
 
 sub indexerPath {
