@@ -86,6 +86,8 @@ sub getUrlCounts {
 	    my $url = $link->[2];
 	    if (isLocalUrl($url) && !isSelfUrl($url)) {
 		$url = removeLocalTagFromUrl($url);
+		$url =~ s/\n//g;
+		$url = uri_unescape($url);
 		$self->incrementCount(getAbsoluteUrl($file, $self->htmlPath(), $url));
 	    }
 	}
@@ -219,8 +221,6 @@ sub getAbsoluteUrl {
 sub incrementCount {
     my $self = shift;
     my $url = shift;
-
-    $url = uri_unescape($url);
 
     if (exists($urls{$url})) {
 	$urls{$url} += 1;
@@ -671,8 +671,8 @@ sub copyFileToDb {
     # url
     if (scalar(%urls)) {
 	$hash{url} = $urls{substr($file, length($self->htmlPath()))};
-	unless (exists($hash{url})) {
-	    die ("Not url found for file".$file);
+	unless (length($hash{url})) {
+	    die ("No URL found for file ".$file);
 	}
     } else {
 	$hash{url} = substr($file, length($self->htmlPath()));
@@ -708,7 +708,8 @@ sub copyFileToDb {
 
 	    # remove parameter if necessary
 	    $url =~ s/(\?.*$)//;
-	    
+	    $url =~ s/\n//g;
+
 	    if ($url =~ /\#/ ) {
 		$absUrl = getAbsoluteUrl($file, $htmlPath, removeLocalTagFromUrl($url));
 	    } else  {
@@ -716,7 +717,7 @@ sub copyFileToDb {
 	    }
 	    
 	    my $newUrl = "/".getNamespace($absUrl)."/".$urls{$absUrl};
-	    
+
 	    if ($url =~ /\#/ ) {
 		my @urlParts = split( /\#/, $url );
 		$newUrl .= "#".$urlParts[1];
