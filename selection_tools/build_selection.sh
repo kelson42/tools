@@ -1,10 +1,11 @@
 #!/bin/bash
 
-WIKI=$1
+LANG=$1
+WIKI=$1WIKI
 
 if [ "$WIKI" = '' ];
 then
-    echo "usage: WP1.sh <wikiname> (enwiki for example)"
+    echo "usage: WP1.sh <lang> (en for enwiki for example)"
     exit
 fi
 
@@ -24,55 +25,54 @@ createDirIfNecessary()
   fi
 }
 
-createDirIfNecessary ./$WIKI
-createDirIfNecessary ./$WIKI/source
-createDirIfNecessary ./$WIKI/target
+createDirIfNecessary ./tmp/$WIKI
+createDirIfNecessary ./tmp/$WIKI/source
+createDirIfNecessary ./tmp/$WIKI/target
 
-if [ -e ./$WIKI/date ]
+if [ -e ./tmp/$WIKI/date ]
 then
-    LAST_VERSION=`cat ./$WIKI/date`
+    LAST_VERSION=`cat ./tmp/$WIKI/date`
     if [ ! $LAST_VERSION = $CURRENT_VERSION ]
-	then
-	rm ./$WIKI/date
-	rm ./$WIKI/source/* >& /dev/null
+    then
+	rm ./tmp/$WIKI/date
+	rm ./tmp/$WIKI/source/* >& /dev/null
     fi
-    wget --connect-timeout=10 --tries=2 --continue -O ./$WIKI/source/wikicharts_cur_$WIKI.sql.gz http://tools.wikimedia.de/~cbm/dumps/u_leon_wikistats_p/2007-12-10/wikicharts_cur_$WIKI.sql.gz
 fi
 
-echo $CURRENT_VERSION > ./$WIKI/date
+echo $CURRENT_VERSION > ./tmp/$WIKI/date
 
 ## GET SQL DUMPS FROM download.wikimedia.org
-wget --continue -O ./$WIKI/source/$WIKI-latest-page.sql.gz http://download.wikimedia.org/$WIKI/latest/$WIKI-latest-page.sql.gz
-wget --continue -O ./$WIKI/source/$WIKI-latest-pagelinks.sql.gz http://download.wikimedia.org/$WIKI/latest/$WIKI-latest-pagelinks.sql.gz
-wget --continue -O ./$WIKI/source/$WIKI-latest-langlinks.sql.gz http://download.wikimedia.org/$WIKI/latest/$WIKI-latest-langlinks.sql.gz
-wget --continue -O ./$WIKI/source/$WIKI-latest-redirect.sql.gz http://download.wikimedia.org/$WIKI/latest/$WIKI-latest-redirect.sql.gz
-wget --continue -O ./$WIKI/source/$WIKI-latest-categorylinks.sql.gz http://download.wikimedia.org/$WIKI/latest/$WIKI-latest-categorylinks.sql.gz
+wget --continue -O ./tmp/$WIKI/source/$WIKI-latest-page.sql.gz http://download.wikimedia.org/$WIKI/latest/$WIKI-latest-page.sql.gz
+wget --continue -O ./tmp/$WIKI/source/$WIKI-latest-pagelinks.sql.gz http://download.wikimedia.org/$WIKI/latest/$WIKI-latest-pagelinks.sql.gz
+wget --continue -O ./tmp/$WIKI/source/$WIKI-latest-langlinks.sql.gz http://download.wikimedia.org/$WIKI/latest/$WIKI-latest-langlinks.sql.gz
+wget --continue -O ./tmp/$WIKI/source/$WIKI-latest-redirect.sql.gz http://download.wikimedia.org/$WIKI/latest/$WIKI-latest-redirect.sql.gz
+wget --continue -O ./tmp/$WIKI/source/$WIKI-latest-categorylinks.sql.gz http://download.wikimedia.org/$WIKI/latest/$WIKI-latest-categorylinks.sql.gz
 
-rm ./$WIKI/target/* >& /dev/null
+rm ./tmp/$WIKI/target/* >& /dev/null
 
 ## BUILD PAGES INDEXES
-cat ./$WIKI/source/$WIKI-latest-page.sql.gz | gzip -d | tail -n +38 | ./bin/pages_parser | egrep "^[0-9]+ 0 " | sort -n -t " " -k 1,1 | gzip > ./$WIKI/target/main_pages_sort_by_ids.lst.gz
+cat ./tmp/$WIKI/source/$WIKI-latest-page.sql.gz | gzip -d | tail -n +38 | ./bin/pages_parser | egrep "^[0-9]+ 0 " | sort -n -t " " -k 1,1 | gzip > ./tmp/$WIKI/target/main_pages_sort_by_ids.lst.gz
 
 ## BUILD TALK INDEXES
-cat ./$WIKI/source/$WIKI-latest-page.sql.gz | gzip -d | tail -n +38 | ./bin/pages_parser | egrep "^[0-9]+ 1 " | sort -n -t " " -k 1,1 | gzip > ./$WIKI/target/talk_pages_sort_by_ids.lst.gz
+cat ./tmp/$WIKI/source/$WIKI-latest-page.sql.gz | gzip -d | tail -n +38 | ./bin/pages_parser | egrep "^[0-9]+ 1 " | sort -n -t " " -k 1,1 | gzip > ./tmp/$WIKI/target/talk_pages_sort_by_ids.lst.gz
 
 ## BUILD CATEGORIES INDEXES
-cat ./$WIKI/source/$WIKI-latest-page.sql.gz | gzip -d | tail -n +38 | ./bin/pages_parser | egrep "^[0-9]+ 14 " | sort -n -t " " -k 1,1 | gzip > ./$WIKI/target/categories_sort_by_ids.lst.gz
+cat ./tmp/$WIKI/source/$WIKI-latest-page.sql.gz | gzip -d | tail -n +38 | ./bin/pages_parser | egrep "^[0-9]+ 14 " | sort -n -t " " -k 1,1 | gzip > ./tmp/$WIKI/target/categories_sort_by_ids.lst.gz
 
 ## BUILD PAGELINKS INDEXES
-cat ./$WIKI/source/$WIKI-latest-pagelinks.sql.gz| gzip -d | tail -n +28 | ./bin/pagelinks_parser | gzip > ./$WIKI/target/pagelinks.lst.gz
+cat ./tmp/$WIKI/source/$WIKI-latest-pagelinks.sql.gz| gzip -d | tail -n +28 | ./bin/pagelinks_parser | gzip > ./tmp/$WIKI/target/pagelinks.lst.gz
 
 ## BUILD LANGLINKS INDEXES
-cat ./$WIKI/source/$WIKI-latest-langlinks.sql.gz | gzip -d | tail -n +28 | ./bin/langlinks_parser | sort -n -t " " -k 1,1 | gzip > ./$WIKI/target/langlinks_sort_by_ids.lst.gz
+cat ./tmp/$WIKI/source/$WIKI-latest-langlinks.sql.gz | gzip -d | tail -n +28 | ./bin/langlinks_parser | sort -n -t " " -k 1,1 | gzip > ./tmp/$WIKI/target/langlinks_sort_by_ids.lst.gz
 
 ## BUILD REDIRECT INDEXES
-cat ./$WIKI/source/$WIKI-latest-redirect.sql.gz | gzip -d | tail -n +28 | ./bin/redirects_parser | sort -n -t " " -k 1,1 | gzip > ./$WIKI/target/redirects_sort_by_ids.lst.gz
+cat ./tmp/$WIKI/source/$WIKI-latest-redirect.sql.gz | gzip -d | tail -n +28 | ./bin/redirects_parser | sort -n -t " " -k 1,1 | gzip > ./tmp/$WIKI/target/redirects_sort_by_ids.lst.gz
 
 ## BUILD CATEGORYLINKS INDEXES
-cat ./$WIKI/source/$WIKI-latest-categorylinks.sql.gz | gzip -d | tail -n +28 | ./bin/categorylinks_parser | sort -n -t " " -k 1,1 | gzip > ./$WIKI/target/categorylinks_sort_by_ids.lst.gz
+cat ./tmp/$WIKI/source/$WIKI-latest-categorylinks.sql.gz | gzip -d | tail -n +28 | ./bin/categorylinks_parser | sort -n -t " " -k 1,1 | gzip > ./tmp/$WIKI/target/categorylinks_sort_by_ids.lst.gz
 
 ## BUILD CHARTS INDEXES
-cat ./$WIKI/source/wikicharts_cur_$WIKI.sql.gz | gzip -d | tail -n +40 | ./bin/charts_parser | egrep "^0 " | gzip > ./$WIKI/target/charts.lst.gz
+./bin/filter_charts.pl --chartsDirectory=../tmp/charts/ --language=$LANG | gzip > ../tmp/$WIKI/target/charts.lst.gz
 
 ## BUILD COUNTS
 ./bin/build_counts.pl --pagesFile=./$WIKI/target/main_pages_sort_by_ids.lst.gz --pagelinksFile=./$WIKI/target/pagelinks.lst.gz --langlinksFile=./$WIKI/target/langlinks_sort_by_ids.lst.gz --redirectsFile=./$WIKI/target/redirects_sort_by_ids.lst.gz --chartsFile=./$WIKI/target/charts.lst.gz | gzip > ./$WIKI/target/counts_sort_by_ids.lst.gz
