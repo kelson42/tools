@@ -1,0 +1,22 @@
+Note: This requires a lot of disk space. The raw dataruns about 1 GB per 
+day of data, and the output for 40 days of data takes about 16 GB. 
+
+1. Download the raw data
+	
+	cd source/
+	sh get.sh
+
+This will download the data that is on the server. Unfortunately, only
+one month is kept on the server, but you can accumulate more over time
+if you run get.sh again and again.  
+
+2. Convert the raw data (which is in hourly files) to daily files with
+
+	sh make-hourly.sh DATE
+
+where DATE is in YYYYMMDD form, e.g. 20080803. This has to be run
+one time for every date that you have downloaded in step 1. 
+
+3. Make the list of average daily hitcounts, hitcounts.raw.gz, with
+
+	sh make-merged.sh
