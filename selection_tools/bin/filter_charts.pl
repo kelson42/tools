@@ -115,8 +115,6 @@ foreach my $file ( @files ) {
     # Close file
     print STDERR scalar(keys(%urls))." urls observed...\n";
     close IN;
-    
-    last;
 }
 
 # Sort desc all urls
