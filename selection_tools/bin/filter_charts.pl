@@ -5,14 +5,28 @@ binmode STDERR, ":utf8";
 
 use utf8;
 use lib '../../mirroring_tools/Mediawiki/';
+use lib "../../dumping_tools/classes/";
 
+use strict;
+use warnings;
 use Encode;
 use PerlIO::gzip;
 use URI::Escape;
 use Data::Dumper;
+use Getopt::Long;
+use Kiwix::PathExplorer;
 use MediaWiki;
 
-my $language = shift(@ARGV);
+my $chartsDirectory;
+my $language;
+
+GetOptions('chartsDirectory=s' => \$chartsDirectory, 
+	   'language=s' => \$language);
+
+if (!$language || !$chartsDirectory) {
+    print "usage: ./filter_charts.pl --chartsDirectory=./tmp/charts --language=fr\n";
+    exit;
+};
 
 # get the namespace in english
 my $enSite = MediaWiki->new();
@@ -26,8 +40,7 @@ $langSite->hostname("$language.wikipedia.org");
 $langSite->path("w");
 my %langNamespaces = $langSite->allNamespaces();
 
-#print STDERR Dumper(%langNamespaces);
-
+# Build exclusion regex
 my $regex = "^(";
 foreach my $code (keys(%langNamespaces)) {
     next unless ($code);
@@ -37,61 +50,81 @@ foreach my $code (keys(%enNamespaces)) {
     next unless ($code);
     $regex .= "(".$enNamespaces{$code}.":)|";
 }
-$regex .= "(Http:)|(WP:)|(Image:)|(Imagen:)|([0-9]+px))";
+$regex .= "(Http:)|(WP:)|(Image:)|(Imagen:)|([0-9]+px)|([0-9A-Za-z]+\.png))";
 
-foreach $file ( @ARGV ) { 
-  open IN, "<:gzip", $file or die;
-
-  $file =~ m/(\d+)/;
-  $date = $1;  
-
-  print STDERR $file .":";
- 
-  $i = 0;
-  while ( $line = <IN> ) {
-
-    $i++;
-    if ( $i % 100000 == 0) { print STDERR "."; }
-
-    # Keep only entries for your language
-    next unless ( $line =~ /^$language /);
-
-    @parts = split / /, $line;
-    if ( defined $parts[5] ) { 
-      print STDERR "\nBAD $parts[0] $parts[1]\n$line";
-    }
-    $name = $parts[1];
-    $count = $parts[2];
-
-    # Decode URL
-    $name =~ s/%([0-9A-Fa-f]{2})/chr(hex($1))/eg;
-    
-    unless (Encode::is_utf8($name)) {
-	$name = decode_utf8($name);
-    }
-
-    next if ( $name =~ /\n/);
-
-    $name =~ s/^://;
-  
-    $name = ucfirst($name);
-
-    $name =~ s/ /_/g;
-    $name =~ s/#.*//;
-    next if ( length $name > 255);
-
-    next if ($name =~ /^$regex/);
-    
-#   print STDERR $name."\n";
-
-    # These are ad hoc exceptions based on examination of the data
-    next if ($name =~ /Wikipedia.*the.*free.*encyclopedia/);
-    next if ($name =~ /files.*css/);
-    next if ($name =~ /files\//);
- 
-    print STDOUT "$date $count $name\n";
-  }
-
-  print STDERR " $i\n";
+# get charts file path
+my @files;
+my $explorer = new Kiwix::PathExplorer();
+$explorer->path($chartsDirectory);
+$explorer->filterRegexp("^.*\.(gz)\$");
+while (my $file = $explorer->getNext()) {
+    push(@files, $file);
 }
+
+# hash to count file
+my %urls;
+
+# parse each file
+foreach my $file ( @files ) { 
+    
+    # open file
+    open IN, "<:gzip", $file or die;
+
+    # print info
+    print STDERR $file .":";
+ 
+    # parse each line of the file
+    my $i=0;
+    while ( my $line = <IN> ) {
+
+	# Display progressbar
+	if ( $i++ % 100000 == 0) { print STDERR "."; }
+
+	# Keep only entries for your language
+	next unless ( $line =~ /^$language /);
+
+	# get infos from the line (ex: "fr Brothers_in_Arms_(jeu) 1 14817")
+	my $name;
+	my $count;
+	if ($line =~ /^[\w|\.]+ ([^ ]+) ([\d]+) [\d]+/) {
+	    $name = ucfirst($1);
+	    $count = $2;
+	} else {
+	    next;
+	}
+
+	# URL decoding
+	$name =~ s/%([0-9A-Fa-f]{2})/chr(hex($1))/eg;
+	
+	# unicode conversion
+	unless (Encode::is_utf8($name)) {
+	    $name = decode_utf8($name);
+	}
+
+	# Beautify the page name
+	$name =~ s/ /_/g;
+	$name =~ s/#.*//;
+	
+	# Apply the filter to remove images, etc.
+	next if ($name =~ /^$regex/);
+
+	# Make the incrementation
+	$urls{$name} += $count;
+    }
+
+    # Close file
+    print STDERR scalar(keys(%urls))." urls observed...\n";
+    close IN;
+    
+    last;
+}
+
+# Sort desc all urls
+my @sortedUrls = sort { $urls{$b} <=> $urls{$a} } keys(%urls);
+
+# Print them
+foreach my $url (@sortedUrls) {
+    print $url." ".$urls{$url}."\n";
+}
+
 
