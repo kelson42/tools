@@ -1,4 +1,9 @@
 #!/usr/bin/perl
+binmode STDOUT, ":utf8";
+binmode STDIN, ":utf8";
+binmode STDERR, ":utf8";
+
+use utf8;
 
 use strict;
 use warnings;
@@ -22,10 +27,10 @@ my ($pageId, $pageNamespace, $pageName, $redirect);
 my ($redirectSourcePageId, $redirectTargetNamespace, $redirectTargetPageName);
 my ($pagelinkSourcePageId, $pagelinkTargetNamespace, $pagelinkTargetPageName);
 my ($langlinkTargetPageId, $langlinkSourceWiki, $langlinkSourcePageName);
-my ($chartPageNamespace, $chartPageName, $chartPageHit);
+my ($chartPageName, $chartPageHit);
 my (%pagelinks_hash, %langlinks_hash, %charts_hash);
 
-open( PAGES_FILE, '<:gzip', $pagesFile ) or die("Unable to open file $pagesFile.\n");
+open( PAGES_FILE, '<:gzip:utf8', $pagesFile ) or die("Unable to open file $pagesFile.\n");
 while( <PAGES_FILE> ) {
     ($pageId, $pageNamespace, $pageName, $redirect) = split(" ", $_);
     unless ($pageNamespace) {
@@ -35,7 +40,7 @@ while( <PAGES_FILE> ) {
 }
 close( PAGES_FILE );
 
-open( PAGELINKS_FILE, '<:gzip', $pagelinksFile ) or die("Unable to open file $pagelinksFile.\n");
+open( PAGELINKS_FILE, '<:gzip:utf8', $pagelinksFile ) or die("Unable to open file $pagelinksFile.\n");
 while( <PAGELINKS_FILE> ) {
     ($pagelinkSourcePageId, $pagelinkTargetNamespace, $pagelinkTargetPageName) = split(" ", $_);
     unless ($pagelinkTargetNamespace) {
@@ -46,9 +51,9 @@ while( <PAGELINKS_FILE> ) {
 }
 close( PAGELINKS_FILE );
 
-open( LANGLINKS_FILE, '<:gzip', $langlinksFile ) or die("Unable to open file $langlinksFile.\n");
+open( LANGLINKS_FILE, '<:gzip:utf8', $langlinksFile ) or die("Unable to open file $langlinksFile.\n");
 my $langlinks_line = readline(*LANGLINKS_FILE);
-open( PAGES_FILE, '<:gzip', $pagesFile ) or die("Unable to open file $pagesFile.\n");
+open( PAGES_FILE, '<:gzip:utf8', $pagesFile ) or die("Unable to open file $pagesFile.\n");
 while( <PAGES_FILE> ) {
     ($pageId, $pageNamespace, $pageName, $redirect) = split(" ", $_);
     unless($pageNamespace || $redirect) {
@@ -73,9 +78,9 @@ sub updateLanglinkCount {
     } while ( $langlinks_line = readline( *LANGLINKS_FILE) );
 }
 
-open( REDIRECTS_FILE, '<:gzip', $redirectsFile ) or die("Unable to open file $redirectsFile.\n");
+open( REDIRECTS_FILE, '<:gzip:utf8', $redirectsFile ) or die("Unable to open file $redirectsFile.\n");
 my $redirects_line = readline(*REDIRECTS_FILE);
-open( PAGES_FILE, '<:gzip', $pagesFile ) or die("Unable to open file $pagesFile.\n");
+open( PAGES_FILE, '<:gzip:utf8', $pagesFile ) or die("Unable to open file $pagesFile.\n");
 while( <PAGES_FILE> ) {
     ($pageId, $pageNamespace, $pageName, $redirect) = split(" ", $_);
     if(!$pageNamespace && $redirect) {
@@ -101,15 +106,15 @@ sub updatePagelinkCount {
 }
 
 if ($chartsFile) {
-    open( CHARTS_FILE, '<:gzip', $chartsFile ) or die("Unable to open file $chartsFile.\n");
+    open( CHARTS_FILE, '<:gzip:utf8', $chartsFile ) or die("Unable to open file $chartsFile.\n");
     while( <CHARTS_FILE> ) {
-	($chartPageNamespace, $chartPageName, $chartPageHit) = split(" ", $_);
-	$charts_hash{$chartPageName} = $chartPageHit;
+	($chartPageName, $chartPageHit) = split(" ", $_);
+	$charts_hash{$chartPageName} = $chartPageHit || 0;
     }
     close( CHARTS_FILE );
 }
 
-open( PAGES_FILE, '<:gzip', $pagesFile ) or die("Unable to open file $pagesFile.\n");
+open( PAGES_FILE, '<:gzip:utf8', $pagesFile ) or die("Unable to open file $pagesFile.\n");
 while( <PAGES_FILE> ) {
     ($pageId, $pageNamespace, $pageName, $redirect) = split(" ", $_);
     unless ($pageNamespace || $redirect) {
