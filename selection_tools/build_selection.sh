@@ -72,10 +72,10 @@ cat ./tmp/$WIKI/source/$WIKI-latest-redirect.sql.gz | gzip -d | tail -n +28 | ./
 cat ./tmp/$WIKI/source/$WIKI-latest-categorylinks.sql.gz | gzip -d | tail -n +28 | ./bin/categorylinks_parser | sort -n -t " " -k 1,1 | gzip > ./tmp/$WIKI/target/categorylinks_sort_by_ids.lst.gz
 
 ## BUILD CHARTS INDEXES
-./bin/filter_charts.pl --chartsDirectory=../tmp/charts/ --language=$LANG | gzip > ../tmp/$WIKI/target/charts.lst.gz
+./bin/filter_charts.pl --chartsDirectory=./tmp/charts/ --language=$LANG | gzip > ./tmp/$WIKI/target/charts.lst.gz
 
 ## BUILD COUNTS
-./bin/build_counts.pl --pagesFile=./$WIKI/target/main_pages_sort_by_ids.lst.gz --pagelinksFile=./$WIKI/target/pagelinks.lst.gz --langlinksFile=./$WIKI/target/langlinks_sort_by_ids.lst.gz --redirectsFile=./$WIKI/target/redirects_sort_by_ids.lst.gz --chartsFile=./$WIKI/target/charts.lst.gz | gzip > ./$WIKI/target/counts_sort_by_ids.lst.gz
+./bin/build_counts.pl --pagesFile=./tmp/$WIKI/target/main_pages_sort_by_ids.lst.gz --pagelinksFile=./tmp/$WIKI/target/pagelinks.lst.gz --langlinksFile=./tmp/$WIKI/target/langlinks_sort_by_ids.lst.gz --redirectsFile=./tmp/$WIKI/target/redirects_sort_by_ids.lst.gz --chartsFile=./tmp/$WIKI/target/charts.lst.gz | gzip > ./tmp/$WIKI/target/counts_sort_by_ids.lst.gz
 
 ## BUILD IMPORTANCE SCORES
-./bin/build_importance_scores.pl --countsFile=./$WIKI/target/counts_sort_by_ids.lst.gz | gzip > ./$WIKI/target/importance_scores.lst.gz
+./bin/build_importance_scores.pl --countsFile=./tmp/$WIKI/target/counts_sort_by_ids.lst.gz | gzip > ./tmp/$WIKI/target/importance_scores.lst.gz
