@@ -4,8 +4,8 @@ binmode STDIN, ":utf8";
 binmode STDERR, ":utf8";
 
 use utf8;
-use lib '../../mirroring_tools/Mediawiki/';
-use lib "../../dumping_tools/classes/";
+use lib '../mirroring_tools/Mediawiki/';
+use lib "../dumping_tools/classes/";
 
 use strict;
 use warnings;
@@ -101,8 +101,12 @@ foreach my $file ( @files ) {
 	    $name = decode_utf8($name);
 	}
 
+	# Return if the title is too long
+	next if (length($name) > 255);
+
 	# Beautify the page name
 	$name =~ s/ /_/g;
+	$name =~ s/^[_]+//g;
 	$name =~ s/#.*//;
 	
 	# Apply the filter to remove images, etc.
@@ -117,11 +121,8 @@ foreach my $file ( @files ) {
     close IN;
 }
 
-# Sort desc all urls
-my @sortedUrls = sort { $urls{$b} <=> $urls{$a} } keys(%urls);
-
-# Print them
-foreach my $url (@sortedUrls) {
+# Sort desc all urls and print them
+foreach my $url (sort { $urls{$b} <=> $urls{$a} } keys(%urls)) {
     print $url." ".$urls{$url}."\n";
 }
 
