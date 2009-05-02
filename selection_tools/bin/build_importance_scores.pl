@@ -37,9 +37,9 @@ while( <COUNTS_FILE> ) {
    ($pageId, $pageName, $langlinkCount, $pagelinkCount, $pagehitCount) = split(" ", $_);
 
     $hash{$pageId} = $pageName;
-    $langlinkHash{$pageId} = $langlinkCount;
-    $pagelinkHash{$pageId} = $pagelinkCount;
-    $pagehitHash{$pageId} = $pagehitCount;
+    $langlinkHash{$pageId} = $langlinkCount =~ /^\d+$/ ? $langlinkCount : 0;
+    $pagelinkHash{$pageId} = $pagelinkCount =~ /^\d+$/ ? $pagelinkCount : 0;
+    $pagehitHash{$pageId} = $pagehitCount =~ /^\d+$/ ? $pagehitCount : 0;
 
     push(@pageIds, $pageId);
 }
@@ -58,7 +58,7 @@ for (my $i=0 ; $i<$count ; $i++) {
 }
 
 foreach $pageId (@sortedpagelinks) {
-    $score{$pageId} = ( $langlinkHash{$pageId} + $pagehitHash{$pageId} * 2 + $pagelinkHash{$pageId} ) / 4 ;
+    $score{$pageId} = ( $langlinkHash{$pageId} + $pagehitHash{$pageId} + $pagelinkHash{$pageId} ) / ( 3 * $count) * 100;
 }
 
 @sortedscores = sort { $score{$b} <=> $score{$a} } @pageIds;
@@ -66,7 +66,7 @@ foreach $pageId (@sortedpagelinks) {
 $count=0;
 foreach $pageId (@sortedscores) {
     $count++;
-    print $pageId." ".$hash{$pageId}."\n";
+    print $pageId." ".$hash{$pageId}." ".$score{$pageId}."\n";
 }
 
 
