@@ -1,7 +1,7 @@
 #!/bin/bash
 
 LANG=$1
-WIKI=$1WIKI
+WIKI=$LANG"wiki"
 
 if [ "$WIKI" = '' ];
 then
