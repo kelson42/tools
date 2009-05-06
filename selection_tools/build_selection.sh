@@ -1,7 +1,8 @@
 #!/bin/bash
 
-LANG=$1
-WIKI=$LANG"wiki"
+LANG=C
+LANGUAGE=$1
+WIKI=$LANGUAGE"wiki"
 
 if [ "$WIKI" = '' ];
 then
@@ -72,7 +73,7 @@ cat ./tmp/$WIKI/source/$WIKI-latest-redirect.sql.gz | gzip -d | tail -n +28 | ./
 cat ./tmp/$WIKI/source/$WIKI-latest-categorylinks.sql.gz | gzip -d | tail -n +28 | ./bin/categorylinks_parser | sort -n -t " " -k 1,1 | gzip > ./tmp/$WIKI/target/categorylinks_sort_by_ids.lst.gz
 
 ## BUILD CHARTS INDEXES
-./bin/filter_charts.pl --chartsDirectory=./tmp/charts/ --language=$LANG | gzip > ./tmp/$WIKI/target/charts.lst.gz
+./bin/filter_charts.pl --chartsDirectory=./tmp/charts/ --language=$LANGUAGE | gzip > ./tmp/$WIKI/target/charts.lst.gz
 
 ## BUILD COUNTS
 ./bin/build_counts.pl --pagesFile=./tmp/$WIKI/target/main_pages_sort_by_ids.lst.gz --pagelinksFile=./tmp/$WIKI/target/pagelinks.lst.gz --langlinksFile=./tmp/$WIKI/target/langlinks_sort_by_ids.lst.gz --redirectsFile=./tmp/$WIKI/target/redirects_sort_by_ids.lst.gz --chartsFile=./tmp/$WIKI/target/charts.lst.gz | gzip > ./tmp/$WIKI/target/counts_sort_by_ids.lst.gz
