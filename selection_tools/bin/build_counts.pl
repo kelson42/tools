@@ -32,6 +32,7 @@ my (%pagelinks_hash, %langlinks_hash, %charts_hash);
 
 open( PAGES_FILE, '<:gzip:utf8', $pagesFile ) or die("Unable to open file $pagesFile.\n");
 while( <PAGES_FILE> ) {
+    next unless (utf8::valid($_));
     ($pageId, $pageNamespace, $pageName, $redirect) = split(" ", $_);
     unless ($pageNamespace) {
 	$pagelinks_hash{$pageName} = 0;
@@ -42,6 +43,7 @@ close( PAGES_FILE );
 
 open( PAGELINKS_FILE, '<:gzip:utf8', $pagelinksFile ) or die("Unable to open file $pagelinksFile.\n");
 while( <PAGELINKS_FILE> ) {
+    next unless (utf8::valid($_));
     ($pagelinkSourcePageId, $pagelinkTargetNamespace, $pagelinkTargetPageName) = split(" ", $_);
     unless ($pagelinkTargetNamespace) {
 	if (exists($pagelinks_hash{$pagelinkTargetPageName}) && exists($langlinks_hash{$pagelinkSourcePageId}) ) {
@@ -55,6 +57,7 @@ open( LANGLINKS_FILE, '<:gzip:utf8', $langlinksFile ) or die("Unable to open fil
 my $langlinks_line = readline(*LANGLINKS_FILE);
 open( PAGES_FILE, '<:gzip:utf8', $pagesFile ) or die("Unable to open file $pagesFile.\n");
 while( <PAGES_FILE> ) {
+    next unless (utf8::valid($_));
     ($pageId, $pageNamespace, $pageName, $redirect) = split(" ", $_);
     unless($pageNamespace || $redirect) {
 	updateLanglinkCount();
@@ -82,6 +85,7 @@ open( REDIRECTS_FILE, '<:gzip:utf8', $redirectsFile ) or die("Unable to open fil
 my $redirects_line = readline(*REDIRECTS_FILE);
 open( PAGES_FILE, '<:gzip:utf8', $pagesFile ) or die("Unable to open file $pagesFile.\n");
 while( <PAGES_FILE> ) {
+    next unless (utf8::valid($_));
     ($pageId, $pageNamespace, $pageName, $redirect) = split(" ", $_);
     if(!$pageNamespace && $redirect) {
         updatePagelinkCount();
@@ -108,6 +112,7 @@ sub updatePagelinkCount {
 if ($chartsFile) {
     open( CHARTS_FILE, '<:gzip:utf8', $chartsFile ) or die("Unable to open file $chartsFile.\n");
     while( <CHARTS_FILE> ) {
+	next unless (utf8::valid($_));
 	($chartPageName, $chartPageHit) = split(" ", $_);
 	$charts_hash{$chartPageName} = $chartPageHit || 0;
     }
@@ -116,6 +121,7 @@ if ($chartsFile) {
 
 open( PAGES_FILE, '<:gzip:utf8', $pagesFile ) or die("Unable to open file $pagesFile.\n");
 while( <PAGES_FILE> ) {
+    next unless (utf8::valid($_));
     ($pageId, $pageNamespace, $pageName, $redirect) = split(" ", $_);
     unless ($pageNamespace || $redirect) {
 	print $pageId." ".$pageName." ".$langlinks_hash{$pageId}." ".$pagelinks_hash{$pageName}." ".($charts_hash{$pageName} || "0" )."\n";
