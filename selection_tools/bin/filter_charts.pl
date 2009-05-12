@@ -96,11 +96,6 @@ foreach my $file ( @files ) {
 	# URL decoding
 	$name =~ s/%([0-9A-Fa-f]{2})/chr(hex($1))/eg;
 	
-	# unicode conversion
-	unless (Encode::is_utf8($name)) {
-	    $name = decode_utf8($name);
-	}
-
 	# Return if the title is too long
 	next if (length($name) > 255);
 
