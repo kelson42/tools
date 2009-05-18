@@ -736,7 +736,7 @@ sub copyFileToDb {
     foreach my $link (@$links) {
 	next unless (exists($link->{'http-equiv'}) && $link->{'http-equiv'} =~ /Refresh/i );
 	my $target = urlRewriterCallback($link->{'url'});
-	$target =~ s/\/[\d]+\/// ;
+	$target =~ s/\/[^\/]+\/// ;
 	$hash{redirect} = $target;
 	last;
     }
