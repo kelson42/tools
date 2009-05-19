@@ -51,9 +51,11 @@ foreach my $page (@pages) {
     print $month."\n";
     my $content = $site->downloadPage($page)."\n"; 
 
-    my $regexp = "({{[w|W]P1ps[ |_]opin[i]{0,1}on\\|.*}})";
+    my $regexp = "(<s>|)[ ]*({{[w|W]P1ps[ |_]opin[i]{0,1}on\\|.*}})";
     while ($content =~ /$regexp/g ) {
-	my $call = $1;
+	next if ($1 eq "<s>");
+
+	my $call = $2;
 	if ($call =~ /opinion=attendre/i ) {
 	    if ($call =~ /article=([^|}]*)/i ) {
 		my $title = $1;
