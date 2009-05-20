@@ -24,12 +24,17 @@ my $dbType = "postgres"; # or sqlite
 my $dbName;
 my $dbUser;
 my $dbPassword;
+my $mediawikiOptim;
 my %urls;
 my @files;
 my $file;
 my $htmlFilterRegexp = "^.*\.(html|htm)\$";
 my $jsFilterRegexp = "^.*\.(js)\$";
 my $cssFilterRegexp = "^.*\.(css)\$";
+
+my %bestResolutionSizes;
+my %bestResolutionUrls;
+my %bestResolutionRedirects;
 
 my $mimeDetector;
 
@@ -58,26 +63,38 @@ sub new {
 
 sub prepareUrlRewriting {
     my $self = shift;
+    $self->getUrls();
     $self->getUrlCounts();
     $self->checkDeadUrls();
     $self->computeNewUrls();
 }
 
-sub getUrlCounts {
+sub getUrls {
     my $self = shift;
 
     my $explorer = new Kiwix::PathExplorer();
     $explorer->path($self->htmlPath());
 
     while (my $file = $explorer->getNext()) {
-	# push the file itself
-	$self->incrementCount(substr($file, length($self->htmlPath())));
+	unless ($self->ignoreFile($file)) {
+	    $self->incrementCount( substr($file, length($htmlPath)) );
+	}
+    }
+}
 
+sub getUrlCounts {
+    my $self = shift;
+
+    foreach my $file (keys(%urls)) {
+	# only html
 	unless ($file =~ /$htmlFilterRegexp/i ) {
 	    next;
 	}
 
 	$self->log("info", "Count links in the (x)html file ".$file);
+
+	# add html path
+	$file = $self->htmlPath().$file;
 
 	# push the link contained in the file
 	my $linkExtractor = HTML::LinkExtor->new();
@@ -92,8 +109,12 @@ sub getUrlCounts {
 	    }
 	}
     }
+}
 
-    $explorer->reset();
+sub mediawikiOptim {
+    my $self = shift;
+    if (@_) { $mediawikiOptim = shift }
+    return $mediawikiOptim;
 }
 
 sub checkDeadUrls {
@@ -108,9 +129,57 @@ sub checkDeadUrls {
 
 sub computeNewUrls {
     my $self = shift;
-    my @urls = keys(%urls);
+    
+    # Special code to user only one resolution of a picutre in case of a Mediawiki HTML dump
+    my $normalImageFakeSize = 424242;
+    my $imageRegex = '^.*\/([\d]+px\-|)([^\/]*)\.(png|jpg|jpeg)$';
+    if ($self->mediawikiOptim()) {
+	
+	# Get the best resolution for each picture
+	foreach my $url (keys(%urls)) {
+	    if ($url =~ /$imageRegex/i) {
+		my $size = $1 || $normalImageFakeSize;
+		my $filename = $2.".".$3;
+		$size =~ s/px\-//g;
+		
+		if (exists($bestResolutionSizes{$filename})) {
+		    if ($bestResolutionSizes{$filename} < $size) {
+			$bestResolutionSizes{$filename} = $size;
+			$bestResolutionUrls{$filename} = $url;
+		    }
+		} else {
+		    $bestResolutionSizes{$filename} = $size;
+		    $bestResolutionUrls{$filename} = $url;
+		}
+	    }
+	}
+
+	# Remove low resolution picture urls
+	foreach my $url (keys(%urls)) {
+	    if ($url =~ /$imageRegex/i) {
+		my $size = $1 || $normalImageFakeSize;
+		my $filename = $2.".".$3;
+		$size =~ s/px\-//g;
+		
+		if ($size < $bestResolutionSizes{$filename}) {
+		    
+		    # increment the url count of the best picture
+		    $urls{ $bestResolutionUrls{$filename} } += $urls{$url};
+		    
+		    # create the redirection
+		    $bestResolutionRedirects{$url} = $bestResolutionUrls{$filename};
+
+		    # delete the hash entry
+		    delete($urls{$url});
+
+		    $self->log("info", "Optim url ".$url." -> ".$bestResolutionUrls{$filename});
+		}
+	    }
+	}
+    }
 
     # Sort urls
+    my @urls = keys(%urls);
     $self->log("info", "Sorting ".scalar(@urls)." urls.");
     my @sortedUrls = sort { $urls{$b} <=> $urls{$a} } (@urls);
 
@@ -154,6 +223,13 @@ sub computeNewUrls {
 
 	$urls{$url} = $newUrl;
 	$nameIndex++;
+    }
+
+    # re-add low resolution picture to %urls if necessary
+    if ($self->mediawikiOptim()) {
+	foreach my $url (keys(%bestResolutionRedirects)) {
+	    $urls{$url} = $urls{ $bestResolutionRedirects{$url} };
+	}
     }
 
     # update the welcome page
@@ -247,25 +323,11 @@ sub isSelfUrl {
 
 sub fillDb {
     my $self = shift;
-    my $file;
 
-    $self->log("info", "List files in the directory ".$self->htmlPath());
-    my $explorer = new Kiwix::PathExplorer();
-    $explorer->path($self->htmlPath());
-    $explorer->filterRegexp("");
-  
-    while ($file = $explorer->getNext()) {
-	push(@files, $file);
-    }
-
-    $self->log("info", "Remove unwanted files in the directory ".$self->htmlPath());
-    $self->removeUnwantedFiles();
-
-    $self->log("info", "Copying files to the DB (".scalar(@files)." files)");
-
-    my $count = 0;
-    foreach $file (@files) {
-	$self->copyFileToDb($file);
+    foreach my $url (keys(%urls)) {
+	if (-f $self->htmlPath().$url && !exists($bestResolutionRedirects{$url})) {
+	    $self->copyFileToDb($url);
+	}
     }
 }
 
@@ -665,18 +727,13 @@ sub copyFileToDb {
     my $self = shift;
     $file = shift;
 
-    my %hash;
-    my $data = $self->readFile($file);
-
     # url
-    if (scalar(%urls)) {
-	$hash{url} = $urls{substr($file, length($self->htmlPath()))};
-	unless (length($hash{url})) {
-	    die ("No URL found for file ".$file);
-	}
-    } else {
-	$hash{url} = substr($file, length($self->htmlPath()));
-    }
+    my %hash;
+    $hash{url} = $urls{$file};
+
+    #data
+    $file = $self->htmlPath().$file;
+    my $data = $self->readFile($file);
 
     # mime-type
     $hash{mimetype} = $self->mimeDetector()->getMimeType($file);
@@ -755,6 +812,7 @@ sub copyFileToDb {
     }
     
     $self->log("info", "Adding to DB ".$file);
+    $self->log("info", $hash{namespace}." - ".$hash{title});
     my $sql = "insert into article (namespace, title, url, redirect, mimetype, data) values (?, ?, ?, ?, ?, ?)";
     my $sth = $self->dbHandler()->prepare($sql);
 

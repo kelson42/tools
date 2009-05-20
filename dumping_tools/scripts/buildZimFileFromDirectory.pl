@@ -24,6 +24,7 @@ my $zimFilePath="./articles";
 my $dbType="postgres";
 my $dbUser="kiwix";
 my $dbPassword="";
+my $mediawikiOptim;
 my $dbName=time();
 
 # Get console line arguments
@@ -33,11 +34,12 @@ GetOptions('indexerPath=s' => \$indexerPath,
 	   'dbName=s' => \$dbName,
 	   'dbUser=s' => \$dbUser,
 	   'dbPassword=s' => \$dbPassword,
+	   'mediawikiOptim' => \$mediawikiOptim,
 	   'welcomePage=s' => \$welcomePage,
 	   );
 
 if (!$htmlPath || !$welcomePage ) {
-    print "usage: ./builZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html [--dbUser=foobar] [--dbPassword=testpass] [--indexerPath=./zimindexer] [--zimFilePath=articles.zim] [--dbName=kiwix_db]\n";
+    print "usage: ./builZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html [--dbUser=foobar] [--dbPassword=testpass] [--indexerPath=./zimindexer] [--zimFilePath=articles.zim] [--dbName=kiwix_db] [--mediawikiOptim]\n";
     exit;
 }
 
@@ -71,6 +73,7 @@ $indexer->dbName($dbName);
 $indexer->dbUser($dbUser);
 $indexer->dbPassword($dbPassword);
 $indexer->welcomePage($welcomePage);
+$indexer->mediawikiOptim($mediawikiOptim);
 
 # prepare urls rewreting
 $indexer->prepareUrlRewriting();
