@@ -793,7 +793,8 @@ sub copyFileToDb {
     foreach my $link (@$links) {
 	next unless (exists($link->{'http-equiv'}) && $link->{'http-equiv'} =~ /Refresh/i );
 	my $target = urlRewriterCallback($link->{'url'});
-	$target =~ s/\/[^\/]+\/// ;
+	$target =~ s/\/.\/// ;
+	print $target."\n";
 	$hash{redirect} = $target;
 	last;
     }
@@ -812,7 +813,6 @@ sub copyFileToDb {
     }
     
     $self->log("info", "Adding to DB ".$file);
-    $self->log("info", $hash{namespace}." - ".$hash{title});
     my $sql = "insert into article (namespace, title, url, redirect, mimetype, data) values (?, ?, ?, ?, ?, ?)";
     my $sth = $self->dbHandler()->prepare($sql);
 
