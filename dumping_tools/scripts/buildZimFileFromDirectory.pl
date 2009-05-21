@@ -76,6 +76,7 @@ $indexer->welcomePage($welcomePage);
 $indexer->mediawikiOptim($mediawikiOptim);
 
 # prepare urls rewreting
+$logger->info("Starting ZIM building process.");
 $indexer->prepareUrlRewriting();
 
 # loads the data from the directory to the db

@@ -72,6 +72,7 @@ sub prepareUrlRewriting {
 sub getUrls {
     my $self = shift;
 
+    $self->log("info", "Listing all files in the HTML path ".$self->htmlPath());
     my $explorer = new Kiwix::PathExplorer();
     $explorer->path($self->htmlPath());
 
@@ -794,7 +795,6 @@ sub copyFileToDb {
 	next unless (exists($link->{'http-equiv'}) && $link->{'http-equiv'} =~ /Refresh/i );
 	my $target = urlRewriterCallback($link->{'url'});
 	$target =~ s/\/.\/// ;
-	print $target."\n";
 	$hash{redirect} = $target;
 	last;
     }
