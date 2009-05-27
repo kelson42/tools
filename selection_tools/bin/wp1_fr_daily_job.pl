@@ -35,7 +35,7 @@ $site->setup();
 
 # Get the page wich have opinion about article to select
 my @pages;
-foreach my $page ($site->embeddedIn("Template:WP1ps_opinion")) {
+foreach my $page ($site->embeddedIn("Template:WP1ps")) {
     if ($page =~ /propositions/) {
 	push(@pages, $page);
 	print $page."\n";    
