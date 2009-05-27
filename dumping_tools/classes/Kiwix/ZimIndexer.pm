@@ -110,6 +110,28 @@ sub getUrlCounts {
 	    }
 	}
     }
+
+    # remove unused redirects
+    foreach my $file (keys(%urls)) {
+	if ($urls{$file} <= 1 && 
+	    $file =~ /$htmlFilterRegexp/i && 
+	    -f $self->htmlPath().$file) {
+
+	    # read file
+	    my $path = $self->htmlPath().$file;
+	    my $data = $self->readFile($path);
+
+	    # is redirect?
+	    my $linkExtractor = HTML::LinkExtractor->new();
+	    $linkExtractor->parse(\$data);
+	    my $links = $linkExtractor->links();
+	    foreach my $link (@$links) {
+		next unless (exists($link->{'http-equiv'}) && $link->{'http-equiv'} =~ /Refresh/i );
+		delete($urls{$file});
+		last;
+	    }
+	}
+    }
 }
 
 sub mediawikiOptim {
