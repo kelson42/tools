@@ -49,7 +49,7 @@ foreach my $page (@pages) {
     my $month = $values[3] || "";
     $month =~ s/_/ /g;
     print $month."\n";
-    my $content = $site->downloadPage($page)."\n"; 
+    my ($content, $revision) = $site->downloadPage($page)."\n"; 
 
     my $regexp = "(<s>|)[ ]*({{[w|W]P1ps[ |_]opin[i]{0,1}on\\|.*}})";
     while ($content =~ /$regexp/g ) {
