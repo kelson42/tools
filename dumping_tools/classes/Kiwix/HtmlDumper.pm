@@ -29,20 +29,24 @@ sub dump {
 
     # remove old 
     $cmd = "rm -rf ".$self->mediawikiPath()."/static/"; `$cmd`;
+    $self->log("info", $cmd); `$cmd`;
 
     # start PHP dump command
     $cmd = "php ".$self->mediawikiPath()."/extensions/DumpHTML/dumpHTML.php -k kiwixoffline";
     $self->log("info", $cmd); `$cmd`;
 
     # remove unsed stuff
+    $self->log("info", "Remove a few unused files...");
     $cmd = "rm ".$self->mediawikiPath()."/static/skins/monobook/headbg.jpg" ; `$cmd`;
     $cmd = "rm ".$self->mediawikiPath()."/static/*version" ; `$cmd`;
     $cmd = "rm ".$self->mediawikiPath()."/static/raw/gen.css" ; `$cmd`;
     $cmd = "rm -rf ".$self->mediawikiPath()."/static/misc" ; `$cmd`;
 
     # copy the static rep to the destination folder
-    $cmd = "rm -rf  ".$self->htmlPath() ; `$cmd`;
-    $cmd = "cp -rf ".$self->mediawikiPath()."/static/ ".$self->htmlPath()."/" ; `$cmd`;
+    $cmd = "rm -rf  ".$self->htmlPath() ;
+    $self->log("info", $cmd); `$cmd`;
+    $cmd = "cp -rf ".$self->mediawikiPath()."/static/ ".$self->htmlPath()."/" ;
+    $self->log("info", $cmd); `$cmd`;
 
     # mv the 'article' one level deeper
     $cmd = "mkdir ".$self->htmlPath()."/html/" ; `$cmd`;
