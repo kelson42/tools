@@ -32,13 +32,13 @@ if (!$language || !$chartsDirectory) {
 my $enSite = MediaWiki->new();
 $enSite->hostname("en.wikipedia.org");
 $enSite->path("w");
-my %enNamespaces = $enSite->allNamespaces();
+my %enNamespaces = $enSite->namespaces();
 
 # get the namespace in the language
 my $langSite = MediaWiki->new();
 $langSite->hostname("$language.wikipedia.org");
 $langSite->path("w");
-my %langNamespaces = $langSite->allNamespaces();
+my %langNamespaces = $langSite->namespaces();
 
 # Build exclusion regex
 my $regex = "^(";
