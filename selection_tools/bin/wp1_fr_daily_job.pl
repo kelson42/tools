@@ -21,7 +21,7 @@ GetOptions('username=s' => \$username,
 	   'password=s' => \$password);
 
 if (!$username || !$password) {
-    print "usage: ./wp1_fr_dailz_job.pl --usernamey=foobar --password=mypass\n";
+    print "usage: ./wp1_fr_daily_job.pl --usernamey=foobar --password=mypass\n";
     exit;
 };
 
@@ -49,7 +49,8 @@ foreach my $page (@pages) {
     my $month = $values[3] || "";
     $month =~ s/_/ /g;
     print $month."\n";
-    my ($content, $revision) = $site->downloadPage($page)."\n"; 
+
+    my ($content, $revision) = $site->downloadPage($page); 
 
     my $regexp = "(<s>|)[ ]*({{[w|W]P1ps[ |_]opin[i]{0,1}on\\|.*}})";
     while ($content =~ /$regexp/g ) {
