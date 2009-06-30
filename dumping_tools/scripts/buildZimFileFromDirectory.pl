@@ -62,6 +62,18 @@ unless (-d $htmlPath) {
 # remove the ".zim" at the end of the zimFilePath
 $zimFilePath =~ s/\.zim$//;
 
+# check welcome page format
+if (substr($welcomePage, 0, 1) eq '.' || substr($welcomePage, 0, 1) eq '/') {
+    print(STDERR "The welcomePage parameter is a path relative to the htmlPath parameter. It can not start with '.' or a '/'.\n");
+    exit;
+}
+
+# check if the welcomePage exists
+unless ( -f $htmlPath.$welcomePage) {
+    print(STDERR "The file '$htmlPath$welcomePage' does not exist.\n");
+    exit;    
+}
+
 # initialization
 my $indexer = Kiwix::ZimIndexer->new();
 $indexer->logger($logger);
