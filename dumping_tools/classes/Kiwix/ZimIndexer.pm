@@ -127,11 +127,12 @@ sub getUrlCounts {
 	    my $links = $linkExtractor->links();
 	    foreach my $link (@$links) {
 		next unless (exists($link->{'http-equiv'}) && $link->{'http-equiv'} =~ /Refresh/i );
-		delete($urls{$file});
+		delete($urls{$file}) unless ($file eq $welcomePage);
 		last;
 	    }
 	}
     }
+
 }
 
 sub mediawikiOptim {
@@ -156,6 +157,7 @@ sub computeNewUrls {
     # Special code to user only one resolution of a picutre in case of a Mediawiki HTML dump
     my $normalImageFakeSize = 424242;
     my $imageRegex = '^.*\/([\d]+px\-|)([^\/]*)\.(png|jpg|jpeg)$';
+
     if ($self->mediawikiOptim()) {
 	
 	# Get the best resolution for each picture
