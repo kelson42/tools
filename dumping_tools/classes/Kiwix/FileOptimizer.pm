@@ -87,7 +87,8 @@ sub optimizePng {
     my $file = shift;
     
     my $bin = $self->optPngPath();
-    
+    $file =~ s/`/\\`/mg;
+
     `$bin "$file"`;
 }
 
@@ -96,7 +97,8 @@ sub optimizeGif {
     my $file = shift;
     
     my $bin = $self->optGifPath();
-    
+    $file =~ s/`/\\`/mg;
+
     `$bin "$file"`;
 }
 
@@ -105,7 +107,8 @@ sub optimizeJpg {
     my $file = shift;
     
     my $bin = $self->optJpgPath();
-    
+    $file =~ s/`/\\`/mg;
+
     `$bin "$file"`;
 }
 
