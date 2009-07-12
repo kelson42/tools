@@ -16,7 +16,7 @@ sub new {
 				  );
     unless ($callback) {
         Carp::croak("Kiwix::UrlRewriter callback is a required parameter");
-      }
+    }
     
     $self->{resolvelink_callback} = $callback;
 

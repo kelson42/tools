@@ -31,6 +31,7 @@ my $file;
 my $htmlFilterRegexp = "^.*\.(html|htm)\$";
 my $jsFilterRegexp = "^.*\.(js)\$";
 my $cssFilterRegexp = "^.*\.(css)\$";
+my $rewriteCDATA;
 
 my %bestResolutionSizes;
 my %bestResolutionUrls;
@@ -100,8 +101,20 @@ sub getUrlCounts {
 	# push the link contained in the file
 	my $linkExtractor = HTML::LinkExtor->new();
 	my $links = $linkExtractor->parse_file($file)->{links};
-	foreach my $link (@$links) {
-	    my $url = $link->[2];
+	
+	#@links
+	my @links;
+	@links = map { $_->[2] } @$links;
+
+	# CDATA links
+	if ($self->rewriteCDATA) {
+	    my $data = $self->readFile($file);
+	    while ($data =~ /\@import\ \"([^\"]+)\"/gm) {
+		push(@links, $1);
+	    }
+	}
+
+	foreach my $url (@links) {
 	    if (isLocalUrl($url) && !isSelfUrl($url)) {
 		$url = removeLocalTagFromUrl($url);
 		$url =~ s/\n//g;
@@ -829,6 +842,23 @@ sub copyFileToDb {
 	
 	my $rewriter = new Kiwix::UrlRewriter(\&urlRewriterCallback);
 	$data = $rewriter->resolve($data);
+	
+	# CDATA rewriting
+	if ($self->rewriteCDATA()) {
+	    my %links;
+	    
+	    # Get links to rewrite
+	    while ($data =~ /\@import\ \"([^\"]+)\"/gm) {
+		$links{$1} = 1;
+            }
+
+	    # Rewrite them
+	    foreach my $link (keys(%links)) {
+		my $newLink = urlRewriterCallback($link);
+		$link = quotemeta($link);
+		$data =~ s/$link/$newLink/g;
+	    }
+	}
     }
 
     # data
@@ -947,6 +977,12 @@ sub dbUser {
     my $self = shift;
     if (@_) { $dbUser = shift } 
     return $dbUser;
+}
+
+sub rewriteCDATA {
+    my $self = shift;
+    if (@_) { $rewriteCDATA = shift } 
+    return $rewriteCDATA;
 }
 
 sub dbPassword {

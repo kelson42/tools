@@ -24,6 +24,7 @@ my $zimFilePath="./articles";
 my $dbType="postgres";
 my $dbUser="kiwix";
 my $dbPassword="";
+my $rewriteCDATA;
 my $mediawikiOptim;
 my $dbName=time();
 
@@ -35,11 +36,12 @@ GetOptions('indexerPath=s' => \$indexerPath,
 	   'dbUser=s' => \$dbUser,
 	   'dbPassword=s' => \$dbPassword,
 	   'mediawikiOptim' => \$mediawikiOptim,
+	   'rewriteCDATA' => \$rewriteCDATA,
 	   'welcomePage=s' => \$welcomePage,
 	   );
 
 if (!$htmlPath || !$welcomePage ) {
-    print "usage: ./builZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html [--dbUser=foobar] [--dbPassword=testpass] [--indexerPath=./zimindexer] [--zimFilePath=articles.zim] [--dbName=kiwix_db] [--mediawikiOptim]\n";
+    print "usage: ./builZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html [--dbUser=foobar] [--dbPassword=testpass] [--indexerPath=./zimindexer] [--zimFilePath=articles.zim] [--dbName=kiwix_db] [--rewriteCDATA] [--mediawikiOptim]\n";
     exit;
 }
 
@@ -86,6 +88,7 @@ $indexer->dbUser($dbUser);
 $indexer->dbPassword($dbPassword);
 $indexer->welcomePage($welcomePage);
 $indexer->mediawikiOptim($mediawikiOptim);
+$indexer->rewriteCDATA($rewriteCDATA);
 
 # prepare urls rewreting
 $logger->info("Starting ZIM building process.");
