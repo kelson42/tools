@@ -16,6 +16,9 @@ use Data::Dumper;
 use Getopt::Long;
 use Kiwix::PathExplorer;
 use MediaWiki;
+use Encode 'is_utf8';
+use Encode 'encode_utf8';
+use Encode 'decode_utf8';
 
 my $chartsDirectory;
 my $language;
@@ -104,9 +107,15 @@ foreach my $file ( @files ) {
 	$name =~ s/^[_]+//g;
 	$name =~ s/#.*//;
 	
+	# Check if the $name if utf8 valid
+	next unless (encode_utf8($name));
+		     
+	# Set the unicode flag
+	$name = decode_utf8($name);
+	
 	# Apply the filter to remove images, etc.
 	next if ($name =~ /^$regex/);
-
+	
 	# Make the incrementation
 	$urls{$name} += $count;
     }
