@@ -109,9 +109,10 @@ foreach my $file ( @files ) {
 	
 	# Check if the $name if utf8 valid
 	next unless (encode_utf8($name));
-		     
+	     
 	# Set the unicode flag
-	$name = decode_utf8($name);
+	#$name = decode_utf8($name); seems to be to strict
+	$name = Encode::decode('UTF-8', $name);
 	
 	# Apply the filter to remove images, etc.
 	next if ($name =~ /^$regex/);
