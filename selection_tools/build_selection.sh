@@ -4,7 +4,7 @@ LANG=C
 LANGUAGE=$1
 WIKI=$LANGUAGE"wiki"
 
-if [ "$WIKI" = '' ];
+if [ "$LANGUAGE" = '' ];
 then
     echo "usage: WP1.sh <lang> (en for enwiki for example)"
     exit
