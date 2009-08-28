@@ -115,7 +115,7 @@ foreach my $file ( @files ) {
 	$name = Encode::decode('UTF-8', $name);
 	
 	# Apply the filter to remove images, etc.
-	next if ($name =~ /^$regex/);
+	next if (!$name || $name =~ /^$regex/);
 	
 	# Make the incrementation
 	$urls{$name} += $count;
@@ -128,7 +128,9 @@ foreach my $file ( @files ) {
 
 # Sort desc all urls and print them
 foreach my $url (sort { $urls{$b} <=> $urls{$a} } keys(%urls)) {
-    print $url." ".$urls{$url}."\n";
+    if ($urls{$url} && $urls{$url} > 10) {
+	print $url." ".$urls{$url}."\n";
+    }
 }
 
 
