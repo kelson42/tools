@@ -14,6 +14,7 @@ my $mimeDetector;
 my $optPngPath;
 my $optGifPath;
 my $optJpgPath;
+my $removeTitleTag;
 
 sub new {
     my $class = shift;
@@ -125,7 +126,9 @@ sub optimizeHtml {
     $$data =~ s/rel=\"nofollow\"//ig;
     
     # remove titles
-    $$data =~ s/title=\"[^\"]*\"//ig;
+    if ($self->removeTitleTag) {
+	$$data =~ s/title=\"[^\"]*\"//ig;
+    }
     
     # remove spaces
     $$data =~ s/[ ]+\/>/\/>/ig;
@@ -172,6 +175,12 @@ sub mimeDetector {
     my $self = shift;
     if (@_) { $mimeDetector = shift }
     return $mimeDetector;
+}
+
+sub removeTitleTag {
+    my $self = shift;
+    if (@_) { $removeTitleTag = shift }
+    return $removeTitleTag;
 }
 
 sub optPngPath {

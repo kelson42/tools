@@ -17,14 +17,16 @@ my $logger = Log::Log4perl->get_logger("optimizeContents.pl");
 
 # get the params
 my $contentPath;
+my $removeTitleTag;
 
 # Get console line arguments
 GetOptions(
-	   'contentPath=s' => \$contentPath
+	   'contentPath=s' => \$contentPath,
+	   'removeTitleTag' => \$removeTitleTag,
 	   );
 
 if (!$contentPath) {
-    print "usage: ./optimizeContents.pl --contentPath=./html\n";
+    print "usage: ./optimizeContents.pl --contentPath=./html [--removeTitleTag]\n";
     exit;
 }
 
@@ -32,4 +34,5 @@ if (!$contentPath) {
 my $optimizer = Kiwix::FileOptimizer->new();
 $optimizer->logger($logger);
 $optimizer->contentPath($contentPath);
+$optimizer->removeTitleTag($removeTitleTag);
 $optimizer->optimize();
