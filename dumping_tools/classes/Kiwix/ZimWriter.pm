@@ -31,6 +31,7 @@ my $file;
 my $htmlFilterRegexp = "^.*\.(html|htm)\$";
 my $jsFilterRegexp = "^.*\.(js)\$";
 my $cssFilterRegexp = "^.*\.(css)\$";
+my $rewriteCDATA;
 
 my %bestResolutionSizes;
 my %bestResolutionUrls;
@@ -98,11 +99,24 @@ sub getUrlCounts {
 	# add html path
 	$file = $self->htmlPath().$file;
 
-	# push the link contained in the file
-	my $linkExtor = HTML::LinkExtor->new();
-	my $links = $linkExtor->parse_file($file)->{links};
-	foreach my $link (@$links) {
-	    my $url = $link->[2];
+	# get the links
+	my $linkExtractor = HTML::LinkExtor->new();
+	my $links = $linkExtractor->parse_file($file)->{links};
+
+	#@links
+	my @links;
+	@links = map { $_->[2] } @$links;
+
+	# CDATA links
+	if ($self->rewriteCDATA) {
+	    my $data = $self->readFile($file);
+	        while ($data =~ /\@import\ \"([^\"]+)\"/gm) {
+		    push(@links, $1);
+		}
+	}
+
+	# Push the link contained in the file
+	foreach my $url (@links) {
 	    if (isLocalUrl($url) && !isSelfUrl($url)) {
 		$url = removeLocalTagFromUrl($url);
 		$url =~ s/\n//g;
@@ -115,7 +129,7 @@ sub getUrlCounts {
 	my $data = $self->readFile($file);
 
 	# get additional keywords
-	my $linkExtractor = HTML::LinkExtractor->new();
+	$linkExtractor = HTML::LinkExtractor->new();
 	$linkExtractor->parse(\$data);
 	$links = $linkExtractor->links();
 	foreach my $link (@$links) {
@@ -855,6 +869,23 @@ sub copyFileToDb {
 	
 	my $rewriter = new Kiwix::UrlRewriter(\&urlRewriterCallback);
 	$data = $rewriter->resolve($data);
+	
+	# CDATA rewriting
+	if ($self->rewriteCDATA()) {
+	    my %links;
+	    
+	    # Get links to rewrite
+	    while ($data =~ /\@import\ \"([^\"]+)\"/gm) {
+		$links{$1} = 1;
+	    }
+	    
+	    # Rewrite them
+	    foreach my $link (keys(%links)) {
+		my $newLink = urlRewriterCallback($link);
+		$link = quotemeta($link);
+		$data =~ s/$link/$newLink/g;
+	    }
+	}
     }
 
     # data
@@ -977,6 +1008,12 @@ sub dbType {
     my $self = shift;
     if (@_) { $dbType = shift } 
     return $dbType;
+}
+
+sub rewriteCDATA {
+    my $self = shift;
+    if (@_) { $rewriteCDATA = shift } 
+    return $rewriteCDATA;
 }
 
 sub dbUser {
