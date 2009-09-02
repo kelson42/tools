@@ -8,7 +8,7 @@ use strict;
 use warnings;
 use Getopt::Long;
 use Data::Dumper;
-use Kiwix::ZimIndexer;
+use Kiwix::ZimWriter;
 use Whereis;
 
 # log
@@ -17,7 +17,7 @@ Log::Log4perl->init("../conf/log4perl");
 my $logger = Log::Log4perl->get_logger("builZimFileFromDirectory.pl");
 
 # get the params
-my $indexerPath;
+my $writerPath;
 my $htmlPath;
 my $welcomePage;
 my $zimFilePath="./articles";
@@ -29,7 +29,7 @@ my $mediawikiOptim;
 my $dbName=time();
 
 # Get console line arguments
-GetOptions('indexerPath=s' => \$indexerPath, 
+GetOptions('writerPath=s' => \$writerPath, 
 	   'htmlPath=s' => \$htmlPath,
 	   'zimFilePath=s' => \$zimFilePath,
 	   'dbName=s' => \$dbName,
@@ -41,18 +41,18 @@ GetOptions('indexerPath=s' => \$indexerPath,
 	   );
 
 if (!$htmlPath || !$welcomePage ) {
-    print "usage: ./builZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html [--dbUser=foobar] [--dbPassword=testpass] [--indexerPath=./zimindexer] [--zimFilePath=articles.zim] [--dbName=kiwix_db] [--rewriteCDATA] [--mediawikiOptim]\n";
+    print "usage: ./builZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html [--dbUser=foobar] [--dbPassword=testpass] [--writerPath=./zimWriter] [--zimFilePath=articles.zim] [--dbName=kiwix_db] [--rewriteCDATA] [--mediawikiOptim]\n";
     exit;
 }
 
-# try to detect the zimindexer path or test it (if given)
-if ($indexerPath) {
-    unless (-x $indexerPath) {
-	$logger->error("The zim indexer '$indexerPath' does not exist or is not executable.");
+# try to detect the zimwriter path or test it (if given)
+if ($writerPath) {
+    unless (-x $writerPath) {
+	$logger->error("The zim writer '$writerPath' does not exist or is not executable.");
 	exit;
     }
 } else {
-    $indexerPath = whereis("zimwriter");
+    $writerPath = whereis("zimwriter");
 }
 
 # test the html directory
@@ -77,27 +77,27 @@ unless ( -f $htmlPath.$welcomePage) {
 }
 
 # initialization
-my $indexer = Kiwix::ZimIndexer->new();
-$indexer->logger($logger);
-$indexer->indexerPath($indexerPath);
-$indexer->htmlPath($htmlPath);
-$indexer->zimFilePath($zimFilePath);
-$indexer->dbType($dbType);
-$indexer->dbName($dbName);
-$indexer->dbUser($dbUser);
-$indexer->dbPassword($dbPassword);
-$indexer->welcomePage($welcomePage);
-$indexer->mediawikiOptim($mediawikiOptim);
-$indexer->rewriteCDATA($rewriteCDATA);
+my $writer = Kiwix::ZimWriter->new();
+$writer->logger($logger);
+$writer->writerPath($writerPath);
+$writer->htmlPath($htmlPath);
+$writer->zimFilePath($zimFilePath);
+$writer->dbType($dbType);
+$writer->dbName($dbName);
+$writer->dbUser($dbUser);
+$writer->dbPassword($dbPassword);
+$writer->welcomePage($welcomePage);
+$writer->mediawikiOptim($mediawikiOptim);
+$writer->rewriteCDATA($rewriteCDATA);
 
 # prepare urls rewreting
 $logger->info("Starting ZIM building process.");
-$indexer->prepareUrlRewriting();
+$writer->prepareUrlRewriting();
 
 # loads the data from the directory to the db
-$indexer->buildDatabase();
-$indexer->buildZimFile();
+$writer->buildDatabase();
+$writer->buildZimFile();
 
 # delete database
-$indexer->deleteDb();
+$writer->deleteDb();
 
