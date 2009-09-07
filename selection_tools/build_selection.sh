@@ -6,7 +6,7 @@ WIKI=$LANGUAGE"wiki"
 
 if [ "$LANGUAGE" = '' ];
 then
-    echo "usage: WP1.sh <lang> (en for enwiki for example)"
+    echo "usage: WP1.sh <lang> (en for 'en' for example)"
     exit
 fi
 
