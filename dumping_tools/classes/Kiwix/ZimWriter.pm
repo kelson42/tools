@@ -143,8 +143,8 @@ sub getUrlCounts {
 		if ($data =~ /<title>(.*)<\/title>/i ) {
 		    my $title = $1;
 		    if ($title) {
-			$additionalKeywords{$target} = ($additionalKeywords{$target} || " ").$title." ";
-			print $title." -> ".$target."\n";
+			$additionalKeywords{$target} = ($additionalKeywords{$target} ? $additionalKeywords{$target}.", " : "").$title;
+			$self->log("info", "New 'redirect keyword' for '$target' : '$title'");
 		    }
 		}
 		last;
@@ -891,12 +891,17 @@ sub copyFileToDb {
     # data
     if (!$hash{redirect}) {
 
-	# if necessary deal with additional keyword
-	if (exists($additionalKeywords{substr($file, length($htmlPath))})) {
+	# if necessary deal with additional keywords
+	if ($hash{mimetype} eq "text/html" && exists($additionalKeywords{substr($file, length($htmlPath))})) {
 	    if ($data =~ /(<meta[ ]+name=[\"|\']{1}keywords[\"|\']{1}[ ]+content=[\"|\']{1}.*)([\"|\']{1})/i ) {
-		my $replacement = $1."\Q".$additionalKeywords{substr($file, length($htmlPath))}."\E".$2;
+		my $replacement = $1."\, \Q".$additionalKeywords{substr($file, length($htmlPath))}."\E".$2;
 		$data =~ s/<meta[ ]+name=[\"|\']{1}keywords[\"|\']{1}[ ]+content=[\"|\']{1}.*[\"|\']{1}/$replacement/i;
-		print $data."\n";;
+		$self->log("info", "Put following additional keywords to '".substr($file, length($htmlPath))."': '".$additionalKeywords{substr($file, length($htmlPath))}."'");
+	    } else {
+
+		my $replacement = "<head><meta name=\"keywords\" content=\"\Q".$additionalKeywords{substr($file, length($htmlPath))}."\E\"\ \/>";
+		$data =~ s/<head>/$replacement/i;
+		$self->log("info", "Creating additional keywords to '".substr($file, length($htmlPath))."': '".$additionalKeywords{substr($file, length($htmlPath))}."'");		
 	    }
 	}
 
