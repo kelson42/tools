@@ -76,7 +76,9 @@ sub dump {
 	    # only img links
 	    next unless $tag eq 'img';
 	    my $src = $$Link{src};
-	    $src =~ s/\.\.\/\.\.\/\.\.\/\.\.\/\.\.\///;
+	    print $src."\n";
+	    $src =~ s/\.\.\///g;
+	    print $src."\n";
 	    $imgs{$src} = 1;
 	} 
     }
