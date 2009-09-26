@@ -37,7 +37,6 @@ sub dump {
 
     # remove unsed stuff
     $self->log("info", "Remove a few unused files...");
-    $cmd = "rm ".$self->mediawikiPath()."/static/skins/monobook/headbg.jpg" ; `$cmd`;
     $cmd = "rm ".$self->mediawikiPath()."/static/*version" ; `$cmd`;
     $cmd = "rm ".$self->mediawikiPath()."/static/raw/gen.css" ; `$cmd`;
     $cmd = "rm -rf ".$self->mediawikiPath()."/static/misc" ; `$cmd`;
@@ -52,8 +51,9 @@ sub dump {
     $cmd = "mkdir ".$self->htmlPath()."/html/" ; `$cmd`;
     $cmd = "mv ".$self->htmlPath()."/articles ".$self->htmlPath()."/html/"  ; `$cmd`;
     $cmd = "mv ".$self->htmlPath()."/index.html ".$self->htmlPath()."/html/"  ; `$cmd`;
-    $cmd = "mv ".$self->htmlPath()."/raw ".$self->htmlPath()."/html/"  ; `$cmd`;
     $cmd = "mv ".$self->htmlPath()."/skins ".$self->htmlPath()."/html/"  ; `$cmd`;
+    $cmd = "cp -r ".$self->htmlPath()."/raw ".$self->htmlPath()."/html/skins/"  ; `$cmd`;
+    $cmd = "mv ".$self->htmlPath()."/raw ".$self->htmlPath()."/html/"  ; `$cmd`;
 
     my $explorer = new Kiwix::PathExplorer();
     $explorer->path($self->htmlPath());

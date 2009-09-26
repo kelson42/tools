@@ -89,6 +89,23 @@ sub getUrlCounts {
     my $self = shift;
 
     foreach my $file (keys(%urls)) {
+
+	# deal with the css
+	if ($file =~ /$cssFilterRegexp/i) {
+	    $file = $self->htmlPath().$file;
+	    my $data = $self->readFile($file);
+	    while ($data =~ /url\([\"\']*(.*\.)(png|gif|jpg|jpeg)[\"\']*\)/gm) {
+		my $url = $1.$2;
+		if ($url =~ /\:\/\// ) {
+		    $self->log("warn", "There is an CSS online picture dependence in ".$file);
+		} else {
+		    $self->incrementCount( getAbsoluteUrl($file, $self->htmlPath(), $url));
+		}
+	    }
+	    
+	    next;
+	}
+
 	# only html
 	unless ($file =~ /$htmlFilterRegexp/i ) {
 	    next;
@@ -902,6 +919,20 @@ sub copyFileToDb {
 		my $replacement = "<head><meta name=\"keywords\" content=\"\Q".$additionalKeywords{substr($file, length($htmlPath))}."\E\"\ \/>";
 		$data =~ s/<head>/$replacement/i;
 		$self->log("info", "Creating additional keywords to '".substr($file, length($htmlPath))."': '".$additionalKeywords{substr($file, length($htmlPath))}."'");		
+	    }
+	}
+
+	# deal with CSS pictures
+	if ($hash{mimetype} eq "text/css") {
+	    while ($data =~ /url\([\"\']*(.*\.)(png|gif|jpg|jpeg)[\"\']*\)/gm) {
+		my $url = $1.$2;
+		unless ($url =~ /\:\/\// ) {
+		    my $absUrl = getAbsoluteUrl($file, $htmlPath, $url);
+		    if ($urls{$absUrl}) {
+			my $newUrl = "zim://".getNamespace($absUrl)."/".$urls{$absUrl};
+			$data =~ s/\Q$url\E/$newUrl/i;
+		    }
+		}
 	    }
 	}
 
