@@ -37,6 +37,7 @@ sub dump {
 
     # remove unsed stuff
     $self->log("info", "Remove a few unused files...");
+    $cmd = "rm ".$self->mediawikiPath()."/static/skins/monobook/headbg.jpg" ; `$cmd`;
     $cmd = "rm ".$self->mediawikiPath()."/static/*version" ; `$cmd`;
     $cmd = "rm ".$self->mediawikiPath()."/static/raw/gen.css" ; `$cmd`;
     $cmd = "rm -rf ".$self->mediawikiPath()."/static/misc" ; `$cmd`;
