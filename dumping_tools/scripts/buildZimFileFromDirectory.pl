@@ -23,6 +23,8 @@ my $welcomePage;
 my $zimFilePath="./articles";
 my $dbType="postgres";
 my $dbUser="kiwix";
+my $dbHost="localhost";
+my $dbPort="5433";
 my $dbPassword="";
 my $rewriteCDATA;
 my $mediawikiOptim;
@@ -33,6 +35,8 @@ GetOptions('writerPath=s' => \$writerPath,
 	   'htmlPath=s' => \$htmlPath,
 	   'zimFilePath=s' => \$zimFilePath,
 	   'dbName=s' => \$dbName,
+	   'dbPort=s' => \$dbPort,
+	   'dbHost=s' => \$dbHost,
 	   'dbUser=s' => \$dbUser,
 	   'dbPassword=s' => \$dbPassword,
 	   'mediawikiOptim' => \$mediawikiOptim,
@@ -41,7 +45,7 @@ GetOptions('writerPath=s' => \$writerPath,
 	   );
 
 if (!$htmlPath || !$welcomePage ) {
-    print "usage: ./builZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html [--dbUser=foobar] [--dbPassword=testpass] [--writerPath=./zimWriter] [--zimFilePath=articles.zim] [--dbName=kiwix_db] [--rewriteCDATA] [--mediawikiOptim]\n";
+    print "usage: ./builZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html [--dbUser=foobar] [--dbPassword=testpass] [--writerPath=./zimWriter] [--zimFilePath=articles.zim] [--dbName=kiwix_db] [--dbPort=5433] [==dbHost=localhost] [--rewriteCDATA] [--mediawikiOptim]\n";
     exit;
 }
 
@@ -85,6 +89,8 @@ $writer->zimFilePath($zimFilePath);
 $writer->dbType($dbType);
 $writer->dbName($dbName);
 $writer->dbUser($dbUser);
+$writer->dbPort($dbPort);
+$writer->dbHost($dbHost);
 $writer->dbPassword($dbPassword);
 $writer->welcomePage($welcomePage);
 $writer->mediawikiOptim($mediawikiOptim);

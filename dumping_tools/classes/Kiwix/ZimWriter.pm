@@ -24,6 +24,8 @@ my $dbType = "postgres"; # or sqlite
 my $dbName;
 my $dbUser;
 my $dbPassword;
+my $dbPort = "5433";
+my $dbHost = "localhost";
 my $mediawikiOptim;
 my %urls;
 my @files;
@@ -423,7 +425,7 @@ sub buildZimFile {
     if ($self->isSqliteDb()) {
 	$command = "$writerPath -s 1024 --db \"sqlite:$dbName\" $zimFilePath";
     } else {
-	$command = "$writerPath -s 1024 --db \"postgresql:dbname=$dbName user=kiwix\" $zimFilePath";
+	$command = "$writerPath -s 1024 --db \"postgresql:dbname=$dbName user=kiwix port=$dbPort\" $zimFilePath";
     }
 
     # call the zim writer
@@ -757,7 +759,7 @@ sub connectToDb {
     if ($self->isSqliteDb()) {
 	$self->dbHandler(DBI->connect("dbi:SQLite:dbname=".$dbName,"","", {AutoCommit => 1, PrintError => 1}));
     } else {
-	$self->dbHandler(DBI->connect("dbi:Pg:dbname=".$dbName, $self->dbUser(), $self->dbPassword(), {AutoCommit => 1, PrintError => 1}));
+	$self->dbHandler(DBI->connect("dbi:Pg:dbname=".$dbName.";host=".$dbHost.";port=".$dbPort, $self->dbUser(), $self->dbPassword(), {AutoCommit => 1, PrintError => 1}));
     }
 
     # set unicode flag
@@ -1032,6 +1034,18 @@ sub dbName {
     my $self = shift;
     if (@_) { $dbName = shift } 
     return $dbName;
+}
+
+sub dbHost {
+    my $self = shift;
+    if (@_) { $dbHost = shift } 
+    return $dbHost;
+}
+
+sub dbPort {
+    my $self = shift;
+    if (@_) { $dbPort = shift } 
+    return $dbPort;
 }
 
 sub dbHandler {
