@@ -931,7 +931,7 @@ sub copyFileToDb {
 		unless ($url =~ /\:\/\// ) {
 		    my $absUrl = getAbsoluteUrl($file, $htmlPath, $url);
 		    if ($urls{$absUrl}) {
-			my $newUrl = "zim://".getNamespace($absUrl)."/".$urls{$absUrl};
+			my $newUrl = "/".getNamespace($absUrl)."/".$urls{$absUrl};
 			$data =~ s/\Q$url\E/$newUrl/i;
 		    }
 		}
