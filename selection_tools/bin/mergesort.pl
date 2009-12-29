@@ -3,10 +3,10 @@ binmode STDOUT, ":utf8";
 binmode STDIN, ":utf8";
 binmode STDERR, ":utf8";
 
-use utf8;
+#use utf8;
 use strict;
 use warnings;
-use Encode;
+#use Encode;
 use Data::Dumper;
 use Compress::Bzip2;
 
@@ -31,7 +31,14 @@ sub readLine {
     my $index = shift;
     $fhs[$index]->bzreadline($line);
     $line =~ s/\r|\n//g;
-    my $key = $line;
+
+    my $key;
+    if ($line =~ /^([\w|\.]+ [^ ]+) ([\d]+) [\d]+/) {
+	$key = $1;
+    } else {
+	return "" unless ($line);
+	die "malformed line";
+    }
 
     unless (exists($fhsMap{$key})) {
 	$fhsMap{$key} = [()];
@@ -53,6 +60,7 @@ sub fillBufferWith {
     return if ($key eq "");
 
     for (my $i=0; $i<$fileCount; $i++) {
+#	print "comparing '".$key."' to '".$sortedBuffer[$i]."' \n";
 	if (!$sortedBuffer[$i] || $key lt $sortedBuffer[$i]) {
 	    splice(@sortedBuffer, $i, 0, $key);
 	    last;
@@ -63,8 +71,12 @@ sub fillBufferWith {
 # Write line
 sub writeLine {
     my $key = shift(@sortedBuffer);
+    
     print shift(@{$linesMap{$key}})."\n";
-    fillBufferWith(shift(@{$fhsMap{$key}}))
+    delete($linesMap{$key}) unless (scalar(@{$linesMap{$key}}));
+
+    fillBufferWith(shift(@{$fhsMap{$key}}));
+    delete($fhsMap{$key}) unless (scalar(@{$fhsMap{$key}}));
 }
 
 # Initiate buffer
@@ -76,5 +88,6 @@ sub initBuffer {
 
 initBuffer();
 do {
+#    print Dumper(\@sortedBuffer);
     writeLine();
 } while (scalar(@sortedBuffer));
