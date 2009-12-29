@@ -1,5 +1,7 @@
 #!/bin/sh
 
+export LC_ALL=C
+
 stop=`curl http://dammit.lt/wikistats/ 2> /dev/null | grep ".gz" | sed s/\<tr\>\<td\ class=\"n\"\>\<a\ href=\"// | sed s/\".*// | sed '1q' | cut -d "-" -f2`
 
 echo "Stop date is $stop";
