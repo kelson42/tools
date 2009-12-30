@@ -60,7 +60,6 @@ sub fillBufferWith {
     return if ($key eq "");
 
     for (my $i=0; $i<$fileCount; $i++) {
-#	print "comparing '".$key."' to '".$sortedBuffer[$i]."' \n";
 	if (!$sortedBuffer[$i] || $key lt $sortedBuffer[$i]) {
 	    splice(@sortedBuffer, $i, 0, $key);
 	    last;
@@ -85,9 +84,9 @@ sub initBuffer {
 	fillBufferWith($i);
     }
 }
-
 initBuffer();
+
+# Run through the whole files
 do {
-#    print Dumper(\@sortedBuffer);
     writeLine();
 } while (scalar(@sortedBuffer));
