@@ -836,9 +836,6 @@ sub copyFileToDb {
 	$hash{title} = $hash{url};
     }
 
-    # url is deprecated
-    $hash{title} = $hash{url};
-
     # url rewrite callback
     sub urlRewriterCallback {
 	my $url = shift;
