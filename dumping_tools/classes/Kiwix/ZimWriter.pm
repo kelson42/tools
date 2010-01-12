@@ -584,6 +584,8 @@ create table trivialwords
 sub createPostgresDbSchema {
     my $self = shift;
 
+    
+
     # create article table
     $self->executeSql("
 create table article
@@ -724,6 +726,7 @@ sub createDb {
     if ($self->isPostgresDb()) {
 	$ENV{'PGPASSWORD'} = $self->dbPassword();
 	`createdb -U $dbUser $dbName `;
+	`cat zim-postgresql.sql | psql -U $dbUser -d $dbName`;
     }
 }
 
@@ -785,7 +788,7 @@ sub buildDatabase {
     } 
 
     # create db schema
-    $self->createDbSchema();
+    #$self->createDbSchema();
 
     # fill the article table
     $self->fillDb();
