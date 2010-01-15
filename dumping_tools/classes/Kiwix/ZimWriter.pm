@@ -8,6 +8,7 @@ use Kiwix::MimeDetector;
 use Kiwix::UrlRewriter;
 use HTML::LinkExtor;
 use HTML::LinkExtractor;
+use HTML::Entities;
 use URI::Escape;
 use Math::BaseArith;
 use DBI qw(:sql_types);
@@ -160,7 +161,7 @@ sub getUrlCounts {
                 $target = uri_unescape($target);
 		$target = getAbsoluteUrl($file, $self->htmlPath(), $target);
 		if ($data =~ /<title>(.*)<\/title>/i ) {
-		    my $title = $1;
+		    my $title = decode_entities($1);
 		    if ($title) {
 			$additionalKeywords{$target} = ($additionalKeywords{$target} ? $additionalKeywords{$target}.", " : "").$title;
 			$self->log("info", "New 'redirect keyword' for '$target' : '$title'");
@@ -952,13 +953,14 @@ sub copyFileToDb {
     }
 
     # if no predefined mimetype
-    return unless (defined($mimeTypes{ $hash{mimetype} }));
+# NOT NECESSARY ANYMORE    return unless (defined($mimeTypes{ $hash{mimetype} }));
 
     $sth->bind_param(1, $hash{namespace});
     $sth->bind_param(2, $hash{title});
     $sth->bind_param(3, $hash{url});
     $sth->bind_param(4, $hash{redirect});
-    $sth->bind_param(5, $mimeTypes{ $hash{mimetype} });
+#    $sth->bind_param(5, $mimeTypes{ $hash{mimetype} });
+    $sth->bind_param(5, $hash{mimetype} );
     
     if ($self->isSqliteDb()) {
 	$sth->bind_param(6, $hash{data}, SQL_BLOB);
