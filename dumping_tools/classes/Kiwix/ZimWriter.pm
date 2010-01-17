@@ -55,6 +55,19 @@ my %mimeTypes = (
     "image/icon" => 9 
     );
 
+my %mimeTypesCompression = (
+    "text/html" => 1,
+    "text/plain" => 1,
+    "image/jpeg" => 0,
+    "image/png" => 0,
+    "image/tiff" => 1,
+    "text/css" => 1,
+    "image/gif" => 0,
+    "application/javascript" => 1,
+    "image/icon" => 0 
+    );
+
+
 sub new {
     my $class = shift;
     my $self = {};
@@ -791,6 +804,11 @@ sub buildDatabase {
     # create db schema
     #$self->createDbSchema();
 
+    # fill the mimetype table
+    foreach my $mimeType (keys(%mimeTypes)) {
+	$self->executeSql("insert into mimetype (id, mimetype, compress) values ('".$mimeTypes{$mimeType}."', '".$mimeType."', '".($mimeTypesCompression{$mimeType} ? "true"  : "false")."')");
+    }
+
     # fill the article table
     $self->fillDb();
 
@@ -805,7 +823,7 @@ sub buildDatabase {
     $self->executeSql("insert into zimfile (filename, mainpage) values ('".$self->zimFilePath()."', '".$welcomePage."')");
 
     # fill the zimarticle table
-    $self->executeSql("insert into zimarticles (zid, aid) select 1, aid from article");
+    $self->executeSql("insert into zimarticle (zid, aid) select 1, aid from article");
 
     # commit und disconnect
     $self->dbHandler()->disconnect();
@@ -953,14 +971,13 @@ sub copyFileToDb {
     }
 
     # if no predefined mimetype
-# NOT NECESSARY ANYMORE    return unless (defined($mimeTypes{ $hash{mimetype} }));
+    return unless (defined($mimeTypes{ $hash{mimetype} }));
 
     $sth->bind_param(1, $hash{namespace});
     $sth->bind_param(2, $hash{title});
     $sth->bind_param(3, $hash{url});
     $sth->bind_param(4, $hash{redirect});
-#    $sth->bind_param(5, $mimeTypes{ $hash{mimetype} });
-    $sth->bind_param(5, $hash{mimetype} );
+    $sth->bind_param(5, $mimeTypes{ $hash{mimetype} });
     
     if ($self->isSqliteDb()) {
 	$sth->bind_param(6, $hash{data}, SQL_BLOB);

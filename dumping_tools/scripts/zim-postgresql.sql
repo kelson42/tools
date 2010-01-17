@@ -1,3 +1,10 @@
+create table mimetype
+(
+  id           integer not null primary key,
+  mimetype     text not null,
+  compress     boolean not null
+);
+
 create table article
 (
   aid          serial  not null primary key,
@@ -5,11 +12,12 @@ create table article
   url          text    not null,
   title        text    not null,
   redirect     text,     -- title of redirect target
-  mimetype     text,
-  data         bytea
+  mimetype     integer,
+  data         bytea,
+  foreign key (mimetype) references mimetype
 );
 
-create unique index article_ix1 on article(namespace, title);
+create unique index article_ix1 on article(namespace, url);
 
 create table category
 (
@@ -18,7 +26,7 @@ create table category
   description  bytea   not null
 );
 
-create table categoryarticles
+create table categoryarticle
 (
   cid          integer not null,
   aid          integer not null,
@@ -37,7 +45,7 @@ create table zimfile
   foreign key (layoutpage) references article
 );
 
-create table zimarticles
+create table zimarticle
 (
   zid          integer not null,
   aid          integer not null,
