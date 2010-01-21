@@ -29,6 +29,7 @@ my $dbPort = "5433";
 my $dbHost = "localhost";
 my $mediawikiOptim;
 my %urls;
+my %deadUrls;
 my @files;
 my $file;
 my $htmlFilterRegexp = "^.*\.(html|htm)\$";
@@ -52,7 +53,9 @@ my %mimeTypes = (
     "text/css" => 5,
     "image/gif" => 6,
     "application/javascript" => 8,
-    "image/icon" => 9 
+    "image/icon" => 9,
+    "application/pdf" => 10,
+    "application/x-bittorrent" => 11
     );
 
 my %mimeTypesCompression = (
@@ -64,9 +67,10 @@ my %mimeTypesCompression = (
     "text/css" => 1,
     "image/gif" => 0,
     "application/javascript" => 1,
-    "image/icon" => 0 
+    "image/icon" => 0,
+    "application/pdf" => 1,
+    "application/x-bittorrent" => 0
     );
-
 
 sub new {
     my $class = shift;
@@ -221,7 +225,12 @@ sub checkDeadUrls {
     foreach my $url (keys(%urls)) {
 	unless (-f $self->htmlPath().$url) {
 	    $self->log("error", "[".$self->htmlPath()."]".$url." is a dead url. It should be removed.");
+	    $deadUrls{$url} = 1;
 	}
+    }
+
+    foreach my $url (keys(%deadUrls)) {
+	delete($urls{$url});
     }
 }
 
@@ -843,6 +852,10 @@ sub copyFileToDb {
 
     # mime-type
     $hash{mimetype} = $self->mimeDetector()->getMimeType($file);
+    if (!exists($mimeTypes{$hash{mimetype}}) || !exists($mimeTypesCompression{$hash{mimetype}})) {
+	print $hash{mimetype}.", mime-type from '".$file."' is not known...\n";
+	exit;
+    }
 
     # namespace
     $hash{namespace} = getNamespace($file);
@@ -876,8 +889,21 @@ sub copyFileToDb {
 		$absUrl = getAbsoluteUrl($file, $htmlPath, $url);
 	    }
 	    
+	    # check if all is OK with this url
+	    if (!getNamespace($absUrl) && !exists($deadUrls{$url})) {
+		print "Unable to get namesapce for url $absUrl and this is not a dead url.\n";
+		exit;
+	    }
+
+	    if (!exists($urls{$absUrl}) && !exists($deadUrls{$url})) {
+		print "Unable to get new url for url $absUrl and this is not a dead url.\n";
+		exit;
+	    }
+
+	    # compute the new url
 	    my $newUrl = "/".getNamespace($absUrl)."/".$urls{$absUrl};
 
+	    # Add the local anchor if necessary
 	    if ($url =~ /\#/ ) {
 		my @urlParts = split( /\#/, $url );
 		$newUrl .= "#".$urlParts[1];

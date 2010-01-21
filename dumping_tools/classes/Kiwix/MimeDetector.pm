@@ -16,6 +16,7 @@ sub new {
     bless($self, $class);
 
     $types->addType( MIME::Type->new(type=>'image/svg+xml', extensions=>['svg']) );
+    $types->addType( MIME::Type->new(type=>'application/x-bittorrent', extensions=>['torrent']) );
 
     return $self;
 }
