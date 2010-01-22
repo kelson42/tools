@@ -6,7 +6,6 @@ use Data::Dumper;
 use Kiwix::PathExplorer;
 use Kiwix::MimeDetector;
 use Kiwix::UrlRewriter;
-use HTML::LinkExtor;
 use HTML::LinkExtractor;
 use HTML::Entities;
 use URI::Escape;
@@ -55,7 +54,9 @@ my %mimeTypes = (
     "application/javascript" => 8,
     "image/icon" => 9,
     "application/pdf" => 10,
-    "application/x-bittorrent" => 11
+    "application/x-bittorrent" => 11,
+    "application/x-shockwave-flash" => 12,
+    "image/vnd.microsoft.icon" => 13
     );
 
 my %mimeTypesCompression = (
@@ -69,7 +70,9 @@ my %mimeTypesCompression = (
     "application/javascript" => 1,
     "image/icon" => 0,
     "application/pdf" => 1,
-    "application/x-bittorrent" => 0
+    "application/x-bittorrent" => 0,
+    "application/x-shockwave-flash" => 0,
+    "image/vnd.microsoft.icon" => 0
     );
 
 sub new {
@@ -135,62 +138,67 @@ sub getUrlCounts {
 
 	# add html path
 	$file = $self->htmlPath().$file;
+	
+	# Parse the file
+	my $linkExtractor = HTML::LinkExtractor->new();
+	$linkExtractor->parse($file);
+	my $links = $linkExtractor->links();
 
-	# get the links
-	my $linkExtractor = HTML::LinkExtor->new();
-	my $links = $linkExtractor->parse_file($file)->{links};
-
-	#@links
-	my @links;
-	@links = map { $_->[2] } @$links;
+	# Read file
+	my $data = $self->readFile($file);
 
 	# CDATA links
 	if ($self->rewriteCDATA) {
-	    my $data = $self->readFile($file);
-	        while ($data =~ /\@import\ \"([^\"]+)\"/gm) {
-		    push(@links, $1);
-		}
+	    while ($data =~ /\@import\ \"([^\"]+)\"/gm) {
+		push(@$links, {"src"=>$1, "tag"=>"CDATA"} );
+	    }
 	}
 
-	# Push the link contained in the file
-	foreach my $url (@links) {
+	# Analyze the links
+	foreach my $link (@$links) {
+	    # Exceptions
+	    if ($link->{'tag'} =~ /meta/i || $link->{'tag'} =~ /form/i ) {
+		next;
+	    }
+
+	    # Get the url
+	    my $url = $link->{'href'} || $link->{'src'} || $link->{'codebase'} || $link->{'background'};
+
+	    unless ($url) {
+		print "Not able to analyze following link:\n";
+		print Dumper($link);
+		exit;
+	    };
+
+	    # normal link
 	    if (isLocalUrl($url) && !isSelfUrl($url)) {
 		$url = removeLocalTagFromUrl($url);
 		$url =~ s/\n//g;
 		$url =~ s/(\?.*$)//;
 		$url = uri_unescape($url);
 		$self->incrementCount(getAbsoluteUrl($file, $self->htmlPath(), $url));
-	    }
-	}
+	    } 
 
-	# read file
-	my $data = $self->readFile($file);
-
-	# get additional keywords
-	$linkExtractor = HTML::LinkExtractor->new();
-	$linkExtractor->parse(\$data);
-	$links = $linkExtractor->links();
-	foreach my $link (@$links) {
-	    next unless (exists($link->{'http-equiv'}) && $link->{'http-equiv'} =~ /Refresh/i );
-	    if ($link->{'content'} =~ /url\=(.*)/) {
-		my $target = $1;
-		$target = removeLocalTagFromUrl($target);
-		$target =~ s/\n//g;
-                $target = uri_unescape($target);
-		$target = getAbsoluteUrl($file, $self->htmlPath(), $target);
-		if ($data =~ /<title>(.*)<\/title>/i ) {
-		    my $title = decode_entities($1);
-		    if ($title) {
-			$additionalKeywords{$target} = ($additionalKeywords{$target} ? $additionalKeywords{$target}.", " : "").$title;
-			$self->log("info", "New 'redirect keyword' for '$target' : '$title'");
+	    # refresh/redirect link
+	    elsif (exists($link->{'http-equiv'}) && $link->{'http-equiv'} =~ /Refresh/i) {
+		if ($link->{'content'} =~ /url\=(.*)/) {
+		    my $target = $1;
+		    $target = removeLocalTagFromUrl($target);
+		    $target =~ s/\n//g;
+		    $target = uri_unescape($target);
+		    $target = getAbsoluteUrl($file, $self->htmlPath(), $target);
+		    if ($data =~ /<title>(.*)<\/title>/i ) {
+			my $title = decode_entities($1);
+			if ($title) {
+			    $additionalKeywords{$target} = ($additionalKeywords{$target} ? $additionalKeywords{$target}.", " : "").$title;
+			    $self->log("info", "New 'redirect keyword' for '$target' : '$title'");
+			}
 		    }
 		}
-		last;
 	    }
-	    last;
 	}
     }
-
+    
     # remove unused redirects
     foreach my $file (keys(%urls)) {
 	if ($urls{$file} <= 1 && 
@@ -406,10 +414,6 @@ sub getAbsoluteUrl {
 sub incrementCount {
     my $self = shift;
     my $url = shift;
-
-    if ($url =~ /WOWfrontpagelogo/) {
-	print $url."\n";
-    }
 
     if (exists($urls{$url})) {
 	$urls{$url} += 1;
@@ -851,7 +855,7 @@ sub copyFileToDb {
     # url
     my %hash;
     $hash{url} = $urls{$file};
-
+    
     #data
     $file = $self->htmlPath().$file;
     my $data = $self->readFile($file);
@@ -876,13 +880,13 @@ sub copyFileToDb {
     if (!$hash{title}) {
 	$hash{title} = $hash{url};
     }
-
+    
     # url rewrite callback
     sub urlRewriterCallback {
 	my $url = shift;
 	$url = uri_unescape($url);
 
-	if (isLocalUrl($url) && !isSelfUrl($url)) {
+	if ($url && isLocalUrl($url) && !isSelfUrl($url)) {
 	    my $absUrl;
 
 	    # remove parameter if necessary
@@ -900,20 +904,23 @@ sub copyFileToDb {
 		print "Unable to get namesapce for url $absUrl in $file and this is not a dead url.\n";
 		exit;
 	    }
-
-	    if (!exists($urls{$absUrl}) && !exists($deadUrls{$absUrl})) {
-		print "Unable to get new url for url $absUrl in $file nd this is not a dead url.\n";
-		exit;
-	    }
-
-	    # compute the new url
-	    my $newUrl = "/".getNamespace($absUrl)."/".$urls{$absUrl};
-
-	    # Add the local anchor if necessary
-	    if ($url =~ /\#/ ) {
-		my @urlParts = split( /\#/, $url );
-		$newUrl .= "#".$urlParts[1];
-	    }
+	    
+	    my $newUrl = "";
+	    if (!exists($urls{$absUrl})) {
+		if (!exists($deadUrls{$absUrl})) {
+		    print "Unable to get new url for url $absUrl in $file nd this is not a dead url.\n";
+		    exit;
+		}
+	    } else {
+		# compute the new url
+		$newUrl = "/".getNamespace($absUrl)."/".$urls{$absUrl};
+		
+		# Add the local anchor if necessary
+		if ($url =~ /\#/) {
+		    my @urlParts = split( /\#/, $url );
+		    $newUrl .= "#".$urlParts[1];
+                }
+            }		
 	    
 	    return $newUrl;
        } else {
