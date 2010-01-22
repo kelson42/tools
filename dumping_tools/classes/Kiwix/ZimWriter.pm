@@ -157,6 +157,7 @@ sub getUrlCounts {
 	    if (isLocalUrl($url) && !isSelfUrl($url)) {
 		$url = removeLocalTagFromUrl($url);
 		$url =~ s/\n//g;
+		$url =~ s/(\?.*$)//;
 		$url = uri_unescape($url);
 		$self->incrementCount(getAbsoluteUrl($file, $self->htmlPath(), $url));
 	    }
@@ -366,6 +367,7 @@ sub getAbsoluteUrl {
     my $i;
 
     if ( $url =~ /^\/.*$/ ) {
+	$url =~ s/^\///;
 	return $url;
     }
 
@@ -405,6 +407,10 @@ sub incrementCount {
     my $self = shift;
     my $url = shift;
 
+    if ($url =~ /WOWfrontpagelogo/) {
+	print $url."\n";
+    }
+
     if (exists($urls{$url})) {
 	$urls{$url} += 1;
     } else {
@@ -414,7 +420,7 @@ sub incrementCount {
 
 sub isLocalUrl {
     my $url = shift;
-    $url =~ /^[\w]{1,8}\:\/\/.*$/ ? 0 : 1 ;
+    $url =~ /^[\w]{1,8}\:(\/\/|).*$/ ? 0 : 1 ;
 }
 
 sub removeLocalTagFromUrl {
@@ -890,13 +896,13 @@ sub copyFileToDb {
 	    }
 	    
 	    # check if all is OK with this url
-	    if (!getNamespace($absUrl) && !exists($deadUrls{$url})) {
-		print "Unable to get namesapce for url $absUrl and this is not a dead url.\n";
+	    if (!getNamespace($absUrl) && !exists($deadUrls{$absUrl})) {
+		print "Unable to get namesapce for url $absUrl in $file and this is not a dead url.\n";
 		exit;
 	    }
 
-	    if (!exists($urls{$absUrl}) && !exists($deadUrls{$url})) {
-		print "Unable to get new url for url $absUrl and this is not a dead url.\n";
+	    if (!exists($urls{$absUrl}) && !exists($deadUrls{$absUrl})) {
+		print "Unable to get new url for url $absUrl in $file nd this is not a dead url.\n";
 		exit;
 	    }
 
