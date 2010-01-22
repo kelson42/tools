@@ -56,7 +56,8 @@ my %mimeTypes = (
     "application/pdf" => 10,
     "application/x-bittorrent" => 11,
     "application/x-shockwave-flash" => 12,
-    "image/vnd.microsoft.icon" => 13
+    "image/vnd.microsoft.icon" => 13,
+    "application/zip" => 14
     );
 
 my %mimeTypesCompression = (
@@ -72,7 +73,8 @@ my %mimeTypesCompression = (
     "application/pdf" => 1,
     "application/x-bittorrent" => 0,
     "application/x-shockwave-flash" => 0,
-    "image/vnd.microsoft.icon" => 0
+    "image/vnd.microsoft.icon" => 0,
+    "application/zip" => 0
     );
 
 sub new {
