@@ -7,6 +7,7 @@ use Kiwix::PathExplorer;
 use Kiwix::MimeDetector;
 use Kiwix::UrlRewriter;
 use HTML::LinkExtractor;
+use Text::Unaccent;
 use HTML::Entities;
 use URI::Escape;
 use Math::BaseArith;
@@ -35,6 +36,7 @@ my $htmlFilterRegexp = "^.*\.(html|htm)\$";
 my $jsFilterRegexp = "^.*\.(js)\$";
 my $cssFilterRegexp = "^.*\.(css)\$";
 my $rewriteCDATA;
+my $shortenUrls;
 
 my %bestResolutionSizes;
 my %bestResolutionUrls;
@@ -167,10 +169,14 @@ sub getUrlCounts {
 	    my $url = $link->{'href'} || $link->{'src'} || $link->{'codebase'} || $link->{'background'};
 
 	    unless ($url) {
-		print "Not able to analyze following link:\n";
-		print Dumper($link);
-		exit;
-	    };
+		next;
+	    }
+
+#	    unless ($url) {
+#		print "Not able to analyze in $file following link:\n";
+#		print Dumper($link);
+#		exit;
+#	    };
 
 	    # normal link
 	    if (isLocalUrl($url) && !isSelfUrl($url)) {
@@ -301,46 +307,106 @@ sub computeNewUrls {
     $self->log("info", "Sorting ".scalar(@urls)." urls.");
     my @sortedUrls = sort { $urls{$b} <=> $urls{$a} } (@urls);
 
-    # new url base
-    my $baseString = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    my $baseSize = length($baseString);
-
-    my @baseString;
-    for (my $i=0; $i<$baseSize; $i++) {
-	push(@baseString, substr($baseString, $i, 1));
-    }
-
-    my @base;
-    for (my $i=0; $i<$baseSize; $i++) {
-	push(@base, $baseSize);
-    }
-
-    # compute the new url
-    $self->log("info", "Computing new urls.");
-    my $nameIndex=0;
-    foreach my $url (@sortedUrls) {
-	my @newUrl = encode( $nameIndex, \@base );
-	my $newUrl = "";
-	my $trail = 1;
-
-	foreach (@newUrl) {
-	    if ($trail) {
-		if ($_ == 0) {
-		    next;
-		} else {
-		    $trail = 0;
+    if ($self->shortenUrls()) {
+	# new url base
+	my $baseString = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	my $baseSize = length($baseString);
+	
+	my @baseString;
+	for (my $i=0; $i<$baseSize; $i++) {
+	    push(@baseString, substr($baseString, $i, 1));
+	}
+	
+	my @base;
+	for (my $i=0; $i<$baseSize; $i++) {
+	    push(@base, $baseSize);
+	}
+	
+	# compute the new url
+	$self->log("info", "Computing new urls.");
+	my $nameIndex=0;
+	foreach my $url (@sortedUrls) {
+	    my @newUrl = encode( $nameIndex, \@base );
+	    my $newUrl = "";
+	    my $trail = 1;
+	    
+	    foreach (@newUrl) {
+		if ($trail) {
+		    if ($_ == 0) {
+			next;
+		    } else {
+			$trail = 0;
+		    }
 		}
+		
+		$newUrl .= $baseString[$_];
+	    }
+	    
+	    if ($newUrl eq "") {
+		$newUrl = $baseString[0];
+	    }
+	    
+	    $urls{$url} = $newUrl;
+	    $nameIndex++;
+	}
+    } else {
+	my %newUrlsReverse;
+
+	# compute the new url
+	$self->log("info", "Computing new urls.");
+
+	foreach my $url (@sortedUrls) {
+	    my $newUrlBase;
+	    my $newUrl;
+	    my $file = $self->htmlPath().$url;
+	    my $extension;
+
+	    # only html
+	    if ($url =~ /$htmlFilterRegexp/i) {
+		#data
+		my $data = $self->readFile($file);
+		
+		if ($data =~ /<title>(.*)<\/title>/i ) {
+		    $newUrlBase = decode_entities($1);
+		}
+		$extension=".html";
+		
 	    }
 
-	    $newUrl .= $baseString[$_];
-	}
+	    # else
+	    unless ($newUrlBase) {
+		$url =~ /^(.*\/|)([^\/]*)(\..*)$/;
+		$newUrlBase = $2;
+		$extension=$3;
+	    }
+	
+	    $newUrlBase = unac_string("UTF8", $newUrlBase) || $newUrlBase;
+	    $newUrlBase =~ s/ /_/g;
+	    $newUrlBase =~ s/[^a-z0-9_]/_/ig;
+	    $newUrlBase =~ s/[_]+/_/ig;
+	    $newUrl = $newUrlBase.$extension;
 
-	if ($newUrl eq "") {
-	    $newUrl = $baseString[0];
-	}
+	    unless ($newUrl) {
+		print "Unable to compute new url for $url $url in $file.\n";
+		exit;
+	    }
 
-	$urls{$url} = $newUrl;
-	$nameIndex++;
+	    # check if there is not a collision with the new url
+	    if (exists($newUrlsReverse{$newUrl}) && !($newUrlsReverse{$newUrl} eq $url)) {
+		my $inc = 0;
+		do {
+		    $newUrl = $newUrlBase."_".$inc++.$extension;
+		} while (exists($newUrlsReverse{$newUrl}) && !($newUrlsReverse{$newUrl} eq $url));
+	    }
+
+	    # set the value in 
+	    $newUrlsReverse{$newUrl} = $url;
+
+	    print $url." -> ".$newUrl."\n";
+
+	    $urls{$url} = $newUrl;
+	}
+	
     }
 
     # re-add low resolution picture to %urls if necessary
@@ -1124,6 +1190,12 @@ sub rewriteCDATA {
     my $self = shift;
     if (@_) { $rewriteCDATA = shift } 
     return $rewriteCDATA;
+}
+
+sub shortenUrls {
+    my $self = shift;
+    if (@_) { $shortenUrls = shift } 
+    return $shortenUrls;
 }
 
 sub dbUser {
