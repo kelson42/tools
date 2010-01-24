@@ -27,6 +27,7 @@ my $dbHost="localhost";
 my $dbPort="5433";
 my $dbPassword="";
 my $rewriteCDATA;
+my $strict;
 my $mediawikiOptim;
 my $shortenUrls;
 my $dbName=time();
@@ -42,12 +43,13 @@ GetOptions('writerPath=s' => \$writerPath,
 	   'dbPassword=s' => \$dbPassword,
 	   'mediawikiOptim' => \$mediawikiOptim,
 	   'rewriteCDATA' => \$rewriteCDATA,
+	   'strict' => \$strict,
 	   'shortenUrls' => \$shortenUrls,
 	   'welcomePage=s' => \$welcomePage,
 	   );
 
 if (!$htmlPath || !$welcomePage ) {
-    print "usage: ./builZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html [--dbUser=foobar] [--dbPassword=testpass] [--writerPath=./zimWriter] [--zimFilePath=articles.zim] [--dbName=kiwix_db] [--dbPort=5433] [==dbHost=localhost] [--rewriteCDATA] [--mediawikiOptim] [--shortenUrls]\n";
+    print "usage: ./builZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html [--dbUser=foobar] [--dbPassword=testpass] [--writerPath=./zimWriter] [--zimFilePath=articles.zim] [--dbName=kiwix_db] [--dbPort=5433] [==dbHost=localhost] [--rewriteCDATA] [--mediawikiOptim] [--shortenUrls] [--strict]\n";
     exit;
 }
 
@@ -97,6 +99,7 @@ $writer->dbPassword($dbPassword);
 $writer->welcomePage($welcomePage);
 $writer->mediawikiOptim($mediawikiOptim);
 $writer->rewriteCDATA($rewriteCDATA);
+$writer->strict($strict);
 $writer->shortenUrls($shortenUrls);
 
 # prepare urls rewreting

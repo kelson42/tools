@@ -37,6 +37,7 @@ my $jsFilterRegexp = "^.*\.(js)\$";
 my $cssFilterRegexp = "^.*\.(css)\$";
 my $rewriteCDATA;
 my $shortenUrls;
+my $strict;
 
 my %bestResolutionSizes;
 my %bestResolutionUrls;
@@ -59,7 +60,8 @@ my %mimeTypes = (
     "application/x-bittorrent" => 11,
     "application/x-shockwave-flash" => 12,
     "image/vnd.microsoft.icon" => 13,
-    "application/zip" => 14
+    "application/zip" => 14,
+    "image/svg+xml" => 15
     );
 
 my %mimeTypesCompression = (
@@ -76,7 +78,8 @@ my %mimeTypesCompression = (
     "application/x-bittorrent" => 0,
     "application/x-shockwave-flash" => 0,
     "image/vnd.microsoft.icon" => 0,
-    "application/zip" => 0
+    "application/zip" => 0,
+    "image/svg+xml" => 1
     );
 
 sub new {
@@ -171,12 +174,13 @@ sub getUrlCounts {
 	    unless ($url) {
 		next;
 	    }
-
-#	    unless ($url) {
-#		print "Not able to analyze in $file following link:\n";
-#		print Dumper($link);
-#		exit;
-#	    };
+	    
+	    if (!$url && $strict) {
+		print $strict."\n";
+		print "Not able to analyze in $file following link:\n";
+		print Dumper($link);
+		exit;
+	    };
 
 	    # normal link
 	    if (isLocalUrl($url) && !isSelfUrl($url)) {
@@ -387,7 +391,7 @@ sub computeNewUrls {
 	    $newUrl = $newUrlBase.$extension;
 
 	    unless ($newUrl) {
-		print "Unable to compute new url for $url $url in $file.\n";
+		print "Unable to compute new url for url $url in $file.\n";
 		exit;
 	    }
 
@@ -401,8 +405,6 @@ sub computeNewUrls {
 
 	    # set the value in 
 	    $newUrlsReverse{$newUrl} = $url;
-
-	    print $url." -> ".$newUrl."\n";
 
 	    $urls{$url} = $newUrl;
 	}
@@ -900,6 +902,7 @@ sub buildDatabase {
     $self->fillDb();
 
     # Fill with the mainpage
+    $self->log("info", "Fill with the main page.");
     my $sth = $self->dbHandler()->prepare("select aid from article where namespace='A' and url='$welcomePage'");
     $sth->execute();
     my $result = $sth->fetchrow_hashref();
@@ -907,13 +910,16 @@ sub buildDatabase {
     $sth->finish();
 
     # fill the zimfile table
+    $self->log("info", "Fill the zimfile table.");
     $self->executeSql("insert into zimfile (filename, mainpage) values ('".$self->zimFilePath()."', '".$welcomePage."')");
 
     # fill the zimarticle table
+    $self->log("info", "Fill the zimarticle table.");
     $self->executeSql("insert into zimarticle (zid, aid) select 1, aid from article");
 
     # commit und disconnect
     $self->dbHandler()->disconnect();
+    $self->log("info", "Have finished to build & fill the database.");
 }
 
 sub copyFileToDb {
@@ -948,7 +954,7 @@ sub copyFileToDb {
     if (!$hash{title}) {
 	$hash{title} = $hash{url};
     }
-    
+
     # url rewrite callback
     sub urlRewriterCallback {
 	my $url = shift;
@@ -968,14 +974,14 @@ sub copyFileToDb {
 	    }
 	    
 	    # check if all is OK with this url
-	    if (!getNamespace($absUrl) && !exists($deadUrls{$absUrl})) {
+	    if ($strict && !getNamespace($absUrl) && !exists($deadUrls{$absUrl})) {
 		print "Unable to get namesapce for url $absUrl in $file and this is not a dead url.\n";
 		exit;
 	    }
 	    
 	    my $newUrl = "";
 	    if (!exists($urls{$absUrl})) {
-		if (!exists($deadUrls{$absUrl})) {
+		if ($strict && !exists($deadUrls{$absUrl})) {
 		    print "Unable to get new url for url $absUrl in $file nd this is not a dead url.\n";
 		    exit;
 		}
@@ -1051,17 +1057,20 @@ sub copyFileToDb {
 	}
 
 	# deal with CSS pictures
+	# todo: buggy
 	if ($hash{mimetype} eq "text/css") {
+	    my $newData = $data;
 	    while ($data =~ /url\([\"\']*(.*\.)(png|gif|jpg|jpeg)[\"\']*\)/gm) {
 		my $url = $1.$2;
 		unless ($url =~ /\:\/\// ) {
 		    my $absUrl = getAbsoluteUrl($file, $htmlPath, $url);
 		    if ($urls{$absUrl}) {
 			my $newUrl = "/".getNamespace($absUrl)."/".$urls{$absUrl};
-			$data =~ s/\Q$url\E/$newUrl/i;
+			$newData =~ s/\Q$url\E/$newUrl/i;
 		    }
 		}
 	    }
+	    $data = $newData;
 	}
 
 	$hash{data} = $data;
@@ -1190,6 +1199,12 @@ sub rewriteCDATA {
     my $self = shift;
     if (@_) { $rewriteCDATA = shift } 
     return $rewriteCDATA;
+}
+
+sub strict {
+    my $self = shift;
+    if (@_) { $strict = shift } 
+    return $strict;
 }
 
 sub shortenUrls {
