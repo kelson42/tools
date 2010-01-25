@@ -30,6 +30,7 @@ my $rewriteCDATA;
 my $strict;
 my $mediawikiOptim;
 my $shortenUrls;
+my $avoidForceHtmlCharsetToUtf8;
 my $dbName=time();
 
 # Get console line arguments
@@ -46,10 +47,11 @@ GetOptions('writerPath=s' => \$writerPath,
 	   'strict' => \$strict,
 	   'shortenUrls' => \$shortenUrls,
 	   'welcomePage=s' => \$welcomePage,
+	   'avoidForceHtmlCharsetToUtf8' => \$avoidForceHtmlCharsetToUtf8
 	   );
 
 if (!$htmlPath || !$welcomePage ) {
-    print "usage: ./builZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html [--dbUser=foobar] [--dbPassword=testpass] [--writerPath=./zimWriter] [--zimFilePath=articles.zim] [--dbName=kiwix_db] [--dbPort=5433] [==dbHost=localhost] [--rewriteCDATA] [--mediawikiOptim] [--shortenUrls] [--strict]\n";
+    print "usage: ./builZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html [--dbUser=foobar] [--dbPassword=testpass] [--writerPath=./zimWriter] [--zimFilePath=articles.zim] [--dbName=kiwix_db] [--dbPort=5433] [==dbHost=localhost] [--rewriteCDATA] [--mediawikiOptim] [--shortenUrls] [--strict] [--avoidForceHtmlCharsetToUtf8]\n";
     exit;
 }
 
@@ -100,6 +102,7 @@ $writer->welcomePage($welcomePage);
 $writer->mediawikiOptim($mediawikiOptim);
 $writer->rewriteCDATA($rewriteCDATA);
 $writer->strict($strict);
+$writer->strict($avoidForceHtmlCharsetToUtf8);
 $writer->shortenUrls($shortenUrls);
 
 # prepare urls rewreting
