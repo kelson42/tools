@@ -494,7 +494,7 @@ sub incrementCount {
 
 sub isLocalUrl {
     my $url = shift;
-    $url =~ /^[\w]{1,8}\:(\/\/|).*$/ ? 0 : 1 ;
+    $url =~ /^[\w]{1,15}\:(\/\/|).*$/ ? 0 : 1 ;
 }
 
 sub removeLocalTagFromUrl {
@@ -1057,7 +1057,6 @@ sub copyFileToDb {
 	}
 
 	# deal with CSS pictures
-	# todo: buggy
 	if ($hash{mimetype} eq "text/css") {
 	    my $newData = $data;
 	    while ($data =~ /url\([\"\']*(.*\.)(png|gif|jpg|jpeg)[\"\']*\)/gm) {
