@@ -82,7 +82,7 @@ if (substr($welcomePage, 0, 1) eq '.' || substr($welcomePage, 0, 1) eq '/') {
 
 # check if the welcomePage exists
 unless ( -f $htmlPath."/".$welcomePage) {
-    print(STDERR "The file '$htmlPath$."/".welcomePage' does not exist.\n");
+    print(STDERR "The file ".$htmlPath."/".$welcomePage." does not exist.\n");
     exit;    
 }
 
