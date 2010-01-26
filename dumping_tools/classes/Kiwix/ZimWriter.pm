@@ -38,6 +38,7 @@ my $cssFilterRegexp = "^.*\.(css)\$";
 my $rewriteCDATA;
 my $shortenUrls;
 my $strict;
+my $avoidForceHtmlCharsetToUtf8;
 
 my %bestResolutionSizes;
 my %bestResolutionUrls;
@@ -61,7 +62,8 @@ my %mimeTypes = (
     "application/x-shockwave-flash" => 12,
     "image/vnd.microsoft.icon" => 13,
     "application/zip" => 14,
-    "image/svg+xml" => 15
+    "image/svg+xml" => 15,
+    "audio/x-wav" => 16
     );
 
 my %mimeTypesCompression = (
@@ -79,7 +81,8 @@ my %mimeTypesCompression = (
     "application/x-shockwave-flash" => 0,
     "image/vnd.microsoft.icon" => 0,
     "application/zip" => 0,
-    "image/svg+xml" => 1
+    "image/svg+xml" => 1,
+    "audio/x-wav" => 0
     );
 
 sub new {
@@ -210,12 +213,17 @@ sub getUrlCounts {
 	    }
 	}
     }
+
+    $self->log("info", "Finished with counting links.");
     
     # remove unused redirects
+    $self->log("info", "Removing unused redirects...");
     foreach my $file (keys(%urls)) {
 	if ($urls{$file} <= 1 && 
 	    $file =~ /$htmlFilterRegexp/i && 
 	    -f $self->htmlPath().$file) {
+
+	    $self->log("info", "Removing unused redirects... looking at $file");
 
 	    # read file
 	    my $path = $self->htmlPath().$file;
@@ -227,11 +235,13 @@ sub getUrlCounts {
 	    my $links = $linkExtractor->links();
 	    foreach my $link (@$links) {
 		next unless (exists($link->{'http-equiv'}) && $link->{'http-equiv'} =~ /Refresh/i );
+		$self->log("info", "Removing redirect $file.");
 		delete($urls{$file});
 		last;
 	    }
 	}
     }
+    $self->log("info", "Finished with removing unused redirects.");
 }
 
 sub mediawikiOptim {
@@ -242,7 +252,8 @@ sub mediawikiOptim {
 
 sub checkDeadUrls {
     my $self = shift;
-    
+
+    $self->log("info", "Checking dead urls...");
     foreach my $url (keys(%urls)) {
 	unless (-f $self->htmlPath().$url) {
 	    $self->log("error", "[".$self->htmlPath()."]".$url." is a dead url. It should be removed.");
@@ -250,6 +261,7 @@ sub checkDeadUrls {
 	}
     }
 
+    $self->log("info", "Removing deadUrl from %urls...");
     foreach my $url (keys(%deadUrls)) {
 	delete($urls{$url});
     }
@@ -895,7 +907,14 @@ sub buildDatabase {
 
     # fill the mimetype table
     foreach my $mimeType (keys(%mimeTypes)) {
-	$self->executeSql("insert into mimetype (id, mimetype, compress) values ('".$mimeTypes{$mimeType}."', '".$mimeType."', '".($mimeTypesCompression{$mimeType} ? "true"  : "false")."')");
+	my $mimeTypeCode = $mimeTypes{$mimeType};
+	my $mimeTypeCompression = $mimeTypesCompression{$mimeType};
+
+	if ($mimeType eq "text/html" && !$self->avoidForceHtmlCharsetToUtf8()) {
+	    $mimeType = "text/html; charset=utf-8";
+	}
+
+	$self->executeSql("insert into mimetype (id, mimetype, compress) values ('".$mimeTypeCode."', '".$mimeType."', '".($mimeTypeCompression ? "true"  : "false")."')");
     }
 
     # fill the article table
@@ -945,7 +964,7 @@ sub copyFileToDb {
     $hash{namespace} = getNamespace($file);
     
     # title
-    if ($hash{mimetype} eq "text/html") {
+    if ($hash{mimetype} =~ /text\/html/ ) {
 	if ($data =~ /<title>(.*)<\/title>/mi ) {
 	    $hash{title} = $1;
 	}
@@ -1015,7 +1034,7 @@ sub copyFileToDb {
     }
 
     # rewriting (for HTML)
-    if (!$hash{redirect} && $hash{mimetype} eq "text/html" && scalar(%urls)) {
+    if (!$hash{redirect} && $hash{mimetype} =~ /text\/html/ && scalar(%urls)) {
 	$self->log("info", "Rewriting url in ".$file);
 	
 	my $rewriter = new Kiwix::UrlRewriter(\&urlRewriterCallback);
@@ -1043,7 +1062,7 @@ sub copyFileToDb {
     if (!$hash{redirect}) {
 
 	# if necessary deal with additional keywords
-	if ($hash{mimetype} eq "text/html" && exists($additionalKeywords{substr($file, length($htmlPath))})) {
+	if ($hash{mimetype} =~ /text\/html/ && exists($additionalKeywords{substr($file, length($htmlPath))})) {
 	    if ($data =~ /(<meta[ ]+name=[\"|\']{1}keywords[\"|\']{1}[ ]+content=[\"|\']{1}.*)([\"|\']{1})/i ) {
 		my $replacement = $1."\, \Q".$additionalKeywords{substr($file, length($htmlPath))}."\E".$2;
 		$data =~ s/<meta[ ]+name=[\"|\']{1}keywords[\"|\']{1}[ ]+content=[\"|\']{1}.*[\"|\']{1}/$replacement/i;
@@ -1198,6 +1217,12 @@ sub rewriteCDATA {
     my $self = shift;
     if (@_) { $rewriteCDATA = shift } 
     return $rewriteCDATA;
+}
+
+sub avoidForceHtmlCharsetToUtf8 {
+    my $self = shift;
+    if (@_) { $avoidForceHtmlCharsetToUtf8 = shift; }
+    return $avoidForceHtmlCharsetToUtf8;
 }
 
 sub strict {
