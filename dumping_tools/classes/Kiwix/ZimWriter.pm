@@ -21,7 +21,6 @@ my $htmlPath;
 my $welcomePage;
 my $zimFilePath;
 my $dbHandler;
-my $dbType = "postgres"; # or sqlite
 my $dbName;
 my $dbUser;
 my $dbPassword;
@@ -535,13 +534,7 @@ sub buildZimFile {
     my $dbName = $self->dbName();
     my $writerPath = $self->writerPath();
     my $zimFilePath = $self->zimFilePath();
-
-    my $command;
-    if ($self->isSqliteDb()) {
-	$command = "$writerPath -s 1024 --db \"sqlite:$dbName\" $zimFilePath";
-    } else {
-	$command = "$writerPath -s 1024 --db \"postgresql:dbname=$dbName user=kiwix port=$dbPort\" $zimFilePath";
-    }
+    my $command = "$writerPath -s 1024 --db \"postgresql:dbname=$dbName user=kiwix port=$dbPort\" $zimFilePath";
 
     # call the zim writer
     $self->log("info", "Creating the zim file : $command");
@@ -556,302 +549,19 @@ sub executeSql {
     if ($self->dbHandler()->err()) { die "$DBI::errstr\n"; }
 }
 
-# identify database type
-sub isPostgresDb {
-    my $self = shift;
-    return $self->dbType() eq "postgres";
-}
-
-sub isSqliteDb {
-    my $self = shift;
-    return $self->dbType() eq "sqlite";
-}
-
-# create database
-sub createSqliteDbSchema {
-    my $self = shift;
-
-    # create article table
-    $self->executeSql("
-create table article
-(
-  aid          integer primary key autoincrement,
-  namespace    text    not null,
-  title        text    not null,
-  url          text    not null,
-  redirect     text,     -- title of redirect target
-  mimetype     integer,
-  data         bytea
-)
-");
-    $self->executeSql("create index article_ix1 on article(namespace, title)");
-
-    # create category tables
-$self->executeSql("
-create table category
-(
-  cid          integer primary key autoincrement,
-  title        text    not null,
-  description  bytea   not null
-)
-");
-
-$self->executeSql("
-create table categoryarticles
-(
-  cid          integer not null,
-  aid          integer not null,
-  primary key  (cid, aid),
-  foreign key  (cid) references category,
-  foreign key  (aid) references article
-)
-");
-
-    # create zimfile table
-    $self->executeSql("
-create table zimfile
-(
-  zid          integer primary key autoincrement,
-  filename     text    not null
- )");
-
-    # create table zimdata
-    $self->executeSql("
-create table zimdata
-(
-  zid          integer not null,
-  did          integer not null,
-  data         bytea not null,
-  primary key (zid, did)
-)");
-
-    # create zimarticles table
-    $self->executeSql("
-create table zimarticles
-(
-  zid          integer not null,
-  aid          integer not null,
-  sort         integer,
-  direntlen    bigint,
-  datapos      bigint,
-  dataoffset   bigint,
-  datasize     bigint,
-  did          bigint,
-  parameter    bytea,
-
-  primary key (zid, aid),
-  foreign key (zid) references zimfile,
-  foreign key (aid) references article
- )");
-
-    # create indexes
-    $self->executeSql("create index zimarticles_ix1 on zimarticles(zid, direntlen)");
-    $self->executeSql("create index zimarticles_ix2 on zimarticles(zid, sort)");
-
-    # create search engine tables
-    $self->executeSql("
-create table indexarticle
-(
-  zid          integer not null,
-  xid          integer not null,
-  namespace    text    not null,
-  title        text    not null,
-  data         bytea,
-  sort         integer,
-  direntlen    bigint,
-  datapos      bigint,
-  dataoffset   bigint,
-  datasize     bigint,
-  did          bigint,
-  parameter    bytea,
-
-  primary key (zid, namespace, title),
-  foreign key (zid) references zimfile
-)
-");
-
-$self->executeSql("create index indexarticle_ix1 on indexarticle(zid, xid)") ;
-$self->executeSql("create index indexarticle_ix2 on indexarticle(zid, sort)");
-
-$self->executeSql("
-create table words
-(
-  word     text not null,
-  pos      integer not null,
-  aid      integer not null,
-  weight   integer not null,
-
-  primary key (word, aid, pos),
-  foreign key (aid) references article
-)") ;
-
-$self->executeSql("create index words_ix1 on words(aid)");
-
-$self->executeSql("
-create table trivialwords
-(
-  word     text not null primary key
-)");
-
-
-}
-
-sub createPostgresDbSchema {
-    my $self = shift;
-
-    
-
-    # create article table
-    $self->executeSql("
-create table article
-(
-  aid          serial  not null primary key,
-  namespace    text    not null,
-  title        text    not null,
-  url          text,
-  redirect     text,     -- title of redirect target
-  mimetype     integer,
-  data         bytea
-)");
-
-$self->executeSql("create unique index article_ix1 on article(namespace, title)");
-
-$self->executeSql("
-create table category
-(
-  cid          serial  not null primary key,
-  title        text    not null,
-  description  bytea   not null
-)");
-
-$self->executeSql("
-create table categoryarticles
-(
-  cid          integer not null,
-  aid          integer not null,
-  primary key (cid, aid),
-  foreign key (cid) references category,
-  foreign key (aid) references article
-)");
-
-$self->executeSql("
-create table zimfile
-(
-  zid          serial  not null primary key,
-  filename     text    not null,
-  mainpage     integer,
-  layoutpage   integer,
-  foreign key (mainpage) references article,
-  foreign key (layoutpage) references article
-)");
-
-$self->executeSql("
-create table zimdata
-(
-  zid          integer not null,
-  did          integer not null,
-  data         bytea not null,
-  primary key (zid, did)
-)");
-
-$self->executeSql("
-create table zimarticles
-(
-  zid          integer not null,
-  aid          integer not null,
-  sort         integer,
-  direntlen    bigint,
-  datapos      bigint,
-  dataoffset   bigint,
-  datasize     bigint,
-  did          bigint,
-  parameter    bytea,
-
-  primary key (zid, aid),
-  foreign key (zid) references zimfile,
-  foreign key (aid) references article
-)");
-
-$self->executeSql("create index zimarticles_ix1 on zimarticles(zid, direntlen)");
-$self->executeSql("create index zimarticles_ix2 on zimarticles(zid, sort)");
-
-$self->executeSql("
-create table indexarticle
-(
-  zid          integer not null,
-  xid          serial  not null,
-  namespace    text    not null,
-  title        text    not null,
-  data         bytea,
-  sort         integer,
-  direntlen    bigint,
-  datapos      bigint,
-  dataoffset   bigint,
-  datasize     bigint,
-  did          bigint,
-  parameter    bytea,
-
-  primary key (zid, namespace, title),
-  foreign key (zid) references zimfile
-)");
-
-$self->executeSql("create index indexarticle_ix1 on indexarticle(zid, xid)");
-$self->executeSql("create index indexarticle_ix2 on indexarticle(zid, sort)");
-
-$self->executeSql("
-create table words
-(
-  word     text not null,
-  pos      integer not null,
-  aid      integer not null,
-  weight   integer not null, -- 0: title/header, 1: subheader, 3: paragraph
-
-  primary key (word, aid, pos),
-  foreign key (aid) references article
-)");
-
-$self->executeSql("create index words_ix1 on words(aid)");
-
-$self->executeSql("
-create table trivialwords
-(
-  word     text not null primary key
-)");
-
-}
-
-sub createDbSchema {
-    my $self = shift;
-
-    if ($self->isPostgresDb()) {
-	$self->createPostgresDbSchema();
-    } elsif ($self->isSqliteDb) {
-	$self->createSqliteDbSchema();
-    } else {
-	die ("'".$self->dbType()."' is not a valid dbtype, should be 'postgresql' or 'sqlite'."); 
-    }
-}
-
 # create database
 sub createDb {
     my $self = shift;
     my $dbName = $self->dbName();
     my $dbUser = $self->dbUser();
 
-    if ($self->isPostgresDb()) {
-	$ENV{'PGPASSWORD'} = $self->dbPassword();
-	`createdb -U $dbUser $dbName `;
-	`cat zim-postgresql.sql | psql -U $dbUser -d $dbName`;
-    }
+    $ENV{'PGPASSWORD'} = $self->dbPassword();
+    `createdb -U $dbUser $dbName `;
+    `cat zim-postgresql.sql | psql -U $dbUser -d $dbName`;
 }
 
 # delete database
-sub deleteSqliteDb {
-    my $self = shift;
-    unlink($self->dbName());
-}
-
-sub deletePostgresDb {
+sub deleteDb {
     my $self = shift;
     my $dbName = $self->dbName();
     my $dbUser = $self->dbUser();
@@ -859,26 +569,12 @@ sub deletePostgresDb {
     `dropdb -U $dbUser $dbName`;
 }
 
-sub deleteDb {
-    my $self = shift;
-
-    if ($self->isSqliteDb()) {
-	$self->deleteSqliteDb();
-    } else {
-	$self->deletePostgresDb();
-    }
-}
-
 # connect to database
 sub connectToDb {
     my $self = shift;
     my $dbName = $self->dbName();
 
-    if ($self->isSqliteDb()) {
-	$self->dbHandler(DBI->connect("dbi:SQLite:dbname=".$dbName,"","", {AutoCommit => 1, PrintError => 1}));
-    } else {
-	$self->dbHandler(DBI->connect("dbi:Pg:dbname=".$dbName.";host=".$dbHost.";port=".$dbPort, $self->dbUser(), $self->dbPassword(), {AutoCommit => 1, PrintError => 1}));
-    }
+    $self->dbHandler(DBI->connect("dbi:Pg:dbname=".$dbName.";host=".$dbHost.";port=".$dbPort, $self->dbUser(), $self->dbPassword(), {AutoCommit => 1, PrintError => 1}));
 
     # set unicode flag
     if ($self->dbHandler()) {
@@ -891,7 +587,7 @@ sub buildDatabase {
     my $self = shift;
     my $dbName = $self->dbName();
 
-    $self->log("info", "Will create and fill the '".$self->dbType()."' database '".$dbName."'.");
+    $self->log("info", "Will create and fill the database '".$dbName."'.");
 
     # create database
     $self->createDb();
@@ -1113,12 +809,8 @@ sub copyFileToDb {
     $sth->bind_param(4, $hash{redirect});
     $sth->bind_param(5, $mimeTypes{ $hash{mimetype} });
     
-    if ($self->isSqliteDb()) {
-	$sth->bind_param(6, $hash{data}, SQL_BLOB);
-    } elsif ($self->isPostgresDb()) {
-	$sth->bind_param(6, $hash{data}, { pg_type => DBD::Pg::PG_BYTEA } );
-    }
-    
+    $sth->bind_param(6, $hash{data}, { pg_type => DBD::Pg::PG_BYTEA } );
+
     $sth->execute();
     if ($self->dbHandler()->err()) { die "$DBI::errstr\n"; }
     
@@ -1205,12 +897,6 @@ sub dbHandler {
     my $self = shift;
     if (@_) { $dbHandler = shift } 
     return $dbHandler;
-}
-
-sub dbType {
-    my $self = shift;
-    if (@_) { $dbType = shift } 
-    return $dbType;
 }
 
 sub rewriteCDATA {

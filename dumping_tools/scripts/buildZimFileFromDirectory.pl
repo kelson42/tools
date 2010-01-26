@@ -21,7 +21,6 @@ my $writerPath;
 my $htmlPath;
 my $welcomePage;
 my $zimFilePath="./articles";
-my $dbType="postgres";
 my $dbUser="kiwix";
 my $dbHost="localhost";
 my $dbPort="5433";
@@ -51,7 +50,7 @@ GetOptions('writerPath=s' => \$writerPath,
 	   );
 
 if (!$htmlPath || !$welcomePage ) {
-    print "usage: ./builZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html [--dbUser=foobar] [--dbPassword=testpass] [--writerPath=./zimWriter] [--zimFilePath=articles.zim] [--dbName=kiwix_db] [--dbPort=5433] [==dbHost=localhost] [--rewriteCDATA] [--mediawikiOptim] [--shortenUrls] [--strict] [--avoidForceHtmlCharsetToUtf8]\n";
+    print "usage: ./builZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html [--dbUser=foobar] [--dbPassword=testpass] [--writerPath=./zimWriter] [--zimFilePath=articles.zim] [--dbName=kiwix_db] [--dbPort=5433] [--dbHost=localhost] [--rewriteCDATA] [--mediawikiOptim] [--shortenUrls] [--strict] [--avoidForceHtmlCharsetToUtf8]\n";
     exit;
 }
 
@@ -92,7 +91,6 @@ $writer->logger($logger);
 $writer->writerPath($writerPath);
 $writer->htmlPath($htmlPath);
 $writer->zimFilePath($zimFilePath);
-$writer->dbType($dbType);
 $writer->dbName($dbName);
 $writer->dbUser($dbUser);
 $writer->dbPort($dbPort);
@@ -102,7 +100,7 @@ $writer->welcomePage($welcomePage);
 $writer->mediawikiOptim($mediawikiOptim);
 $writer->rewriteCDATA($rewriteCDATA);
 $writer->strict($strict);
-$writer->strict($avoidForceHtmlCharsetToUtf8);
+$writer->avoidForceHtmlCharsetToUtf8($avoidForceHtmlCharsetToUtf8);
 $writer->shortenUrls($shortenUrls);
 
 # prepare urls rewreting
