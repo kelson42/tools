@@ -395,9 +395,9 @@ sub computeNewUrls {
 		$extension=$3;
 	    }
 	
-	    $newUrlBase = unac_string("UTF8", $newUrlBase) || $newUrlBase;
-	    $newUrlBase =~ s/ /_/g;
-	    $newUrlBase =~ s/[^a-z0-9_]/_/ig;
+	    #$newUrlBase = unac_string("UTF8", $newUrlBase) || $newUrlBase;
+	    #$newUrlBase =~ s/ /_/g;
+	    #$newUrlBase =~ s/[^a-z0-9_]/_/ig;
 	    $newUrlBase =~ s/[_]+/_/ig;
 	    $newUrl = $newUrlBase.$extension;
 
