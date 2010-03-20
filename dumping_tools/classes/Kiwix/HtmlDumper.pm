@@ -35,7 +35,7 @@ sub dump {
     my $checkpointPath = $self->mediawikiPath()."/checkpoint";
     $cmd = "rm $checkpointPath"; `$cmd`;
     while ($checkpointPath) {
-	$cmd = "php ".$self->mediawikiPath()."/extensions/DumpHTML/dumpHTML.php -k kiwixoffline --checkpoint ".$self->mediawikiPath()."/checkpoint";
+	$cmd = "ulimit -v 2000000 ; php ".$self->mediawikiPath()."/extensions/DumpHTML/dumpHTML.php -k kiwixoffline --checkpoint ".$self->mediawikiPath()."/checkpoint";
 	$self->log("info", $cmd); `$cmd`;
 	
 	# Check if process is finished
