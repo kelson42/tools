@@ -32,8 +32,18 @@ sub dump {
     $self->log("info", $cmd); `$cmd`;
 
     # start PHP dump command
-    $cmd = "php ".$self->mediawikiPath()."/extensions/DumpHTML/dumpHTML.php -k kiwixoffline";
-    $self->log("info", $cmd); `$cmd`;
+    my $checkpointPath = $self->mediawikiPath()."/checkpoint";
+    $cmd = "rm $checkpointPath"; `$cmd`;
+    while ($checkpointPath) {
+	$cmd = "php ".$self->mediawikiPath()."/extensions/DumpHTML/dumpHTML.php -k kiwixoffline --checkpoint ".$self->mediawikiPath()."/checkpoint";
+	$self->log("info", $cmd); `$cmd`;
+	
+	# Check if process is finished
+	my $checkpoint = $self->readFile($checkpointPath);
+	if ($checkpoint =~ /done/i) {
+	    $checkpointPath = "";
+	}
+    }	
 
     # remove unsed stuff
     $self->log("info", "Remove a few unused files...");
