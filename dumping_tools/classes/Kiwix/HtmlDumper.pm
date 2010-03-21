@@ -42,6 +42,9 @@ sub dump {
 	my $checkpoint = $self->readFile($checkpointPath);
 	if ($checkpoint =~ /done/i) {
 	    $checkpointPath = "";
+	} else {
+	    # Sleep a little bit
+	    sleep(10);
 	}
     }	
 
