@@ -34,19 +34,20 @@ sub dump {
     # start PHP dump command
     my $checkpointPath = $self->mediawikiPath()."/checkpoint";
     $cmd = "rm $checkpointPath"; `$cmd`;
-    while ($checkpointPath) {
+    do {
 	$cmd = "ulimit -v 2000000 ; php ".$self->mediawikiPath()."/extensions/DumpHTML/dumpHTML.php -k kiwixoffline --checkpoint ".$self->mediawikiPath()."/checkpoint";
 	$self->log("info", $cmd); `$cmd`;
 	
 	# Check if process is finished
 	my $checkpoint = $self->readFile($checkpointPath);
-	if ($checkpoint =~ /done/i) {
+	if ($$checkpoint =~ /done/i) {
 	    $checkpointPath = "";
+	    $self->log("info", "php dumping finished");
 	} else {
 	    # Sleep a little bit
 	    sleep(10);
 	}
-    }	
+    } while ($checkpointPath);
 
     # remove unsed stuff
     $self->log("info", "Remove a few unused files...");
