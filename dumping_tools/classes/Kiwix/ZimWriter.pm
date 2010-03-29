@@ -215,12 +215,9 @@ sub getUrlCounts {
 		    $target =~ s/\n//g;
 		    $target = uri_unescape($target);
 		    $target = getAbsoluteUrl($file, $self->htmlPath(), $target);
-		    if ($data =~ /<title>(.*)<\/title>/i ) {
-			my $title = decode_entities($1);
-			if ($title) {
-			    $additionalKeywords{$target} = ($additionalKeywords{$target} ? $additionalKeywords{$target}.", " : "").$title;
-			    $self->log("info", "New 'redirect keyword' for '$target' : '$title'");
-			}
+		    if (my $title = extractTitleFromHtml(\$data) ) {
+			$additionalKeywords{$target} = ($additionalKeywords{$target} ? $additionalKeywords{$target}.", " : "").$title;
+			$self->log("info", "New 'redirect keyword' for '$target' : '$title'");
 		    }
 		}
 	    }
@@ -395,8 +392,8 @@ sub computeNewUrls {
 		#data
 		my $data = $self->readFile($file);
 		
-		if ($data =~ /<title>(.*)<\/title>/i ) {
-		    $newUrlBase = decode_entities($1);
+		if (my $title = extractTitleFromHtml(\$data) ) {
+		    $newUrlBase = $title;
 		}
 		$extension=".html";
 		
@@ -675,8 +672,8 @@ sub copyFileToDb {
     
     # title
     if ($hash{mimetype} =~ /text\/html/ ) {
-	if ($data =~ /<title>(.*)<\/title>/mi ) {
-	    $hash{title} = $1;
+	if (my $title = extractTitleFromHtml(\$data) ) {
+	    $hash{title} = $title;
 	}
     }
 
@@ -840,6 +837,13 @@ sub removeUnwantedFiles {
 	}
     }
     @files = @selectedFiles;
+}
+
+sub extractTitleFromHtml {
+    my $html = shift;
+    if ($$html =~ /<title>[\n|\t| ]*(.*?)[\n|\t| ]*<\/title>/im ) {
+	return decode_entities($1);
+    }
 }
 
 sub ignoreFile {
