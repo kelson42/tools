@@ -64,7 +64,12 @@ my %mimeTypes = (
     "image/svg+xml" => 15,
     "audio/x-wav" => 16,
     "application/vnd.ms-powerpoint" => 17,
-    "application/x-gzip" => 18
+    "application/x-gzip" => 18,
+    "1" => 19,
+    "application/x-debian-package" => 20,
+    "audio/x-pn-realaudio-plugin" => 21,
+    "application/x-tar" => 22,
+    "application/x-gtar" => 23,
     );
 
 my %mimeTypesCompression = (
@@ -85,7 +90,12 @@ my %mimeTypesCompression = (
     "image/svg+xml" => 1,
     "audio/x-wav" => 0,
     "application/vnd.ms-powerpoint" => 1,
-    "application/x-gzip" => 0
+    "application/x-gzip" => 0,
+    "1" => 1,
+    "application/x-debian-package" => 0,
+    "audio/x-pn-realaudio-plugin" => 0,
+    "application/x-tar" => 1,
+    "application/x-gtar" => 1,
     );
 
 sub new {
