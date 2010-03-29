@@ -63,7 +63,8 @@ my %mimeTypes = (
     "application/zip" => 14,
     "image/svg+xml" => 15,
     "audio/x-wav" => 16,
-    "application/vnd.ms-powerpoint" => 17
+    "application/vnd.ms-powerpoint" => 17,
+    "application/x-gzip" => 18
     );
 
 my %mimeTypesCompression = (
@@ -83,7 +84,8 @@ my %mimeTypesCompression = (
     "application/zip" => 0,
     "image/svg+xml" => 1,
     "audio/x-wav" => 0,
-    "application/vnd.ms-powerpoint" => 1
+    "application/vnd.ms-powerpoint" => 1,
+    "application/x-gzip" => 0
     );
 
 sub new {
