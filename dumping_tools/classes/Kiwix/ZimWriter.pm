@@ -713,7 +713,7 @@ sub copyFileToDb {
 		}
 	    } else {
 		# compute the new url
-		$newUrl = "/".getNamespace($absUrl)."/".$urls{$absUrl};
+		$newUrl = getNamespace($absUrl)."/".$urls{$absUrl};
 		
 		# Add the local anchor if necessary
 		if ($url =~ /\#/) {
