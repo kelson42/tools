@@ -20,6 +20,7 @@ my $logger = Log::Log4perl->get_logger("builZimFileFromDirectory.pl");
 my $writerPath;
 my $htmlPath;
 my $welcomePage;
+my $compressAll;
 my $zimFilePath="./articles";
 my $dbUser="kiwix";
 my $dbHost="localhost";
@@ -44,13 +45,14 @@ GetOptions('writerPath=s' => \$writerPath,
 	   'mediawikiOptim' => \$mediawikiOptim,
 	   'rewriteCDATA' => \$rewriteCDATA,
 	   'strict' => \$strict,
+	   'compressAll' => \$compressAll,
 	   'shortenUrls' => \$shortenUrls,
 	   'welcomePage=s' => \$welcomePage,
 	   'avoidForceHtmlCharsetToUtf8' => \$avoidForceHtmlCharsetToUtf8
 	   );
 
 if (!$htmlPath || !$welcomePage ) {
-    print "usage: ./builZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html [--dbUser=foobar] [--dbPassword=testpass] [--writerPath=./zimWriter] [--zimFilePath=articles.zim] [--dbName=kiwix_db] [--dbPort=5433] [--dbHost=localhost] [--rewriteCDATA] [--mediawikiOptim] [--shortenUrls] [--strict] [--avoidForceHtmlCharsetToUtf8]\n";
+    print "usage: ./builZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html [--dbUser=foobar] [--dbPassword=testpass] [--writerPath=./zimWriter] [--zimFilePath=articles.zim] [--dbName=kiwix_db] [--dbPort=5433] [--dbHost=localhost] [--rewriteCDATA] [--mediawikiOptim] [--shortenUrls] [--strict] [--avoidForceHtmlCharsetToUtf8] [--compressAll]\n";
     exit;
 }
 
@@ -90,6 +92,7 @@ my $writer = Kiwix::ZimWriter->new();
 $writer->logger($logger);
 $writer->writerPath($writerPath);
 $writer->htmlPath($htmlPath);
+$writer->compressAll($compressAll);
 $writer->zimFilePath($zimFilePath);
 $writer->dbName($dbName);
 $writer->dbUser($dbUser);

@@ -19,6 +19,7 @@ my $logger;
 my $writerPath;
 my $htmlPath;
 my $welcomePage;
+my $compressAll;
 my $zimFilePath;
 my $dbHandler;
 my $dbName;
@@ -70,6 +71,7 @@ my %mimeTypes = (
     "audio/x-pn-realaudio-plugin" => 21,
     "application/x-tar" => 22,
     "application/x-gtar" => 23,
+    "application/x-msdos-program" => 24,
     );
 
 my %mimeTypesCompression = (
@@ -96,6 +98,7 @@ my %mimeTypesCompression = (
     "audio/x-pn-realaudio-plugin" => 0,
     "application/x-tar" => 1,
     "application/x-gtar" => 1,
+    "application/x-msdos-program" => 0,
     );
 
 sub new {
@@ -615,7 +618,7 @@ sub buildDatabase {
     # fill the mimetype table
     foreach my $mimeType (keys(%mimeTypes)) {
 	my $mimeTypeCode = $mimeTypes{$mimeType};
-	my $mimeTypeCompression = $mimeTypesCompression{$mimeType};
+	my $mimeTypeCompression = $self->compressAll() || $mimeTypesCompression{$mimeType};
 
 	if ($mimeType eq "text/html" && !$self->avoidForceHtmlCharsetToUtf8()) {
 	    $mimeType = "text/html; charset=utf-8";
@@ -713,7 +716,7 @@ sub copyFileToDb {
 		}
 	    } else {
 		# compute the new url
-		$newUrl = getNamespace($absUrl)."/".$urls{$absUrl};
+		$newUrl = "/".getNamespace($absUrl)."/".$urls{$absUrl};
 		
 		# Add the local anchor if necessary
 		if ($url =~ /\#/) {
@@ -963,6 +966,12 @@ sub welcomePage {
     my $self = shift;
     if (@_) { $welcomePage = shift } 
     return $welcomePage;
+}
+
+sub compressAll {
+    my $self = shift;
+    if (@_) { $compressAll = shift } 
+    return $compressAll;
 }
 
 sub logger {
