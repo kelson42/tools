@@ -19,6 +19,6 @@ for MONTH in $MONTHS
 do
     if [ $MONTH -lt $CURRENT_MONTH ]
     then
-	$BINDIR/mergesort.pl ./$MONTH*bz2 | lzma -c > $MONTH.lzma
+	$BINDIR/mergesort.pl ./$MONTH*bz2 | $BINDIR/simplify_charts.pl | lzma -c > $MONTH.lzma
     fi
 done
