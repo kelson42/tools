@@ -8,6 +8,9 @@ use Kiwix::PathExplorer;
 use URI::Escape;
 use File::Path qw(mkpath);
 use File::Copy;
+use Net::Address::IP::Local;
+use Sys::Hostname;
+use Socket;
 
 use Cwd 'abs_path';
 
@@ -73,11 +76,17 @@ sub dump {
     my $explorer = new Kiwix::PathExplorer();
     $explorer->path($self->htmlPath());
     $explorer->filterRegexp('^.*html$');
+
+    my @localAddresses = (Net::Address::IP::Local->public(), "127.0.0.1");
     while (my $file = $explorer->getNext()) {
 	$self->log("info", "Analyze images to copy for ".$file);
 
 	# read file
 	my $content = $self->readFile($file);
+
+	# Prepare to rewrite the content
+	my $newContent = $content;
+	my %rews;
 
 	# setup the parser
 	my $LX = new HTML::LinkExtractor();
@@ -91,9 +100,36 @@ sub dump {
 	    # only img links
 	    next unless $tag eq 'img';
 	    my $src = $$Link{src};
-	    $src =~ s/\.\.\///g;
-	    $imgs{$src} = 1;
-	} 
+	    my $imgPath = $src;
+
+	    if ($src =~ /^http:\/\/([^\/]+)\/(.*$)/) {
+		my $hostname=$1;
+		$imgPath=$2;
+		
+		# Check the hostname in the @localAddresses 
+		if (grep(/\Q$hostname\E/, @localAddresses)) {
+		    $imgs{$imgPath} = 1;
+		} else {
+		    my ($hostnameIp) = inet_ntoa( (gethostbyname($hostname))[4] );
+		    if ( grep(/\Q$hostnameIp\E/, @localAddresses) ) {
+			push(@localAddresses, $hostname);
+			$imgs{$imgPath} = 1;
+		    }
+		}
+	    } else {
+		$imgPath =~ s/\.\.\///g;
+		$imgs{$imgPath} = 1;
+	    }
+
+	    $rews{$src} = $imgPath;
+	}
+
+	# Rewrite the file
+	foreach my $imgLink (keys(%rews)) {
+	    my $rewritedImgLink = "../../../../../".$rews{$imgLink};
+	    $$newContent =~ s/\Q$imgLink\E/$rewritedImgLink/g;
+	}
+	writeFile($file, $newContent);
     }
 
     $explorer->reset();
@@ -130,6 +166,15 @@ sub readFile {
     close FILE;
 
     return \$data;
+}
+
+sub writeFile {
+    my $file = shift;
+    my $data = shift;
+
+    open (FILE, ">$file") or die "Couldn't open file: $file";
+    print FILE $$data;
+    close (FILE);
 }
 
 sub htmlPath {
