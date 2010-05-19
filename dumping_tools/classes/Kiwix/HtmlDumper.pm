@@ -126,7 +126,12 @@ sub dump {
 
 	# Rewrite the file
 	foreach my $imgLink (keys(%rews)) {
-	    my $rewritedImgLink = "../../../../../".$rews{$imgLink};
+	    my $rewritedImgLink;
+	    if ($file =~ ".*index\.html") {
+		$rewritedImgLink = $rews{$imgLink};
+	    } else {
+		$rewritedImgLink = "../../../../../".$rews{$imgLink};
+	    }
 	    $$newContent =~ s/\Q$imgLink\E/$rewritedImgLink/g;
 	}
 	writeFile($file, $newContent);
