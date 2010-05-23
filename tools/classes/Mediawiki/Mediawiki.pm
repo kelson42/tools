@@ -1,4 +1,4 @@
-package MediaWiki;
+package Mediawiki;
 
 use utf8;
 use strict;
