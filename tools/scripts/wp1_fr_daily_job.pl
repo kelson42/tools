@@ -4,7 +4,7 @@ binmode STDIN, ":utf8";
 binmode STDERR, ":utf8";
 
 use utf8;
-use lib '../../mirroring_tools/Mediawiki/';
+use lib '../classes/Mediawiki/';
 
 use strict;
 use warnings;
@@ -12,7 +12,7 @@ use Getopt::Long;
 use List::Compare;
 use Getopt::Long;
 use Data::Dumper;
-use MediaWiki;
+use Mediawiki;
 
 my $username;
 my $password;
@@ -26,7 +26,7 @@ if (!$username || !$password) {
 };
 
 # Get the connection to fr.wikipedia.org
-my $site = MediaWiki->new();
+my $site = Mediawiki->new();
 $site->hostname("fr.wikipedia.org");
 $site->path("w");
 $site->user($username);
