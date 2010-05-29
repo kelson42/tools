@@ -1,12 +1,11 @@
 #!/usr/bin/perl
 
-use lib "../";
-use lib "../Mediawiki/";
+use lib "../classes/";
 
 use Config;
 use strict;
 use warnings;
-use MediaWiki::InterwikiManager;
+use Mediawiki::InterwikiManager;
 use Getopt::Long;
 use Data::Dumper;
 use Term::Query qw( query query_table query_table_set_defaults query_table_process );
@@ -45,7 +44,7 @@ if ($databaseUsername && !$databasePassword) {
     $databasePassword = query("Database password:", "");
 }
 
-my $manager = MediaWiki::InterwikiManager->new();
+my $manager = Mediawiki::InterwikiManager->new();
 $manager->logger($logger);
 $manager->readFromWeb($sourceHost, $sourcePath);
 $manager->writeToDatabase($databaseName, $databaseUsername, $databasePassword, $databaseHost, $databasePort);

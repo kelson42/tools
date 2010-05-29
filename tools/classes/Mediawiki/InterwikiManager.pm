@@ -1,4 +1,4 @@
-package MediaWiki::InterwikiManager;
+package Mediawiki::InterwikiManager;
 
 use strict;
 use warnings;

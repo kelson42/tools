@@ -4,14 +4,13 @@ binmode STDIN, ":utf8";
 
 use utf8;
 
-use lib "../";
-use lib "../Mediawiki/";
+use lib "../classes/";
 
 use Encode;
 use strict;
 use warnings;
 use Getopt::Long;
-use MediaWiki::Mirror;
+use Mediawiki::Mirror;
 use Data::Dumper;
 use Term::Query qw( query query_table query_table_set_defaults query_table_process );
 
@@ -135,7 +134,7 @@ if ($readFromStdin) {
     }
 }
 
-my $mirror = new MediaWiki::Mirror();
+my $mirror = new Mediawiki::Mirror();
 
 # log
 unless ($noLog) {

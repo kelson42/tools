@@ -1,4 +1,4 @@
-package MediaWiki::Mirror;
+package Mediawiki::Mirror;
 
 use utf8;
 use strict;
@@ -6,7 +6,7 @@ use warnings;
 use Encode;
 use HTML::Template;
 use Data::Dumper;
-use MediaWiki;
+use Mediawiki::Mediawiki;
 use POSIX qw(strftime);
 use URI::Escape;
 
@@ -1136,7 +1136,7 @@ sub connectToMediawiki {
     my $httpPass = shift || ''; 
     my $httpRealm = shift || ''; 
 
-    my $site = MediaWiki->new();
+    my $site = Mediawiki::Mediawiki->new();
     $site->logger($self->logger);
 
     $site->user($user);

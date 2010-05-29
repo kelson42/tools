@@ -1,4 +1,4 @@
-package Mediawiki;
+package Mediawiki::Mediawiki;
 
 use utf8;
 use strict;
@@ -914,7 +914,7 @@ sub embeddedIn {
 
 	foreach my $hash ( @{ $xml->{query}->{embeddedin}->{ei} } ) {
 
-	    if (defined($namespace) && ($namespace eq $hash->{ns})) {
+	    if (!defined($namespace) || defined($namespace) && ($namespace eq $hash->{ns})) {
 		my $title = $hash->{title};
 		$title =~ tr/ /_/;
 

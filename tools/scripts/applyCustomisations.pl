@@ -3,15 +3,14 @@ binmode STDOUT, ":utf8";
 binmode STDIN, ":utf8";
 
 use utf8;
-use lib "../";
-use lib "../Mediawiki/";
+use lib "../classes/";
 
 use Config;
 use strict;
 use warnings;
 use Getopt::Long;
 use Data::Dumper;
-use MediaWiki;
+use Mediawiki::Mediawiki;
 use Term::Query qw(query);
 
 # log
@@ -41,7 +40,7 @@ if (!$projectCode || !$host) {
 }
 
 # connect to mediawiki
-my $site = MediaWiki->new();
+my $site = Mediawiki::Mediawiki->new();
 $site->logger($logger);
 $site->hostname($host);
 $site->path($path);
@@ -52,7 +51,7 @@ if ($username) {
 $site->setup();
 
 # connect to commons
-my $commons = MediaWiki->new();
+my $commons = Mediawiki::Mediawiki->new();
 $commons->logger($logger);
 $commons->hostname("commons.mirror.kiwix.org");
 $commons->path($path);
@@ -63,7 +62,7 @@ if ($username) {
 $commons->setup();
 
 # Initiate www.kiwix.org
-my $www = MediaWiki->new();
+my $www = Mediawiki::Mediawiki->new();
 $www->hostname("www.kiwix.org");
 $www->path("");
 $www->logger($logger);
@@ -86,11 +85,48 @@ sub getList {
     return $list;
 }
 
-# Remove the images in the image black list
+# Expand categories in a list
+sub expandCategories {
+    my $list = shift;
+    my $entries = "";
+
+    foreach my $entry (split(/\n/, $list)) {
+	if ($entry =~ /^Category:(.*)$/i) {
+	    my $category=$1;
+
+	    foreach my $categoryEntry ($site->listCategoryEntries($category, 5, 10)) {
+		$categoryEntry =~ s/ /_/g;
+		$entries = $entries.$categoryEntry."\n";
+	    }
+
+	} elsif ($entry) {
+	    $entries = $entries.$entry."\n";
+	}
+    }
+
+    return $entries;
+}
+
+# Remove the images
 $entries = getList("Mirrors/$projectCode/image_black_list.txt");
 foreach my $entry (split(/\n/, $entries)) {
     $site->deletePage($entry);
     $commons->deletePage($entry);
+}
+
+# Remove the templates 
+$entries = getList("Mirrors/$projectCode/template_black_list.txt");
+$entries = expandCategories($entries);
+
+foreach my $entry (split(/\n/, $entries)) {
+    print $entry."\n";
+    if ($entry =~ /^(.+) (.+)$/) {
+	$entry = $1;
+	my $replacement = $2;
+	$site->uploadPage($entry, $replacement);
+    } else {
+	$site->uploadPage($entry, "", "empty page");
+    }
 }
 
 exit;
