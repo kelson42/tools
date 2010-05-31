@@ -448,6 +448,8 @@ sub computeNewUrls {
 	$welcomePage = $urls{$welcomePage};
     } else {
 	$self->log("error", "Unable to find the welcome page '$welcomePage'.");
+	print STDERR "Unable to find the welcome page '$welcomePage'.";
+	exit 1;
     }
 }
 
@@ -600,6 +602,7 @@ sub connectToDb {
 sub buildDatabase {
     my $self = shift;
     my $dbName = $self->dbName();
+    my $sql;
 
     $self->log("info", "Will create and fill the database '".$dbName."'.");
 
@@ -611,9 +614,6 @@ sub buildDatabase {
 	$self->log("error", "Unable to connect to the database.");
 	return;
     } 
-
-    # create db schema
-    #$self->createDbSchema();
 
     # fill the mimetype table
     foreach my $mimeType (keys(%mimeTypes)) {
@@ -639,8 +639,9 @@ sub buildDatabase {
     $sth->finish();
 
     # fill the zimfile table
-    $self->log("info", "Fill the zimfile table.");
-    $self->executeSql("insert into zimfile (filename, mainpage) values ('".$self->zimFilePath()."', '".$welcomePage."')");
+    $sql = "insert into zimfile (filename, mainpage) values ('".$self->zimFilePath()."', '".$welcomePage."')";
+    $self->log("info", "Fill the zimfile table: ".$sql);
+    $self->executeSql($sql);
 
     # fill the zimarticle table
     $self->log("info", "Fill the zimarticle table.");
