@@ -1,14 +1,13 @@
 #!/usr/bin/perl
 
-use lib "../";
-use lib "../Mediawiki/";
+use lib "../classes/";
 
 use strict;
 use warnings;
 use Getopt::Long;
 use Data::Dumper;
 use HTML::Template;
-use MediaWiki;
+use Mediawiki::Mediawiki;
 
 # log
 use Log::Log4perl;
@@ -99,7 +98,7 @@ if ($directory) {
 # connect to mediawiki
 my $site;
 if ($mediawikiHost) {
-    $site = MediaWiki->new();
+    $site = Mediawiki::Mediawiki->new();
     $site->hostname($mediawikiHost);
     $site->path($mediawikiPath);
     $site->user($mediawikiUsername);
