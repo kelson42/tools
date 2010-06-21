@@ -1,4 +1,4 @@
-package MediaWiki::Code;
+package Mediawiki::Code;
 
 use strict;
 use warnings;
@@ -197,7 +197,7 @@ sub applyCustomisations {
     `$cmd`;
 
     # Overwrite the dumpHtml.* extension files
-    $cmd = "cp ../data/skins/dumpHTML.* ".$directory."/extension/DumpHTML/";
+    $cmd = "cp ../data/skins/dumpHTML.* ".$directory."/extensions/DumpHTML/";
     `$cmd`;
 
     # copy and modify Parser.php
@@ -223,8 +223,7 @@ sub applyCustomisations {
     `$cmd`;
 
     # compile textvc
-    $cmd = "cd $directory/math ; make clean all";
-    print $cmd."\n";
+    $cmd = "cd $directory/math ; make -s clean all";
     `$cmd`;
 
     # Set link color to 'black' in the timeline extension
@@ -234,12 +233,18 @@ sub applyCustomisations {
     }
 
     # Make the link for the 'local directory
-    $cmd = 'ln -s /var/www/mirror/commons/images/ '.$directory.'/images/shared';
+    $cmd = 'ln -f -s /var/www/mirror/commons/images/ '.$directory.'/images/shared';
     `$cmd`;
 
     # Make the link for the 'local' directory
-    $cmd = 'ln -s '.$directory.'/images/ '.$directory.'/images/local';
+    $cmd = 'ln -f -s '.$directory.'/images/ '.$directory.'/images/local';
     `$cmd`;
+
+    # Make an DB update if necessary
+    if ( -e $directory."/LocalSettings.php" ) {
+	$cmd = "php $directory/maintenance/update.php";
+	`$cmd`;
+    }
 
     # todo: check if all extern tools are there
 }

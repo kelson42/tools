@@ -1,12 +1,11 @@
 #!/usr/bin/perl
 
-use lib "../";
-use lib "../Mediawiki/";
+use lib "../classes";
 
 use Config;
 use strict;
 use warnings;
-use MediaWiki::Code;
+use Mediawiki::Code;
 use Getopt::Long;
 use Data::Dumper;
 use Term::Query qw( query query_table query_table_set_defaults query_table_process );
@@ -39,7 +38,7 @@ if (!$host || ($action eq "svn" && !$directory) ) {
     exit;
 }
 
-my $code = MediaWiki::Code->new();
+my $code = Mediawiki::Code->new();
 $code->filter($filter);
 
 $code->logger($logger);
