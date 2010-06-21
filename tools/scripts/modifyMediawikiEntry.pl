@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-use lib "../";
-use lib "../Mediawiki/";
+use utf8;
+use lib "../classes/";
 
 use strict;
 use warnings;
 use Getopt::Long;
 use Data::Dumper;
-use MediaWiki;
+use Mediawiki::Mediawiki;
 
 # log
 use Log::Log4perl;
@@ -68,7 +68,7 @@ if ($file) {
 }
 
 # connect to mediawiki
-my $site = MediaWiki->new();
+my $site = Mediawiki::Mediawiki->new();
 $site->logger($logger);
 $site->hostname($host);
 $site->path($path);
