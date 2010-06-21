@@ -4,15 +4,14 @@ binmode STDIN, ":utf8";
  
 use utf8;
 
-use lib "../";
-use lib "../Mediawiki/";
+use lib "../classes/";
 
 use Config;
 use strict;
 use warnings;
 use Getopt::Long;
 use Data::Dumper;
-use MediaWiki;
+use Mediawiki::Mediawiki;
 
 # log
 use Log::Log4perl;
@@ -33,7 +32,7 @@ if (!$host) {
     exit;
 }
 
-my $site = MediaWiki->new();
+my $site = Mediawiki::Mediawiki->new();
 $site->logger($logger);
 $site->hostname($host);
 $site->path($path);
