@@ -707,7 +707,7 @@ sub uploadImageFromUrl {
     if ($content =~ /error\ code\=\"([^\"]+)\"/) {
 	$self->log("error", "Error by uploading image '$title' : $1");
     }
-    elsif ($content =~ /upload_session_key\=\"([\d]+)\"/) {
+    elsif ($content =~ /upload_session_key\=\"([\d]+)\"/ || $content =~ /result=\"success\"/i ) {
 	my $sessionKey = $1;
 	$httpResponse = $self->makeApiRequest( { 'action' => 'upload', 'httpstatus' => '1', 'sessionkey' => "$sessionKey", 'format' => 'xml', 'token' => $self->editToken() } , 'POST');
 

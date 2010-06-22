@@ -1,4 +1,4 @@
-package MediaWiki::RevisionManager;
+package Mediawiki::RevisionManager;
 
 use strict;
 use warnings;
