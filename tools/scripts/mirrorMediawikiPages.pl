@@ -178,8 +178,10 @@ $mirror->footerPath($footerPath);
 $mirror->startMirroring();
 
 # useIncompletePagesAsInput
-unless ($noLog) { $mirror->logger->info("Page which are incomplete will be searched."); }
 if ($useIncompletePagesAsInput) {
+    unless ($noLog) { 
+	$mirror->logger->info("Page which are incomplete will be searched."); 
+    }
     push(@pages, $mirror->getDestinationMediawikiIncompletePages());
 }
 unless ($noLog) { $mirror->logger->info(scalar(@pages)." incomplete pages were found."); }
