@@ -22,7 +22,7 @@ GetOptions(
            );
 
 if (!$directory) {
-    print "Usage: listLocalImagesToDownload.pl --directory=/var/www/mirror/en\n";
+    print "Usage: listLocalImagesToMirror.pl --directory=/var/www/mirror/en\n";
     exit;
 }
 
