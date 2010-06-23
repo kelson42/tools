@@ -3,16 +3,14 @@ binmode STDOUT, ":utf8";
 binmode STDIN, ":utf8";
 
 use utf8;
-
-use lib "../";
-use lib "../Mediawiki/";
+use lib "../classes/";
 
 use DBI;
 use strict;
 use warnings;
 use Getopt::Long;
 use Data::Dumper;
-use MediaWiki;
+use Mediawiki::Mediawiki;
 use Encode;
 
 # log
@@ -89,7 +87,7 @@ if ($databaseName) {
     }
 
 } else {
-    my $site = MediaWiki->new();
+    my $site = Mediawiki::Mediawiki->new();
     $site->hostname($host);
     $site->path($path);
     $site->logger($logger);
