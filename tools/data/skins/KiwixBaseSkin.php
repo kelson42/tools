@@ -297,12 +297,6 @@ class KiwixBaseSkin extends SkinTemplate {
                    $last++;
                  };
 
-                 // Really strange new bugs... img src which starts with http://localhost
-		 while ( preg_match("/http\:\/\/localhost/", $content, $match) ) {
-                   $content = str_replace($match[0], "", $content);
-                   $last++;
-                 };
-
 		 // print out
 		 $out->mBodytext = $content;
 		 SkinTemplate::outputPage($out);
@@ -339,7 +333,7 @@ function KiwixImageMap($content, $attributes, $object) {
 $wgHooks['LinkBegin'][] = 'KiwixLinkBegin';
 
 function KiwixLinkBegin($skin, $target, &$text, &$customAttribs, &$query, &$options, &$ret) {
-  if( $target->getNamespace() != NS_MAIN && $target->getNamespace() != NS_WIKIPEDIA ) {
+  if( $target->getNamespace() != NS_MAIN && $target->getNamespace() != NS_WIKIPEDIA && $target->getNamespace() != NS_CATEGORY /*With categories */) {
     $options = Array('broken');
   }
   return true;

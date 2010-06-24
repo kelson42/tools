@@ -202,9 +202,11 @@ class DumpHTML {
 			$title = Title::newFromID( $id );
 			if ( $title ) {
 				$ns = $title->getNamespace() ;
-				if ( ($ns == NS_MAIN ) && 
+				if ( ($ns == NS_MAIN || $ns == NS_CATEGORY /* With categories */) && 
 				  $title->getPrefixedDBkey() != $mainPage ) {
+				  	echo "Dumping \"$title\"...";
 					$this->doArticle( $title );
+					echo " done.\n";
 				}
 			}
 		}

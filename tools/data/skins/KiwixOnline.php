@@ -103,6 +103,9 @@ class KiwixOnlineTemplate extends QuickTemplate {
 			<?php if($this->data['showjumplinks']) { ?><div id="jump-to-nav"><?php $this->msg('jumpto') ?> <a href="#column-one"><?php $this->msg('jumptonavigation') ?></a>, <a href="#searchInput"><?php $this->msg('jumptosearch') ?></a></div><?php } ?>
 			<!-- start content -->
 			<?php $this->html('bodytext') ?>
+		        
+			   <?php /* With categories */ if($this->data['catlinks']) { $this->html('catlinks'); } ?>
+
 			<!-- end content -->
 			<?php if($this->data['dataAfterContent']) { $this->html ('dataAfterContent'); } ?>
 			<div class="visualClear"></div>

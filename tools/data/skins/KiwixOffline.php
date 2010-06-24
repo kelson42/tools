@@ -78,7 +78,7 @@ class KiwixOfflineTemplate extends QuickTemplate {
 		<a name="top" id="top"></a>
 		<h1 class="firstHeading"><?php $this->html('title'); ?></h1>
 			<?php $this->html('bodytext') ?>
-
+   		        <?php /* With categories */ if($this->data['catlinks']) { $this->html('catlinks'); } ?>
 </div></div>
 <?php $this->html('bottomscripts'); /* JS call to runBodyOnloadHook */ ?>
 </body></html>
