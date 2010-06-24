@@ -128,7 +128,7 @@ sub dump {
 	foreach my $imgLink (keys(%rews)) {
 	    my $rewritedImgLink;
 	    if ($file =~ ".*index\.html") {
-		$rewritedImgLink = $rews{$imgLink};
+		$rewritedmgLink = "../"..$rews{$imgLink};
 	    } else {
 		$rewritedImgLink = "../../../../../".$rews{$imgLink};
 	    }
