@@ -4,8 +4,7 @@ binmode STDIN, ":utf8";
 
 use utf8;
 
-use lib "../";
-use lib "../Mediawiki/";
+use lib "../classes/";
 
 use Config;
 use strict;
@@ -13,7 +12,7 @@ use warnings;
 use Getopt::Long;
 use Data::Dumper;
 use LWP::UserAgent;
-use MediaWiki::Install;
+use Mediawiki::Install;
 use Term::Query qw( query query_table query_table_set_defaults query_table_process );
 
 # log
@@ -59,7 +58,7 @@ if (!$dbPassword) {
     $dbPassword = query("dbPassword:", "");
 }
 
-my $installer = MediaWiki::Install->new();
+my $installer = Mediawiki::Install->new();
 $installer->logger($logger);
 $installer->site($site);
 $installer->code($code);

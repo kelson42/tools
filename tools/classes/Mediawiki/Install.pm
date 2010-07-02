@@ -1,4 +1,4 @@
-package MediaWiki::Install;
+package Mediawiki::Install;
 
 use strict;
 use warnings;
