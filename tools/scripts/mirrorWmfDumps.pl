@@ -68,10 +68,8 @@ unless ($withoutImages) {
 
 # Install and compile the mwdumper
 my $mwDumperDir = $tmpDir."/mwdumper/";
-unless (-d $mwDumperDir) {
-    $cmd = "cd $tmpDir; svn co http://svn.wikimedia.org/svnroot/mediawiki/trunk/mwdumper/"; `$cmd`;
-    $cmd = "cd $mwDumperDir/src; javac org/mediawiki/dumper/Dumper.java"; `$cmd`; 
-}
+$cmd = "cd $tmpDir; svn co http://svn.wikimedia.org/svnroot/mediawiki/trunk/mwdumper/"; `$cmd`;
+$cmd = "cd $mwDumperDir/src; javac org/mediawiki/dumper/Dumper.java"; `$cmd`; 
 
 # Prepare DB connection
 my $dsn = "DBI:mysql:$databaseName;host=$databaseHost:$databasePort";
@@ -90,7 +88,7 @@ foreach my $table ("revision", "page", "text", "imagelinks", "templatelinks", "i
 # Upload the SQL
 my $mysqlCmd = "mysql --user=$databaseUsername --password=$databasePassword $databaseName";
 $cmd = "gzip -d -c $tmpDir/$projectCode-latest-interwiki.sql.gz | $mysqlCmd"; `$cmd`;
-$cmd = "gzip -d -c $tmpDir/$projectCode-latest-interwiki.sql.gz | $mysqlCmd"; `$cmd`;
+$cmd = "gzip -d -c $tmpDir/$projectCode-latest-image.sql.gz | $mysqlCmd"; `$cmd`;
 $cmd = "gzip -d -c $tmpDir/$projectCode-latest-imagelinks.sql.gz | $mysqlCmd"; `$cmd`;
 $cmd = "gzip -d -c $tmpDir/$projectCode-latest-pagelinks.sql.gz | $mysqlCmd"; `$cmd`;
 $cmd = "gzip -d -c $tmpDir/$projectCode-latest-redirect.sql.gz | $mysqlCmd"; `$cmd`;
