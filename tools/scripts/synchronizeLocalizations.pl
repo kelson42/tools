@@ -3,15 +3,14 @@ binmode STDOUT, ":utf8";
 binmode STDIN, ":utf8";
 
 use utf8;
-use lib "../";
-use lib "../Mediawiki/";
+use lib "../classes/";
 
 use Config;
 use strict;
 use warnings;
 use Getopt::Long;
 use Data::Dumper;
-use MediaWiki;
+use Mediawiki::Mediawiki;
 use Term::Query qw(query);
 
 # log
@@ -52,7 +51,7 @@ if (!scalar(@languages) && !$allLanguages) {
 }
 
 # Initiate the Mediawiki object
-my $site = MediaWiki->new();
+my $site = Mediawiki::Mediawiki->new();
 $site->logger($logger);
 $site->hostname("www.kiwix.org");
 $site->path("");
