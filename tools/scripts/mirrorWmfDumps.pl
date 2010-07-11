@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+1;2305;0c#!/usr/bin/perl
 
 use lib "../";
 use lib "../Mediawiki/";
@@ -61,6 +61,7 @@ $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/latest/$
 $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/latest/$projectCode-latest-externallinks.sql.gz"; `$cmd`;
 $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/latest/$projectCode-latest-categorylinks.sql.gz"; `$cmd`;
 $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/latest/$projectCode-latest-category.sql.gz"; `$cmd`;
+$cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/latest/$projectCode-latest-langlinks.sql.gz"; `$cmd`;
 
 unless ($withoutImages) {
     $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/latest/$projectCode-latest-image.sql.gz"; `$cmd`;
@@ -79,7 +80,7 @@ my $sth;
 $dbh = DBI->connect($dsn, $databaseUsername, $databasePassword) or die ("Unable to connect to the database.");
 
 # Truncate necessary tables
-foreach my $table ("revision", "page", "text", "imagelinks", "templatelinks", "interwiki", "redirect", "externallinks", "image") {
+foreach my $table ("revision", "page", "text", "imagelinks", "templatelinks", "interwiki", "redirect", "externallinks", "image", "langlinks") {
     $req = "TRUNCATE $table";
     $sth = $dbh->prepare($req)  or die ("Unable to prepare request.");
     $sth->execute() or die ("Unable to execute request.");
@@ -95,7 +96,7 @@ $cmd = "gzip -d -c $tmpDir/$projectCode-latest-redirect.sql.gz | $mysqlCmd"; `$c
 $cmd = "gzip -d -c $tmpDir/$projectCode-latest-templatelinks.sql.gz | $mysqlCmd"; `$cmd`;
 $cmd = "gzip -d -c $tmpDir/$projectCode-latest-externallinks.sql.gz | $mysqlCmd"; `$cmd`;
 $cmd = "gzip -d -c $tmpDir/$projectCode-latest-categorylinks.sql.gz | $mysqlCmd"; `$cmd`;
-$cmd = "gzip -d -c $tmpDir/$projectCode-latest-category.sql.gz | $mysqlCmd"; `$cmd`;
+$cmd = "gzip -d -c $tmpDir/$projectCode-latest-langlinks.sql.gz | $mysqlCmd"; `$cmd`;
 
 unless ($withoutImages) {
     $cmd = "gzip -d -c $tmpDir/$projectCode-latest-image.sql.gz | $mysqlCmd"; `$cmd`;
