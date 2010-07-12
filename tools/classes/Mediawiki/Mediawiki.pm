@@ -39,7 +39,8 @@ sub new {
 	httpPassword => undef,
 	httpRealm => undef,
 	namespaces => undef,
-	useImageUploadToken => 1
+	useImageUploadToken => 1,
+	specialFilePath => 'Special:FilePath'
     };
 
     bless($self, $class);
@@ -245,6 +246,12 @@ sub protocol {
 	$self->computeUrls();
     }
     return $self->{protocol};
+}
+
+sub specialFilePath {
+    my $self = shift;
+    if (@_) { $self->{specialFilePath} = shift; }
+    return $self->{specialFilePath};
 }
 
 sub httpPassword {
@@ -585,19 +592,20 @@ sub makeApiRequestAndParseResponse {
 sub getImageUrl {
     my ($self, $image) = @_;
     my $url;
-    my $title = 'Special:FilePath';
     my $continue = 0;
 
     do {
 	$self->userAgent()->requests_redirectable([]);
-	$url = $self->makeHttpGetRequest($self->indexUrl(), {}, {  'title' => $title, 'file' => $image } )->header('location') ;
+	$url = $self->makeHttpGetRequest($self->indexUrl(), {}, {  'title' => $self->specialFilePath(), 
+								   'file' => $image } )->header('location') ;
 	$self->userAgent()->requests_redirectable(['HEAD', 'POST', 'GET']);
 
 	if ( $url && $url =~ /\?/ && $url =~ /title\=(.*)\&/ ) {
-	    $title = uri_unescape($1);
-	    unless (Encode::is_utf8($title)) {
-		$title = decode_utf8($title);
+	    my $newSpecialFilePath = uri_unescape($1);
+	    unless (Encode::is_utf8($newSpecialFilePath)) {
+		$newSpecialFilePath = decode_utf8($newSpecialFilePath);
 	    }
+	    $self->specialFilePath($newSpecialFilePath);
 	    $continue = 1;
 	} else {
 	    $continue = 0;
