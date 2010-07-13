@@ -108,24 +108,34 @@ sub expandCategories {
 }
 
 # Remove the images
+$logger->info("Remove images...");
 $entries = getList("Mirrors/$projectCode/image_black_list.txt");
 foreach my $entry (split(/\n/, $entries)) {
-    $site->deletePage($entry);
-    $commons->deletePage($entry);
+    if ($site->exists($entry)) {
+	$site->deletePage($entry);
+    }
+    
+    if ($commons->exists($entry)) {
+	$commons->deletePage($entry);
+    }
 }
 
 # Remove the templates 
+$logger->info("Remove templates...");
 $entries = getList("Mirrors/$projectCode/template_black_list.txt");
 $entries = expandCategories($entries);
 
 foreach my $entry (split(/\n/, $entries)) {
-    print $entry."\n";
     if ($entry =~ /^(.+) (.+)$/) {
 	$entry = $1;
 	my $replacement = $2;
-	$site->uploadPage($entry, $replacement);
+	if ($site->exists($entry)) {
+	    $site->uploadPage($entry, $replacement);
+	}
     } else {
-	$site->uploadPage($entry, "", "empty page");
+	if ($site->exists($entry)) {
+	    $site->uploadPage($entry, "", "empty page");
+	}
     }
 }
 
