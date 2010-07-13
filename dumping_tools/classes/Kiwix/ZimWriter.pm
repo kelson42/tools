@@ -72,6 +72,8 @@ my %mimeTypes = (
     "application/x-tar" => 22,
     "application/x-gtar" => 23,
     "application/x-msdos-program" => 24,
+    "application/vnd.ms-fontobject" => 25,
+    "application/octet-stream" => 26,
     );
 
 my %mimeTypesCompression = (
@@ -99,6 +101,8 @@ my %mimeTypesCompression = (
     "application/x-tar" => 1,
     "application/x-gtar" => 1,
     "application/x-msdos-program" => 0,
+    "application/vnd.ms-fontobject" => 0,
+    "application/octet-stream" => 0,
     );
 
 sub new {
@@ -143,7 +147,7 @@ sub getUrlCounts {
 	if ($file =~ /$cssFilterRegexp/i) {
 	    $file = $self->htmlPath().$file;
 	    my $data = $self->readFile($file);
-	    while ($data =~ /url\([\"\']*(.*\.)(png|gif|jpg|jpeg)[\"\']*\)/gm) {
+	    while ($data =~ /url\([\"\']*(.*\.)(png|gif|jpg|jpeg|eot|ttf)[\"\']*\)/gm) {
 		my $url = $1.$2;
 		if ($url =~ /\:\/\// ) {
 		    $self->log("warn", "There is an CSS online picture dependence in ".$file);
@@ -283,7 +287,7 @@ sub checkDeadUrls {
 sub computeNewUrls {
     my $self = shift;
     
-    # Special code to user only one resolution of a picutre in case of a Mediawiki HTML dump
+    # Special code to use only one resolution of a picture in case of a Mediawiki HTML dump
     my $normalImageFakeSize = 424242;
     my $imageRegex = '^.*\/([\d]+px\-|)([^\/]*)\.(png|jpg|jpeg)$';
     if ($self->mediawikiOptim()) {
@@ -789,7 +793,7 @@ sub copyFileToDb {
 	# deal with CSS pictures
 	if ($hash{mimetype} eq "text/css") {
 	    my $newData = $data;
-	    while ($data =~ /url\([\"\']*(.*\.)(png|gif|jpg|jpeg)[\"\']*\)/gm) {
+	    while ($data =~ /url\([\"\']*(.*\.)(png|gif|jpg|jpeg|eot|ttf)[\"\']*\)/gm) {
 		my $url = $1.$2;
 		unless ($url =~ /\:\/\// ) {
 		    my $absUrl = getAbsoluteUrl($file, $htmlPath, $url);
