@@ -4,14 +4,13 @@ binmode STDIN, ":utf8";
 
 use utf8;
 
-use lib "../";
-use lib "../Mediawiki/";
+use lib "../classes/";
 
 use strict;
 use warnings;
 use Getopt::Long;
 use Data::Dumper;
-use MediaWiki;
+use Mediawiki::Mediawiki;
 use Encode;
 
 # log
@@ -44,7 +43,7 @@ if ($readFromStdin) {
     }
 }
 
-my $site = MediaWiki->new();
+my $site = Mediawiki::Mediawiki->new();
 $site->hostname($host);
 $site->path($path);
 $site->logger($logger);
@@ -56,7 +55,7 @@ foreach my $page (@pages) {
 	$page = decode_utf8($page);
     }
 
-    my %links = $site->exists($site->getOutgoingLinks($page));
+    my %links = $site->exist($site->getOutgoingLinks($page));
 
     foreach my $link (keys(%links)) {
 	unless ($links{$link}) {
