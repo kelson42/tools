@@ -398,7 +398,7 @@ sub addImageToDownload {
 
 	lock($imageDownloadMutex);
 	unless ( exists($imageDownloadQueue{$image}) ) {
-	    $imageDownloadQueue{$image} = 1;
+	    $imageDownloadQueue{$image} = $image;
 	}
     }
 }
@@ -406,14 +406,16 @@ sub addImageToDownload {
 sub getImageToDownload {
     my $self = shift;
     my $image;
+    my $key;
     
     lock($imageDownloadMutex);
 
     if (keys(%imageDownloadQueue)) {
-	($image) = keys(%imageDownloadQueue);
+	($key) = keys(%imageDownloadQueue);
+	$image = $imageDownloadQueue{$key};
 
 	if ($image) { 
-	    delete($imageDownloadQueue{$image});
+	    delete($imageDownloadQueue{$key});
 	} else {
 	    $self->log("error", "empty image title found in getImageToDownload()");
 	}
