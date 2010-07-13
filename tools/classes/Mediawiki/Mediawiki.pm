@@ -1069,6 +1069,14 @@ sub redirects {
 
 sub exists {
     my $self = shift;
+    my $title = shift;
+    my %result = $self->exist($title);
+    my ($key) = keys(%result);
+    return $result{$key};
+}
+
+sub exist {
+    my $self = shift;
     my @pages = @_;
     my $httpPostRequestParams = {
 	'action' => 'query',
