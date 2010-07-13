@@ -678,7 +678,7 @@ sub checkRedirects {
 	    my $count = 0;
 
 	    # check if the pages already exists
-	    my %redirects = $destinationSite->exists(@redirects);
+	    my %redirects = $destinationSite->exist(@redirects);
 
 	    foreach my $redirect (@redirects) {
 		$count++;
