@@ -703,7 +703,7 @@ sub uploadImageFromUrl {
 	'filename' => $title,
 	'token' => $self->editToken(),
 	'format' => 'xml',
-#	'asyncdownload' => '1',
+	'asyncdownload' => '1',
 	'ignorewarnings' => '1',
     };
     
