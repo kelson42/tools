@@ -28,11 +28,14 @@ $wgStrictFileExtensions = false;
 
 # image shared dir
 $wgUseSharedUploads = true;
-$wgSharedUploadPath = "http://commons.mirror.kiwix.org/images";
+$wgSharedUploadPath = "http://commons.wikimedia.org.mirror2.kiwix.org/images";
 $wgFetchCommonsDescriptions = false;
-$wgSharedUploadDirectory = "/var/www/mirror/commons/images";
-$wgSharedUploadDBname = "mirror_commons";
+$wgSharedUploadDirectory = "/var/www/mirror/commons_wikimedia_org/images";
+$wgSharedUploadDBname = "mirror_commons_wikimedia_org";
 $wgCacheSharedUploads = false;
+
+# Allow async upload
+$wgEnableAsyncDownload = true;
 
 # permissions
 $wgGroupPermissions['*']['createaccount']    = true;
