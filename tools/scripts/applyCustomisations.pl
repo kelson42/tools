@@ -88,13 +88,18 @@ sub getList {
 # Expand categories in a list
 sub expandCategories {
     my $list = shift;
+    my $namespace = shift;
     my $entries = "";
 
     foreach my $entry (split(/\n/, $list)) {
 	if ($entry =~ /^Category:(.*)$/i) {
 	    my $category=$1;
+	    
+	    if ($namespace eq "14") {
+		$entries = $entries.$entry."\n";
+	    }
 
-	    foreach my $categoryEntry ($site->listCategoryEntries($category, 5, 10)) {
+	    foreach my $categoryEntry ($site->listCategoryEntries($category, 5, $namespace)) {
 		$categoryEntry =~ s/ /_/g;
 		$entries = $entries.$categoryEntry."\n";
 	    }
@@ -106,6 +111,19 @@ sub expandCategories {
 
     return $entries;
 }
+
+# Remove the categories
+$logger->info("Remove categories...");
+$entries = getList("Mirrors/$projectCode/category_black_list.txt");
+$entries = expandCategories($entries, 14);
+
+foreach my $entry (split(/\n/, $entries)) {
+    if ($site->exists($entry)) {
+	$site->deletePage($entry, "");
+    }
+}
+
+exit;
 
 # Remove the images
 $logger->info("Remove images...");
@@ -123,7 +141,7 @@ foreach my $entry (split(/\n/, $entries)) {
 # Remove the templates 
 $logger->info("Remove templates...");
 $entries = getList("Mirrors/$projectCode/template_black_list.txt");
-$entries = expandCategories($entries);
+$entries = expandCategories($entries, 10);
 
 foreach my $entry (split(/\n/, $entries)) {
     if ($entry =~ /^(.+) (.+)$/) {
