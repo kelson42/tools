@@ -69,7 +69,7 @@ my @embeddedInThreads;
 my $pageDownloadThreadCount = 1;
 my $pageUploadThreadCount = 3;
 my $imageDownloadThreadCount = 1;
-my $imageUploadThreadCount = 3;
+my $imageUploadThreadCount = 2;
 my $imageDependenceThreadCount = 3;
 my $templateDependenceThreadCount = 3;
 my $redirectThreadCount = 3;
