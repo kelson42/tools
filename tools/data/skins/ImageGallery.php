@@ -44,7 +44,7 @@ class ImageGallery extends ImageGalleryOriginal
 
 			// remove links
 			$trace=debug_backtrace();
-			$caller=$trace[2];
+			$caller=$trace[1];
 
 			if ($caller['class'] == 'ParserOriginal' || $caller['class'] == 'Parser' ) {
 			  preg_match_all('/<a [^>]*>(.*?<img.*?)<\/a>/s', $html, $matches);
