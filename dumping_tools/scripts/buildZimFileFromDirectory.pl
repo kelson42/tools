@@ -32,6 +32,7 @@ my $mediawikiOptim;
 my $shortenUrls;
 my $avoidForceHtmlCharsetToUtf8;
 my $dbName=time();
+my %metadata;
 
 # Get console line arguments
 GetOptions('writerPath=s' => \$writerPath, 
@@ -48,11 +49,12 @@ GetOptions('writerPath=s' => \$writerPath,
 	   'compressAll' => \$compressAll,
 	   'shortenUrls' => \$shortenUrls,
 	   'welcomePage=s' => \$welcomePage,
-	   'avoidForceHtmlCharsetToUtf8' => \$avoidForceHtmlCharsetToUtf8
+	   'avoidForceHtmlCharsetToUtf8' => \$avoidForceHtmlCharsetToUtf8,
+	   'language=s' => \$metadata{'Language'}
 	   );
 
-if (!$htmlPath || !$welcomePage ) {
-    print "usage: ./builZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html [--dbUser=foobar] [--dbPassword=testpass] [--writerPath=./zimWriter] [--zimFilePath=articles.zim] [--dbName=kiwix_db] [--dbPort=5433] [--dbHost=localhost] [--rewriteCDATA] [--mediawikiOptim] [--shortenUrls] [--strict] [--avoidForceHtmlCharsetToUtf8] [--compressAll]\n";
+if (!$htmlPath || !$welcomePage || !$metadata{'Language'}) {
+    print "usage: ./builZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html --language=fr [--dbUser=foobar] [--dbPassword=testpass] [--writerPath=./zimWriter] [--zimFilePath=articles.zim] [--dbName=kiwix_db] [--dbPort=5433] [--dbHost=localhost] [--rewriteCDATA] [--mediawikiOptim] [--shortenUrls] [--strict] [--avoidForceHtmlCharsetToUtf8] [--compressAll]\n";
     exit;
 }
 
@@ -105,6 +107,7 @@ $writer->rewriteCDATA($rewriteCDATA);
 $writer->strict($strict);
 $writer->avoidForceHtmlCharsetToUtf8($avoidForceHtmlCharsetToUtf8);
 $writer->shortenUrls($shortenUrls);
+$writer->metadata(\%metadata);
 
 # prepare urls rewreting
 $logger->info("Starting ZIM building process.");

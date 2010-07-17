@@ -7,7 +7,6 @@ use Kiwix::PathExplorer;
 use Kiwix::MimeDetector;
 use Kiwix::UrlRewriter;
 use HTML::LinkExtractor;
-use Text::Unaccent;
 use HTML::Entities;
 use URI::Escape;
 use Math::BaseArith;
@@ -39,6 +38,7 @@ my $rewriteCDATA;
 my $shortenUrls;
 my $strict;
 my $avoidForceHtmlCharsetToUtf8;
+my $metadata;
 
 my %bestResolutionSizes;
 my %bestResolutionUrls;
@@ -413,9 +413,6 @@ sub computeNewUrls {
 		$extension=$3;
 	    }
 	
-	    #$newUrlBase = unac_string("UTF8", $newUrlBase) || $newUrlBase;
-	    #$newUrlBase =~ s/ /_/g;
-	    #$newUrlBase =~ s/[^a-z0-9_]/_/ig;
 	    $newUrlBase =~ s/[_]+/_/ig;
 	    $newUrl = $newUrlBase.$extension;
 
@@ -629,6 +626,25 @@ sub buildDatabase {
 	}
 
 	$self->executeSql("insert into mimetype (id, mimetype, compress) values ('".$mimeTypeCode."', '".$mimeType."', '".($mimeTypeCompression ? "true"  : "false")."')");
+    }
+
+    # Put the metadata
+    foreach my $key (keys(%$metadata)) {
+	my $redirect;
+
+	$self->log("info", "Adding Metadata '$key' to DB.");
+	my $sql = "insert into article (namespace, title, url, redirect, mimetype, data) values (?, ?, ?, ?, ?, ?)";
+	my $sth = $self->dbHandler()->prepare($sql);
+
+	$sth->bind_param(1, "M");
+	$sth->bind_param(2, $key);
+	$sth->bind_param(3, $key);
+	$sth->bind_param(4, $redirect);
+	$sth->bind_param(5, 1);
+    	$sth->bind_param(6, $metadata->{$key}, { pg_type => DBD::Pg::PG_BYTEA } );
+	
+	$sth->execute();
+	if ($self->dbHandler()->err()) { die "$DBI::errstr\n"; }
     }
 
     # fill the article table
@@ -992,6 +1008,12 @@ sub mimeDetector {
     my $self = shift;
     if (@_) { $mimeDetector = shift } 
     return $mimeDetector;
+}
+
+sub metadata {
+    my $self = shift;
+    if (@_) { $metadata = shift } 
+    return $metadata;
 }
 
 sub log {
