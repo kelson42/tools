@@ -18,15 +18,17 @@ my $logger = Log::Log4perl->get_logger("optimizeContents.pl");
 # get the params
 my $contentPath;
 my $removeTitleTag;
+my $threadCount=2;
 
 # Get console line arguments
 GetOptions(
 	   'contentPath=s' => \$contentPath,
 	   'removeTitleTag' => \$removeTitleTag,
+	   'threadCount' => \$threadCount,
 	   );
 
 if (!$contentPath) {
-    print "usage: ./optimizeContents.pl --contentPath=./html [--removeTitleTag]\n";
+    print "usage: ./optimizeContents.pl --contentPath=./html [--removeTitleTag] [--threadCount=2]\n";
     exit;
 }
 
@@ -34,5 +36,6 @@ if (!$contentPath) {
 my $optimizer = Kiwix::FileOptimizer->new();
 $optimizer->logger($logger);
 $optimizer->contentPath($contentPath);
+$optimizer->threadCount($threadCount);
 $optimizer->removeTitleTag($removeTitleTag);
 $optimizer->optimize();
