@@ -10,6 +10,7 @@ use Compress::Zlib;
 use HTML::Entities qw(decode_entities);
 
 my $directory;
+my $runMaintenanceUpdate;
 my $logger;
 my $doc;
 my $mediawikiRevision = "head";
@@ -192,6 +193,8 @@ sub informations {
 }
 
 sub applyCustomisations {
+    my $self = shift;
+
     # copy the Kiwix skins
     my $cmd = "cp ../data/skins/*.php ".$directory."/skins/";
     `$cmd`;
@@ -223,25 +226,30 @@ sub applyCustomisations {
     `$cmd`;
 
     # compile textvc
+    $self->log("info", "Compile the math rendere tool.");	
     $cmd = "cd $directory/math ; make -s clean all";
     `$cmd`;
 
     # Set link color to 'black' in the timeline extension
+    $self->log("info", "Patch EasyTimeline.pl");	
     if ( -f $directory.'/extensions/timeline/EasyTimeline.pl') {
 	$cmd = 'sed -i -e \'s/\$LinkColor[ |]=.*$/\$LinkColor = "black";/\' ' . $directory . '/extensions/timeline/EasyTimeline.pl';
 	`$cmd`;
     }
 
     # Make the link for the 'local directory
+    $self->log("info", "Create the smylink images/shared");	
     $cmd = 'ln -f -s /var/www/mirror/commons/images/ '.$directory.'/images/shared';
     `$cmd`;
 
     # Make the link for the 'local' directory
+    $self->log("info", "Create the smylink images/local");	
     $cmd = 'ln -f -s '.$directory.'/images/ '.$directory.'/images/local';
     `$cmd`;
 
     # Make an DB update if necessary
-    if ( -e $directory."/LocalSettings.php" ) {
+    $self->log("info", "Run update if necessary");	
+    if ( -e $directory."/LocalSettings.php" && $self->runMaintenanceUpdate()) {
 	$cmd = "php $directory/maintenance/update.php";
 	`$cmd`;
     }
@@ -303,6 +311,12 @@ sub directory {
     my $self = shift;
     if (@_) { $directory = shift }
     return $directory;
+}
+
+sub runMaintenanceUpdate {
+    my $self = shift;
+    if (@_) { $runMaintenanceUpdate = shift }
+    return $runMaintenanceUpdate;
 }
 
 sub log {

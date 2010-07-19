@@ -21,6 +21,7 @@ my $path;
 my $action="info";
 my $filter=".*";
 my $directory="";
+my $runMaintenanceUpdate;
 
 ## Get console line arguments
 GetOptions('host=s' => \$host, 
@@ -28,13 +29,14 @@ GetOptions('host=s' => \$host,
 	   'action=s' => \$action,
 	   'filter=s' => \$filter,
 	   'directory=s' => \$directory,
+	   'runMaintenanceUpdate' => \$runMaintenanceUpdate,
 	   );
 
 if (!$host || ($action eq "svn" && !$directory) ) {
     if ($action eq "svn" && !$directory) {
 	print "error: please specify a directory argument\n";
     }
-    print "usage: ./mirrorMediawikiCode.pl --host=my_wiki_host [--path=w] [--action=info|svn|checkout|php] [--filter=*] [--directory=./]\n";
+    print "usage: ./mirrorMediawikiCode.pl --host=my_wiki_host [--path=w] [--action=info|svn|checkout|php] [--filter=*] [--directory=./] [--runMaintenanceUpdate]\n";
     exit;
 }
 
@@ -43,6 +45,7 @@ $code->filter($filter);
 
 $code->logger($logger);
 $code->directory($directory);
+$code->runMaintenanceUpdate($runMaintenanceUpdate);
 
 unless ($code->get($host, $path)) {
     exit;
@@ -58,13 +61,13 @@ if ($action eq "info") {
 	`$command`;
     }
 
-    $code->applyCustomisations();
-    
     my $code = "<?php\n".$code->php()."\n?>\n";
     my $filename = "$directory/extensions.php";
     open (FILE, ">>$filename");
     print FILE $code;
     close (FILE);
+
+    $code->applyCustomisations();
 
 } elsif ($action eq "php") {
     print $code->php();
