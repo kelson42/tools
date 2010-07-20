@@ -61,10 +61,10 @@ if ($action eq "info") {
 	`$command`;
     }
 
-    my $code = "<?php\n".$code->php()."\n?>\n";
+    my $phpcode = "<?php\n".$code->php()."\n?>\n";
     my $filename = "$directory/extensions.php";
     open (FILE, ">>$filename");
-    print FILE $code;
+    print FILE $phpcode;
     close (FILE);
 
     $code->applyCustomisations();
