@@ -123,8 +123,6 @@ foreach my $entry (split(/\n/, $entries)) {
     }
 }
 
-exit;
-
 # Remove the images
 $logger->info("Remove images...");
 $entries = getList("Mirrors/$projectCode/image_black_list.txt");
