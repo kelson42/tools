@@ -50,11 +50,14 @@ GetOptions('writerPath=s' => \$writerPath,
 	   'shortenUrls' => \$shortenUrls,
 	   'welcomePage=s' => \$welcomePage,
 	   'avoidForceHtmlCharsetToUtf8' => \$avoidForceHtmlCharsetToUtf8,
-	   'language=s' => \$metadata{'Language'}
+	   'language=s' => \$metadata{'Language'},
+	   'title=s' => \$metadata{'Title'},
+	   'creator=s' => \$metadata{'Creator'},
+	   'description=s' => \$metadata{'Description'},
 	   );
 
-if (!$htmlPath || !$welcomePage || !$metadata{'Language'}) {
-    print "usage: ./builZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html --language=fr [--dbUser=foobar] [--dbPassword=testpass] [--writerPath=./zimWriter] [--zimFilePath=articles.zim] [--dbName=kiwix_db] [--dbPort=5433] [--dbHost=localhost] [--rewriteCDATA] [--mediawikiOptim] [--shortenUrls] [--strict] [--avoidForceHtmlCharsetToUtf8] [--compressAll]\n";
+if (!$htmlPath || !$welcomePage || !$metadata{'Language'} || !$metadata{'Title'} || !$metadata{'Creator'} || !$metadata{'Description'}) {
+    print "usage: ./builZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html --language=fr --title=foobar --creator=foobar --decription=mydescription [--dbUser=foobar] [--dbPassword=testpass] [--writerPath=./zimWriter] [--zimFilePath=articles.zim] [--dbName=kiwix_db] [--dbPort=5433] [--dbHost=localhost] [--rewriteCDATA] [--mediawikiOptim] [--shortenUrls] [--strict] [--avoidForceHtmlCharsetToUtf8] [--compressAll]\n";
     exit;
 }
 
