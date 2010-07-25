@@ -1,12 +1,11 @@
 #!/usr/bin/perl
 
-use lib "../";
-use lib "../Mediawiki/";
+use lib "../classes/";
 
 use Config;
 use strict;
 use warnings;
-use MediaWiki::Reset;
+use Mediawiki::Reset;
 use Getopt::Long;
 use Data::Dumper;
 use Term::Query qw( query query_table query_table_set_defaults query_table_process );
@@ -37,6 +36,7 @@ GetOptions('host=s' => \$host,
 
 if (!$database || !$username ) {
     print "usage: ./resetMediawikiDatabase.pl --database=my_wiki_db [--username=my_user] [--password=my_password] [--host=localhost] [--port=3306] [--dropDatabase] [--keepImages]\n";
+    exit;
 }
 
 if (!$username) {
@@ -47,7 +47,7 @@ if (!$password) {
     $password = query("Password:", "");
 }
 
-my $reset = MediaWiki::Reset->new();
+my $reset = Mediawiki::Reset->new();
 $reset->logger($logger);
 $reset->host($host);
 $reset->port($port);

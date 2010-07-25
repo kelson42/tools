@@ -1,4 +1,4 @@
-package MediaWiki::Reset;
+package Mediawiki::Reset;
 
 use strict;
 use warnings;
