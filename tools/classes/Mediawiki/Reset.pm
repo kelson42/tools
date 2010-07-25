@@ -32,7 +32,7 @@ sub reset {
     
     $dbh = DBI->connect($dsn, $username, $password) or die ("Unable to connect to the database.");
     
-    foreach my $table ("archive", "categorylinks", "externallinks", "filearchive", "hitcounter", "imagelinks", "langlinks", "logging", "math", "objectcache", "redirect", "page", "pagelinks", "revision", "text", "recentchanges", "searchindex", "templatelinks") {
+    foreach my $table ("archive", "category", "categorylinks", "externallinks", "filearchive", "hitcounter", "imagelinks", "langlinks", "logging", "math", "objectcache", "redirect", "page", "pagelinks", "revision", "text", "recentchanges", "searchindex", "templatelinks") {
 	$req = "TRUNCATE $table";
 	$sth = $dbh->prepare($req)  or die ("Unable to prepare request.");
 	$sth->execute() or die ("Unable to execute request.");
