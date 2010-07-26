@@ -12,7 +12,6 @@ use Cwd 'abs_path';
 use threads;
 use threads::shared;
 
-my $logger;
 my $contentPath : shared;
 my $optPngPath : shared;
 my $optGifPath : shared;
@@ -22,10 +21,12 @@ my $removeTitleTag : shared;
 my %queue : shared;
 my $threadCount = 2;
 my $queueMutex : shared = 1;
-my $loggerMutex : shared = 1;
 my @threads;
 my $isRunnable : shared = 1;
 my $delay : shared = 1;
+
+my $loggerMutex : shared = 1;
+my $logger;
 
 sub new {
     my $class = shift;
@@ -35,6 +36,18 @@ sub new {
     $self->optPngPath(whereis("opt-png"));
     $self->optGifPath(whereis("opt-gif"));
     $self->optJpgPath(whereis("opt-jpg"));
+
+    return $self;
+}
+
+sub optimize {
+    my $self = shift;
+
+    # Few checks
+    unless ($self->contentPath) {
+	$self->log("error", "You have to give a path to explore to search files to be optmized.");
+	return;
+    }
 
     if (!$self->optPngPath()) {
 	die("Sorry, but opt-png does not seems not be installed on your system.");
@@ -48,22 +61,13 @@ sub new {
 	die("Sorry, but opt-jpg does not seems not be installed on your system.");
     }
 
+    # Start the threads to optimize files
     $self->log("info", $threadCount." thread(s) launched...");
     for (my $i=0; $i<$threadCount; $i++) {
         $threads[$i] = threads->new(\&optimizeFiles, $self, $i);
     }
 
-    return $self;
-}
-
-sub optimize {
-    my $self = shift;
-    
-    unless ($self->contentPath) {
-	$self->log("error", "You have to give a path to explore to search files to be optmized.");
-	return;
-    }
-
+    # Start the directory walker to find files to optimize
     my $explorer = new Kiwix::PathExplorer();
     $explorer->path($self->contentPath());
     while (my $file = $explorer->getNext()) {
@@ -88,12 +92,13 @@ sub optimizeFiles {
     my $self = shift;
     my $id = shift;
 
+    $self->log("info", "Starting thread $id...");
     my $mimeDetector = new Kiwix::MimeDetector();
 
     while ($self->isRunnable()) {
 	my $file = $self->getFileToOptimize();
 	if ($file) {
-	    $self->log("info", "Optimizing $file.");
+	    $self->log("info", "$id : Optimizing $file.");
 	    my $mimeType = $mimeDetector->getMimeType($file);
 	    if ($mimeType eq "text/html") {
 		$self->optimizeHtml($file);
@@ -298,6 +303,7 @@ sub getQueueSize {
 # loggin
 sub logger {
     my $self = shift;
+
     lock($loggerMutex);
     if (@_) { 
 	$logger = shift ;

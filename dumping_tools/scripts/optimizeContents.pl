@@ -24,7 +24,7 @@ my $threadCount=2;
 GetOptions(
 	   'contentPath=s' => \$contentPath,
 	   'removeTitleTag' => \$removeTitleTag,
-	   'threadCount' => \$threadCount,
+	   'threadCount=s' => \$threadCount,
 	   );
 
 if (!$contentPath) {
