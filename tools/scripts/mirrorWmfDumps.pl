@@ -1,4 +1,4 @@
-1;2305;0c#!/usr/bin/perl
+#!/usr/bin/perl
 
 use lib "../";
 use lib "../Mediawiki/";
@@ -25,6 +25,7 @@ my $databasePassword = "";
 my $projectCode = "";
 my $withoutImages;
 my $tmpDir = "/tmp";
+my $version = "latest";
 my $cmd;
 
 ## Get console line arguments
@@ -35,11 +36,12 @@ GetOptions('databaseHost=s' => \$databaseHost,
 	   'databasePassword=s' => \$databasePassword,
 	   'projectCode=s' => \$projectCode,
 	   'withoutImages' => \$withoutImages,
+	   'version=s' => \$version,
 	   'tmpDir=s' => \$tmpDir,
 	   );
 
 if (!$databaseName || !$projectCode) {
-    print "usage: ./mirrorWmfDumps.pl --projectCode=enwiki --databaseName=MYDB [--tmpDir=/tmp] [--databaseHost=localhost] [--databasePort=3306] [--databaseUsername=tom] [--databasePassword=fff] [--withoutImages]\n";
+    print "usage: ./mirrorWmfDumps.pl --projectCode=enwiki --databaseName=MYDB [--tmpDir=/tmp] [--databaseHost=localhost] [--databasePort=3306] [--databaseUsername=tom] [--databasePassword=fff] [--withoutImages] [--version=latest]\n";
     exit;
 }
 
@@ -52,19 +54,19 @@ $tmpDir = $tmpDir."/wmfDumps";
 `mkdir $tmpDir`;
 
 # Download the XML & SQL files
-$cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/latest/$projectCode-latest-pages-articles.xml.bz2"; `$cmd`;
-$cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/latest/$projectCode-latest-interwiki.sql.gz"; `$cmd`;
-$cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/latest/$projectCode-latest-imagelinks.sql.gz"; `$cmd`;
-$cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/latest/$projectCode-latest-pagelinks.sql.gz"; `$cmd`;
-$cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/latest/$projectCode-latest-redirect.sql.gz"; `$cmd`;
-$cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/latest/$projectCode-latest-templatelinks.sql.gz"; `$cmd`;
-$cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/latest/$projectCode-latest-externallinks.sql.gz"; `$cmd`;
-$cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/latest/$projectCode-latest-categorylinks.sql.gz"; `$cmd`;
-$cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/latest/$projectCode-latest-category.sql.gz"; `$cmd`;
-$cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/latest/$projectCode-latest-langlinks.sql.gz"; `$cmd`;
+$cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-pages-articles.xml.bz2"; `$cmd`;
+$cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-interwiki.sql.gz"; `$cmd`;
+$cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-imagelinks.sql.gz"; `$cmd`;
+$cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-pagelinks.sql.gz"; `$cmd`;
+$cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-redirect.sql.gz"; `$cmd`;
+$cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-templatelinks.sql.gz"; `$cmd`;
+$cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-externallinks.sql.gz"; `$cmd`;
+$cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-categorylinks.sql.gz"; `$cmd`;
+$cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-category.sql.gz"; `$cmd`;
+$cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-langlinks.sql.gz"; `$cmd`;
 
 unless ($withoutImages) {
-    $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/latest/$projectCode-latest-image.sql.gz"; `$cmd`;
+    $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-image.sql.gz"; `$cmd`;
 }
 
 # Install and compile the mwdumper
@@ -88,21 +90,21 @@ foreach my $table ("revision", "page", "text", "imagelinks", "templatelinks", "i
 
 # Upload the SQL
 my $mysqlCmd = "mysql --user=$databaseUsername --password=$databasePassword $databaseName";
-$cmd = "gzip -d -c $tmpDir/$projectCode-latest-interwiki.sql.gz | $mysqlCmd"; `$cmd`;
-$cmd = "gzip -d -c $tmpDir/$projectCode-latest-image.sql.gz | $mysqlCmd"; `$cmd`;
-$cmd = "gzip -d -c $tmpDir/$projectCode-latest-imagelinks.sql.gz | $mysqlCmd"; `$cmd`;
-$cmd = "gzip -d -c $tmpDir/$projectCode-latest-pagelinks.sql.gz | $mysqlCmd"; `$cmd`;
-$cmd = "gzip -d -c $tmpDir/$projectCode-latest-redirect.sql.gz | $mysqlCmd"; `$cmd`;
-$cmd = "gzip -d -c $tmpDir/$projectCode-latest-templatelinks.sql.gz | $mysqlCmd"; `$cmd`;
-$cmd = "gzip -d -c $tmpDir/$projectCode-latest-externallinks.sql.gz | $mysqlCmd"; `$cmd`;
-$cmd = "gzip -d -c $tmpDir/$projectCode-latest-categorylinks.sql.gz | $mysqlCmd"; `$cmd`;
-$cmd = "gzip -d -c $tmpDir/$projectCode-latest-langlinks.sql.gz | $mysqlCmd"; `$cmd`;
+$cmd = "gzip -d -c $tmpDir/$projectCode-$version-interwiki.sql.gz | $mysqlCmd"; `$cmd`;
+$cmd = "gzip -d -c $tmpDir/$projectCode-$version-image.sql.gz | $mysqlCmd"; `$cmd`;
+$cmd = "gzip -d -c $tmpDir/$projectCode-$version-imagelinks.sql.gz | $mysqlCmd"; `$cmd`;
+$cmd = "gzip -d -c $tmpDir/$projectCode-$version-pagelinks.sql.gz | $mysqlCmd"; `$cmd`;
+$cmd = "gzip -d -c $tmpDir/$projectCode-$version-redirect.sql.gz | $mysqlCmd"; `$cmd`;
+$cmd = "gzip -d -c $tmpDir/$projectCode-$version-templatelinks.sql.gz | $mysqlCmd"; `$cmd`;
+$cmd = "gzip -d -c $tmpDir/$projectCode-$version-externallinks.sql.gz | $mysqlCmd"; `$cmd`;
+$cmd = "gzip -d -c $tmpDir/$projectCode-$version-categorylinks.sql.gz | $mysqlCmd"; `$cmd`;
+$cmd = "gzip -d -c $tmpDir/$projectCode-$version-langlinks.sql.gz | $mysqlCmd"; `$cmd`;
 
 unless ($withoutImages) {
-    $cmd = "gzip -d -c $tmpDir/$projectCode-latest-image.sql.gz | $mysqlCmd"; `$cmd`;
+    $cmd = "gzip -d -c $tmpDir/$projectCode-$version-image.sql.gz | $mysqlCmd"; `$cmd`;
 }
 
 # Upload the XML
-$cmd = "cd $mwDumperDir; java -classpath ./src org.mediawiki.dumper.Dumper --format=sql:1.5 ../$projectCode-latest-pages-articles.xml.bz2 | $mysqlCmd"; `$cmd`;
+$cmd = "cd $mwDumperDir; java -classpath ./src org.mediawiki.dumper.Dumper --format=sql:1.5 ../$projectCode-$version-pages-articles.xml.bz2 | $mysqlCmd"; `$cmd`;
 
 exit;
