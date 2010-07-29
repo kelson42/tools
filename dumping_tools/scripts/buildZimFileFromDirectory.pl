@@ -92,6 +92,10 @@ unless ( -f $htmlPath."/".$welcomePage) {
     exit;    
 }
 
+# Add auto. the date metadata
+my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+$metadata{"Date"} = (1900+$year)."-".sprintf("%02d", $mon+1)."-".sprintf("%02d", $mday);
+
 # initialization
 my $writer = Kiwix::ZimWriter->new();
 $writer->logger($logger);

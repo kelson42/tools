@@ -9,7 +9,7 @@ use Kiwix::UrlRewriter;
 use HTML::LinkExtractor;
 use HTML::Entities;
 use URI::Escape;
-use Math::BaseArith;
+#use Math::BaseArith;
 use DBI qw(:sql_types);
 use Cwd 'abs_path';
 use DBD::Pg;
