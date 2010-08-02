@@ -83,6 +83,7 @@ foreach my $zimPath (@zimPaths) {
     $zimFileId =~ s/\r|\n//g;
 
     # Create the library
+    $logger->info("Create new library filef ro $zimFile.");
     my $libraryPath = "$isoDirectory/data/library/$zimFile.library";
     $logger->info("Create the library for $zimFile : ");
     my $xmlContent = "<library current=\"$zimFileId\"><book id=\"$zimFileId\" path=\"$zimFile\" indexPath=\"$zimFile.idx\" indexType=\"xapian\"/></library>\n";
@@ -90,9 +91,11 @@ foreach my $zimPath (@zimPaths) {
 }
 
 # Download the source code
-$cmd = "cd $isoDirectory ; wget \`curl --silent http://sourceforge.net/projects/kiwix/ | grep \"/download\" | sed 's/.*http/http/' | sed 's/\\?.*//'\`"; `$cmd`;
+    $logger->info("Download Kiwix source code");
+$cmd = "cd $isoDirectory ; wget \`curl --silent http://sourceforge.net/projects/kiwix/ | grep \"/download\" | sed 's/\\?.*//' | sed 's/.*http/http/'\`"; `$cmd`;
 
 # Download deb files
+    $logger->info("Download Kiwix deb packages");
 $cmd = "curl --silent http://ppa.launchpad.net/kiwixteam/ppa/ubuntu/pool/main/k/kiwix/ | grep deb | sed 's/.*href=\\\"//' | sed 's/deb.*/deb/'";
 my @debFiles = split(/\n/, `$cmd 2>&1`);
 foreach my $debFile (@debFiles) {
@@ -100,12 +103,18 @@ foreach my $debFile (@debFiles) {
 }
 
 # Download the file with DLL for Visual Studio redit. binaries
+$logger->info("Download vcredist_x86.exe");
 $cmd = "wget http://download.kiwix.org/dev/vcredist_x86.exe -O $isoDirectory/bonus/vcredist_x86.exe"; `$cmd`;
 
 # Download and unzip Windows binary
-$cmd = "wget \`curl --silent --user-agent \"Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.7.5) Gecko/20041202 Firefox/1.0\" http://sourceforge.net/projects/kiwix/ | grep \"/download\" | sed 's/.*http/http/' | sed 's/\\?.*//'\` -O $isoDirectory/kiwix.zip"; `$cmd`;
+$logger->info("Download and unzip Windows binary");
+$cmd = "wget \`curl --silent --user-agent \"Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.7.5) Gecko/20041202 Firefox/1.0\" http://sourceforge.net/projects/kiwix/ | grep \"/download\" |  sed 's/\\?.*//' | sed 's/.*http/http/'\` -O $isoDirectory/kiwix.zip"; `$cmd`;
 $cmd = "cd $isoDirectory/ ; unzip -n kiwix.zip" ; `$cmd`;
 $cmd = "rm $isoDirectory/kiwix.zip" ; `$cmd`;
+
+# Build ISO
+$logger->info("Build ISO $isoPath");
+$cmd = "mkisofs -r -J -o  $isoPath $isoDirectory"; `$cmd`;
 
 sub writeFile {
     my $file = shift;
