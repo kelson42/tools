@@ -10,6 +10,7 @@ use Getopt::Long;
 my @zimPaths;
 my $isoPath;
 my $tmpDirectory = "/tmp/";
+my $lang = "en";
 my $cmd;
 
 # Instance logger
@@ -21,11 +22,12 @@ my $logger = Log::Log4perl->get_logger("buildIso.pl");
 GetOptions('zimPath=s' => \@zimPaths,
 	   'tmpDirectory=s' => \$tmpDirectory,
 	   'isoPath=s' => \$isoPath,
+	   'lang=s' => \$lang,
     );
 
 # Check if we have all the mandatory variable set
 if (!scalar(@zimPaths) || !$isoPath) {
-    print "usage: ./buildIso.pl --isoPath=dvd.iso --zimPath=articles.zim [--tmpDirectory=/tmp/]\n";
+    print "usage: ./buildIso.pl --isoPath=dvd.iso --zimPath=articles.zim [--tmpDirectory=/tmp/] [--lang=en|fr]\n";
     exit
 }
 
@@ -83,7 +85,7 @@ foreach my $zimPath (@zimPaths) {
     $zimFileId =~ s/\r|\n//g;
 
     # Create the library
-    $logger->info("Create new library filef ro $zimFile.");
+    $logger->info("Create new library file ro $zimFile.");
     my $libraryPath = "$isoDirectory/data/library/$zimFile.library";
     $logger->info("Create the library for $zimFile : ");
     my $xmlContent = "<library current=\"$zimFileId\"><book id=\"$zimFileId\" path=\"$zimFile\" indexPath=\"$zimFile.idx\" indexType=\"xapian\"/></library>\n";
@@ -111,6 +113,14 @@ $logger->info("Download and unzip Windows binary");
 $cmd = "wget \`curl --silent --user-agent \"Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.7.5) Gecko/20041202 Firefox/1.0\" http://sourceforge.net/projects/kiwix/ | grep \"/download\" |  sed 's/\\?.*//' | sed 's/.*http/http/'\` -O $isoDirectory/kiwix.zip"; `$cmd`;
 $cmd = "cd $isoDirectory/ ; unzip -n kiwix.zip" ; `$cmd`;
 $cmd = "rm $isoDirectory/kiwix.zip" ; `$cmd`;
+
+# Download the autorun
+$logger->info("Download autorun");
+$cmd = "cd $isoDirectory/autorun/ ; wget http://download.kiwix.org/dev/launcher/mingwm10.dll"; `$cmd`;
+$cmd = "cd $isoDirectory/autorun/ ; wget http://download.kiwix.org/dev/launcher/libgcc_s_dw2-1.dll"; `$cmd`;
+$cmd = "cd $isoDirectory/autorun/ ; wget http://download.kiwix.org/dev/launcher/QtGui4.dll"; `$cmd`;
+$cmd = "cd $isoDirectory/autorun/ ; wget http://download.kiwix.org/dev/launcher/QtCore4.dll"; `$cmd`;
+$cmd = "cd $isoDirectory/autorun/ ; wget http://download.kiwix.org/dev/launcher/autorun-$lang.exe -O autorun.exe"; `$cmd`;
 
 # Build ISO
 $logger->info("Build ISO $isoPath");
