@@ -89,6 +89,9 @@ foreach my $zimPath (@zimPaths) {
     writeFile($libraryPath, $xmlContent);
 }
 
+# Download the source code
+$cmd = "cd $isoDirectory ; wget \`curl --silent http://sourceforge.net/projects/kiwix/ | grep \"/download\" | sed 's/.*http/http/' | sed 's/\\?.*//'\`"; `$cmd`;
+
 # Download deb files
 $cmd = "curl --silent http://ppa.launchpad.net/kiwixteam/ppa/ubuntu/pool/main/k/kiwix/ | grep deb | sed 's/.*href=\\\"//' | sed 's/deb.*/deb/'";
 my @debFiles = split(/\n/, `$cmd 2>&1`);
