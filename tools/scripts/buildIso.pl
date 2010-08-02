@@ -78,7 +78,7 @@ foreach my $zimPath (@zimPaths) {
     $cmd = "kiwix-compact $zimFileIndex"; `$cmd`;
 
     # Compute the zimId
-    $cmd = "zimdump -F /tmp/kiwix_iso_tmp_directory/data/content/ubuntudoc_fr_01_2009.zim  | grep uuid | sed 's/uuid: //'";
+    $cmd = "zimdump -F $zimPath | grep uuid | sed 's/uuid: //'";
     my $zimFileId = `$cmd 2>&1`;
     $zimFileId =~ s/\r|\n//g;
 
@@ -88,6 +88,21 @@ foreach my $zimPath (@zimPaths) {
     my $xmlContent = "<library current=\"$zimFileId\"><book id=\"$zimFileId\" path=\"$zimFile\" indexPath=\"$zimFile.idx\" indexType=\"xapian\"/></library>\n";
     writeFile($libraryPath, $xmlContent);
 }
+
+# Download deb files
+$cmd = "curl --silent http://ppa.launchpad.net/kiwixteam/ppa/ubuntu/pool/main/k/kiwix/ | grep deb | sed 's/.*href=\\\"//' | sed 's/deb.*/deb/'";
+my @debFiles = split(/\n/, `$cmd 2>&1`);
+foreach my $debFile (@debFiles) {
+    $cmd = "wget http://ppa.launchpad.net/kiwixteam/ppa/ubuntu/pool/main/k/kiwix/$debFile -O $isoDirectory/$debFile"; `$cmd`;
+}
+
+# Download the file with DLL for Visual Studio redit. binaries
+$cmd = "wget http://download.kiwix.org/dev/vcredist_x86.exe -O $isoDirectory/bonus/vcredist_x86.exe"; `$cmd`;
+
+# Download and unzip Windows binary
+$cmd = "wget \`curl --silent --user-agent \"Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.7.5) Gecko/20041202 Firefox/1.0\" http://sourceforge.net/projects/kiwix/ | grep \"/download\" | sed 's/.*http/http/' | sed 's/\\?.*//'\` -O $isoDirectory/kiwix.zip"; `$cmd`;
+$cmd = "cd $isoDirectory/ ; unzip -n kiwix.zip" ; `$cmd`;
+$cmd = "rm $isoDirectory/kiwix.zip" ; `$cmd`;
 
 sub writeFile {
     my $file = shift;
