@@ -116,14 +116,17 @@ $writer->avoidForceHtmlCharsetToUtf8($avoidForceHtmlCharsetToUtf8);
 $writer->shortenUrls($shortenUrls);
 $writer->metadata(\%metadata);
 
+# Create database
+$writer->createDatabase();
+
 # prepare urls rewreting
 $logger->info("Starting ZIM building process.");
 $writer->prepareUrlRewriting();
 
 # loads the data from the directory to the db
-$writer->buildDatabase();
+$writer->fillDatabase();
 $writer->buildZimFile();
 
 # delete database
-$writer->deleteDb();
+$writer->deleteDatabase();
 

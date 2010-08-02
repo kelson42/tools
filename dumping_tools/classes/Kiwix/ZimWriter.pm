@@ -567,7 +567,7 @@ sub executeSql {
 }
 
 # create database
-sub createDb {
+sub createDatabase {
     my $self = shift;
     my $dbName = $self->dbName();
     my $dbUser = $self->dbUser();
@@ -578,7 +578,7 @@ sub createDb {
 }
 
 # delete database
-sub deleteDb {
+sub deleteDatabase {
     my $self = shift;
     my $dbName = $self->dbName();
     my $dbUser = $self->dbUser();
@@ -600,15 +600,12 @@ sub connectToDb {
     }
 }
 
-sub buildDatabase {
+sub fillDatabase {
     my $self = shift;
     my $dbName = $self->dbName();
     my $sql;
 
     $self->log("info", "Will create and fill the database '".$dbName."'.");
-
-    # create database
-    $self->createDb();
 
     # connect to the db
     unless ($self->connectToDb()) {
