@@ -863,7 +863,12 @@ sub removeUnwantedFiles {
 sub extractTitleFromHtml {
     my $html = shift;
     if ($$html =~ /<title>[\n|\t| ]*(.*?)[\n|\t| ]*<\/title>/im ) {
-	return decode_entities($1);
+	my $title = $1;
+
+	# Remove HTML tags in title
+	$title =~ s/<(.*?)>//g;
+
+	return decode_entities($title);
     }
 }
 
