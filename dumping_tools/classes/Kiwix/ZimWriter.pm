@@ -337,10 +337,11 @@ sub computeNewUrls {
 
     # Sort urls
     my @urls = keys(%urls);
-    $self->log("info", "Sorting ".scalar(@urls)." urls.");
-    my @sortedUrls = sort { $urls{$b} <=> $urls{$a} } (@urls);
 
     if ($self->shortenUrls()) {
+	$self->log("info", "Sorting ".scalar(@urls)." urls.");
+	my @sortedUrls = sort { $urls{$b} <=> $urls{$a} } (@urls);
+
 	# new url base
 	my $baseString = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	my $baseSize = length($baseString);
@@ -388,7 +389,7 @@ sub computeNewUrls {
 	# compute the new url
 	$self->log("info", "Computing new urls.");
 
-	foreach my $url (@sortedUrls) {
+	foreach my $url (@urls) {
 	    my $newUrlBase;
 	    my $newUrl;
 	    my $file = $self->htmlPath().$url;
@@ -536,12 +537,12 @@ sub isSelfUrl {
     $url =~ /^\#.*$/ ? 1 : 0 ;
 }
 
-sub fillDb {
+sub copyFilesToDatabase {
     my $self = shift;
 
     foreach my $url (keys(%urls)) {
 	if (-f $self->htmlPath().$url && !exists($bestResolutionRedirects{$url})) {
-	    $self->copyFileToDb($url);
+	    $self->copyFileToDatabase($url);
 	}
     }
 }
@@ -645,7 +646,7 @@ sub fillDatabase {
     }
 
     # fill the article table
-    $self->fillDb();
+    $self->copyFilesToDatabase();
 
     # Fill with the mainpage
     $self->log("info", "Fill with the main page.");
@@ -669,7 +670,7 @@ sub fillDatabase {
     $self->log("info", "Have finished to build & fill the database.");
 }
 
-sub copyFileToDb {
+sub copyFileToDatabase {
     my $self = shift;
     $file = shift;
 
@@ -844,7 +845,10 @@ sub copyFileToDb {
     $sth->bind_param(6, $hash{data}, { pg_type => DBD::Pg::PG_BYTEA } );
 
     $sth->execute();
-    if ($self->dbHandler()->err()) { die "$DBI::errstr\n"; }
+    if ($self->dbHandler()->err()) { 
+	$self->log("error", "Error by inserting namespace=".$hash{namespace}." & title=".$hash{title}." & url=".$hash{url}." & mimetype=".$mimeTypes{ $hash{mimetype} });
+#	die "$DBI::errstr\n"; 
+    }
     
     return \%hash;
 }
