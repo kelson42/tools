@@ -8,7 +8,6 @@ use Kiwix::PathExplorer;
 use URI::Escape;
 use File::Path qw(mkpath);
 use File::Copy;
-use Net::Address::IP::Local;
 use Sys::Hostname;
 use Socket;
 
@@ -17,6 +16,7 @@ use Cwd 'abs_path';
 my $logger;
 my $mediawikiPath;
 my $htmlPath;
+my $restartAtCheckpoint;
 my %imgs;
 
 sub new {
@@ -30,13 +30,17 @@ sub dump {
     my $self = shift;
     my $cmd;
 
-    # remove old 
-    $cmd = "rm -rf ".$self->mediawikiPath()."/static/"; `$cmd`;
-    $self->log("info", $cmd); `$cmd`;
-
     # start PHP dump command
     my $checkpointPath = $self->mediawikiPath()."/checkpoint";
-    $cmd = "rm $checkpointPath"; `$cmd`;
+
+    unless ($self->restartAtCheckpoint()) {
+	$cmd = "rm $checkpointPath"; `$cmd`;
+
+	# remove old 
+	$cmd = "rm -rf ".$self->mediawikiPath()."/static/"; `$cmd`;
+	$self->log("info", $cmd); `$cmd`;
+    }
+
     do {
 	$cmd = "ulimit -v 2000000 ; php ".$self->mediawikiPath()."/extensions/DumpHTML/dumpHTML.php -k kiwixoffline --checkpoint ".$self->mediawikiPath()."/checkpoint";
 	$self->log("info", $cmd); `$cmd`;
@@ -77,7 +81,7 @@ sub dump {
     $explorer->path($self->htmlPath());
     $explorer->filterRegexp('^.*html$');
 
-    my @localAddresses = (Net::Address::IP::Local->public(), "127.0.0.1");
+#    my @localAddresses = (Net::Address::IP::Local->public(), "127.0.0.1");
     while (my $file = $explorer->getNext()) {
 	$self->log("info", "Analyze images to copy for ".$file);
 
@@ -102,24 +106,8 @@ sub dump {
 	    my $src = $$Link{src};
 	    my $imgPath = $src;
 
-	    if ($src =~ /^http:\/\/([^\/]+)\/(.*$)/) {
-		my $hostname=$1;
-		$imgPath=$2;
-		
-		# Check the hostname in the @localAddresses 
-		if (grep(/\Q$hostname\E/, @localAddresses)) {
-		    $imgs{$imgPath} = 1;
-		} else {
-		    my ($hostnameIp) = inet_ntoa( (gethostbyname($hostname))[4] );
-		    if ( grep(/\Q$hostnameIp\E/, @localAddresses) ) {
-			push(@localAddresses, $hostname);
-			$imgs{$imgPath} = 1;
-		    }
-		}
-	    } else {
-		$imgPath =~ s/\.\.\///g;
-		$imgs{$imgPath} = 1;
-	    }
+	    $imgPath =~ s/\.\.\///g;
+	    $imgs{$imgPath} = 1;
 
 	    $rews{$src} = $imgPath;
 	}
@@ -128,7 +116,7 @@ sub dump {
 	foreach my $imgLink (keys(%rews)) {
 	    my $rewritedImgLink;
 	    if ($file =~ ".*index\.html") {
-		$rewritedmgLink = "../"..$rews{$imgLink};
+		$rewritedImgLink = "../"..$rews{$imgLink};
 	    } else {
 		$rewritedImgLink = "../../../../../".$rews{$imgLink};
 	    }
@@ -213,6 +201,14 @@ sub mediawikiPath {
 	}
     } 
     return $mediawikiPath;
+}
+
+sub restartAtCheckpoint {
+    my $self = shift;
+    if (@_) {
+	$restartAtCheckpoint = shift;
+    }
+    return $restartAtCheckpoint;
 }
 
 sub logger {
