@@ -92,16 +92,17 @@ foreach my $zimPath (@zimPaths) {
     writeFile($libraryPath, $xmlContent);
 }
 
-# Download the source code
-    $logger->info("Download Kiwix source code");
+ # Download the source code
+$logger->info("Download Kiwix source code");
 $cmd = "cd $isoDirectory ; wget \`curl --silent http://sourceforge.net/projects/kiwix/ | grep \"/download\" | sed 's/\\?.*//' | sed 's/.*http/http/'\`"; `$cmd`;
 
 # Download deb files
-    $logger->info("Download Kiwix deb packages");
+$logger->info("Download Kiwix deb packages");
 $cmd = "curl --silent http://ppa.launchpad.net/kiwixteam/ppa/ubuntu/pool/main/k/kiwix/ | grep deb | sed 's/.*href=\\\"//' | sed 's/deb.*/deb/'";
 my @debFiles = split(/\n/, `$cmd 2>&1`);
+
 foreach my $debFile (@debFiles) {
-    $cmd = "wget http://ppa.launchpad.net/kiwixteam/ppa/ubuntu/pool/main/k/kiwix/$debFile -O $isoDirectory/$debFile"; `$cmd`;
+    $cmd = "wget http://ppa.launchpad.net/kiwixteam/ppa/ubuntu/pool/main/k/kiwix/$debFile -O $isoDirectory/install/$debFile"; `$cmd`;
 }
 
 # Download the file with DLL for Visual Studio redit. binaries
