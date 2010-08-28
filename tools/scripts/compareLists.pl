@@ -17,7 +17,7 @@ my @results;
 GetOptions('file1=s' => \$file1, 'file2=s' => \$file2, 'mode=s' => \$mode);
  
 unless ($file1 && $file2 && $mode) {
-    print "usage: ./compareLists.pl --file1=first_list --file2=second_list --mode=[only1|inter]\n";
+    print STDERR "usage: ./compareLists.pl --file1=first_list --file2=second_list --mode=[only1|inter]\n";
     exit
 }
  
