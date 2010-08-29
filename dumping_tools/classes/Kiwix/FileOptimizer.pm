@@ -17,6 +17,7 @@ my $optPngPath : shared;
 my $optGifPath : shared;
 my $optJpgPath : shared;
 my $removeTitleTag : shared;
+my $ignoreHtml : shared;
 
 my %queue : shared;
 my $threadCount = 2;
@@ -91,6 +92,7 @@ sub optimize {
 sub optimizeFiles {
     my $self = shift;
     my $id = shift;
+    my $ignoreHtml = $self->ignoreHtml();
 
     $self->log("info", "Starting thread $id...");
     my $mimeDetector = new Kiwix::MimeDetector();
@@ -100,7 +102,7 @@ sub optimizeFiles {
 	if ($file) {
 	    $self->log("info", "$id : Optimizing $file.");
 	    my $mimeType = $mimeDetector->getMimeType($file);
-	    if ($mimeType eq "text/html") {
+	    if ($mimeType eq "text/html" && !$ignoreHtml) {
 		$self->optimizeHtml($file);
 	    } elsif ($mimeType eq "image/png") {
 		$self->optimizePng($file);
@@ -213,6 +215,13 @@ sub removeTitleTag {
     lock($removeTitleTag);
     if (@_) { $removeTitleTag = shift }
     return $removeTitleTag;
+}
+
+sub ignoreHtml {
+    my $self = shift;
+    lock($ignoreHtml);
+    if (@_) { $ignoreHtml = shift }
+    return $ignoreHtml;
 }
 
 sub optPngPath {

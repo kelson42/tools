@@ -18,17 +18,19 @@ my $logger = Log::Log4perl->get_logger("optimizeContents.pl");
 # get the params
 my $contentPath;
 my $removeTitleTag;
+my $ignoreHtml;
 my $threadCount=2;
 
 # Get console line arguments
 GetOptions(
-	   'contentPath=s' => \$contentPath,
-	   'removeTitleTag' => \$removeTitleTag,
-	   'threadCount=s' => \$threadCount,
-	   );
+    'contentPath=s' => \$contentPath,
+    'removeTitleTag' => \$removeTitleTag,
+    'ignoreHtml' => \$ignoreHtml,
+    'threadCount=s' => \$threadCount,
+    );
 
 if (!$contentPath) {
-    print "usage: ./optimizeContents.pl --contentPath=./html [--removeTitleTag] [--threadCount=2]\n";
+    print "usage: ./optimizeContents.pl --contentPath=./html [--removeTitleTag] [--ignoreHtml] [--threadCount=2]\n";
     exit;
 }
 
@@ -38,4 +40,5 @@ $optimizer->logger($logger);
 $optimizer->contentPath($contentPath);
 $optimizer->threadCount($threadCount);
 $optimizer->removeTitleTag($removeTitleTag);
+$optimizer->ignoreHtml($ignoreHtml);
 $optimizer->optimize();
