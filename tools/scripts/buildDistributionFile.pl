@@ -56,8 +56,14 @@ $cmd = "rm -rf \`find $distributionDirectory -name \"*.svn\"\`"; `$cmd`;
 # Copy the ZIMs
 $logger->info("Copying the ZIM files");
 foreach my $zimPath (@zimPaths) {
-    $logger->info("Check ZIM file $zimPath");
-    $cmd = "cp $zimPath $distributionDirectory/data/content/"; `$cmd`;
+    my $zimSize = -s $zimPath;
+    if ($zimSize > 4293918720) {
+	my $prefix = $zimPath; $prefix =~ s/.*\///g;
+	$cmd = "cd $distributionDirectory/data/content/; split --bytes=4095M $zimPath $prefix"; `$cmd`;
+    } else {
+	$logger->info("Check ZIM file $zimPath");
+	$cmd = "cp $zimPath $distributionDirectory/data/content/"; `$cmd`;
+    }
 }
 
 # Update @zimPaths
