@@ -8,26 +8,28 @@ use Getopt::Long;
 
 # Variables 
 my @zimPaths;
-my $isoPath;
+my $filePath;
 my $tmpDirectory = "/tmp/";
 my $lang = "en";
+my $type;
 my $cmd;
 
 # Instance logger
 use Log::Log4perl;
 Log::Log4perl->init("../conf/log4perl");
-my $logger = Log::Log4perl->get_logger("buildIso.pl");
+my $logger = Log::Log4perl->get_logger("buildDistributionFile.pl");
 
 # Get arguments
 GetOptions('zimPath=s' => \@zimPaths,
 	   'tmpDirectory=s' => \$tmpDirectory,
-	   'isoPath=s' => \$isoPath,
+	   'filePath=s' => \$filePath,
+	   'type=s' => \$type,
 	   'lang=s' => \$lang,
     );
 
 # Check if we have all the mandatory variable set
-if (!scalar(@zimPaths) || !$isoPath) {
-    print "usage: ./buildIso.pl --isoPath=dvd.iso --zimPath=articles.zim [--tmpDirectory=/tmp/] [--lang=en|fr]\n";
+if (!scalar(@zimPaths) || !$filePath || ($type != "iso" && $type != "portable")) {
+    print "usage: ./buildIso.pl --filePath=dvd.iso --zimPath=articles.zim --type=[iso|portable] [--tmpDirectory=/tmp/] [--lang=en|fr]\n";
     exit
 }
 
@@ -124,8 +126,10 @@ $cmd = "cd $isoDirectory/autorun/ ; wget http://download.kiwix.org/dev/launcher/
 $cmd = "cd $isoDirectory/autorun/ ; wget http://download.kiwix.org/dev/launcher/autorun-$lang.exe -O autorun.exe"; `$cmd`;
 
 # Build ISO
-$logger->info("Build ISO $isoPath");
-$cmd = "mkisofs -r -J -o  $isoPath $isoDirectory"; `$cmd`;
+if ($type eq "iso") {
+    $logger->info("Build ISO $filePath");
+    $cmd = "mkisofs -r -J -o  $filePath $isoDirectory"; `$cmd`;
+}
 
 sub writeFile {
     my $file = shift;
