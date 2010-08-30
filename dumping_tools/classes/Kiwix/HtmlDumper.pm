@@ -34,7 +34,7 @@ sub dump {
     my $checkpointPath = $self->mediawikiPath()."/checkpoint";
 
     unless ($self->restartAtCheckpoint()) {
-	$cmd = "rm $checkpointPath"; `$cmd`;
+	$cmd = "rm -f $checkpointPath"; `$cmd`;
 
 	# remove old 
 	$cmd = "rm -rf ".$self->mediawikiPath()."/static/"; `$cmd`;
