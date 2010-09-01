@@ -239,7 +239,7 @@ sub applyCustomisations {
 
     # Make the link for the 'local directory
     $self->log("info", "Create the smylink images/shared");	
-    $cmd = 'ln -f -s /var/www/mirror/commons/images/ '.$directory.'/images/shared';
+    $cmd = 'ln -f -s /var/www/mirror/commons_wikimedia_org/images/ '.$directory.'/images/shared';
     `$cmd`;
 
     # Make the link for the 'local' directory
