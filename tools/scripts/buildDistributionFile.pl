@@ -60,6 +60,7 @@ foreach my $zimPath (@zimPaths) {
     if ($zimSize > 4293918720) {
 	my $prefix = $zimPath; $prefix =~ s/.*\///g;
 	$cmd = "cd $distributionDirectory/data/content/; split --bytes=4095M $zimPath $prefix"; `$cmd`;
+	$cmd = "cd $distributionDirectory/data/content/ ; ln -s $zimPath"; `$cmd`;
     } else {
 	$logger->info("Check ZIM file $zimPath");
 	$cmd = "cp $zimPath $distributionDirectory/data/content/"; `$cmd`;
@@ -102,7 +103,7 @@ foreach my $zimPath (@zimPaths) {
 
  # Download the source code
 $logger->info("Download Kiwix source code");
-$cmd = "cd $distributionDirectory ; wget \`curl --silent http://sourceforge.net/projects/kiwix/ | grep \"/download\" | sed 's/\\?.*//' | sed 's/.*http/http/'\`"; `$cmd`;
+$cmd = "cd $distributionDirectory ; wget \`curl --silent http://www.kiwix.org/index.php/Main_Page | grep \"/download\" | grep https | grep bz2 | sed 's/.*https/https/' | sed 's/download.*/download/' \`"; `$cmd`;
 
 # Download deb files
 $logger->info("Download Kiwix deb packages");
@@ -119,7 +120,7 @@ $cmd = "wget http://download.kiwix.org/dev/vcredist_x86.exe -O $distributionDire
 
 # Download and unzip Windows binary
 $logger->info("Download and unzip Windows binary");
-$cmd = "wget \`curl --silent --user-agent \"Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.7.5) Gecko/20041202 Firefox/1.0\" http://sourceforge.net/projects/kiwix/ | grep \"/download\" |  sed 's/\\?.*//' | sed 's/.*http/http/'\` -O $distributionDirectory/kiwix.zip"; `$cmd`;
+$cmd = "wget \`curl --silent --user-agent \"Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.7.5) Gecko/20041202 Firefox/1.0\" http://www.kiwix.org/index.php/Main_Page | grep \"/download\" | grep zip | grep https | sed 's/.*http/http/' | sed 's/download.*/download/' \` -O $distributionDirectory/kiwix.zip"; `$cmd`;
 $cmd = "cd $distributionDirectory/ ; unzip -n kiwix.zip" ; `$cmd`;
 $cmd = "rm $distributionDirectory/kiwix.zip" ; `$cmd`;
 
@@ -130,6 +131,11 @@ $cmd = "cd $distributionDirectory/autorun/ ; wget http://download.kiwix.org/dev/
 $cmd = "cd $distributionDirectory/autorun/ ; wget http://download.kiwix.org/dev/launcher/QtGui4.dll"; `$cmd`;
 $cmd = "cd $distributionDirectory/autorun/ ; wget http://download.kiwix.org/dev/launcher/QtCore4.dll"; `$cmd`;
 $cmd = "cd $distributionDirectory/autorun/ ; wget http://download.kiwix.org/dev/launcher/autorun-$lang.exe -O autorun.exe"; `$cmd`;
+
+# Try to remove link if exists
+foreach my $zimPath (@zimPaths) {
+    $cmd = "cd $distributionDirectory/data/content/ ; unlink $zimPath"; `$cmd`;
+}
 
 # Build ISO
 if ($type eq "iso") {
