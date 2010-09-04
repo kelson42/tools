@@ -53,6 +53,25 @@ $logger->info("Checkout the SVN dvd directory template");
 $cmd = "svn co https://kiwix.svn.sourceforge.net/svnroot/kiwix/moulinkiwix/dvd $distributionDirectory"; `$cmd`;
 $cmd = "rm -rf \`find $distributionDirectory -name \"*.svn\"\`"; `$cmd`;
 
+ # Download the source code
+$logger->info("Download Kiwix source code");
+$cmd = "cd $distributionDirectory ; wget http://download.kiwix.org/kiwix/unstable/latest/\` curl --silent http://download.kiwix.org/kiwix/unstable/latest/ |  grep bz2 | sed 's/.*href=\"//' | sed 's/\".*//' \`"; `$cmd`;
+
+# Download deb files
+$logger->info("Download Kiwix deb packages");
+$cmd = "curl --silent http://download.kiwix.org/kiwix/unstable/latest/ | grep deb | sed 's/.*href=\"//' | sed 's/\".*//'";
+my @debFiles = split(/\n/, `$cmd 2>&1`);
+
+foreach my $debFile (@debFiles) {
+    $cmd = "wget http://download.kiwix.org/kiwix/unstable/latest/$debFile -O $distributionDirectory/install/$debFile"; `$cmd`;
+}
+
+# Download and unzip Windows binary
+$logger->info("Download and unzip Windows binary");
+$cmd = "wget http://download.kiwix.org/kiwix/unstable/latest/\` curl --silent http://download.kiwix.org/kiwix/unstable/latest/ | grep zip | sed 's/.*href=\"//' | sed 's/\".*//' \` -O $distributionDirectory/kiwix.zip"; `$cmd`;
+$cmd = "cd $distributionDirectory/ ; unzip -n kiwix.zip" ; `$cmd`;
+$cmd = "rm $distributionDirectory/kiwix.zip" ; `$cmd`;
+
 # Copy the ZIMs
 $logger->info("Copying the ZIM files");
 foreach my $zimPath (@zimPaths) {
@@ -101,28 +120,9 @@ foreach my $zimPath (@zimPaths) {
     writeFile($libraryPath, $xmlContent);
 }
 
- # Download the source code
-$logger->info("Download Kiwix source code");
-$cmd = "cd $distributionDirectory ; wget \`curl --silent http://www.kiwix.org/index.php/Main_Page | grep \"/download\" | grep https | grep bz2 | sed 's/.*https/https/' | sed 's/download.*/download/' \`"; `$cmd`;
-
-# Download deb files
-$logger->info("Download Kiwix deb packages");
-$cmd = "curl --silent http://ppa.launchpad.net/kiwixteam/ppa/ubuntu/pool/main/k/kiwix/ | grep deb | sed 's/.*href=\\\"//' | sed 's/deb.*/deb/'";
-my @debFiles = split(/\n/, `$cmd 2>&1`);
-
-foreach my $debFile (@debFiles) {
-    $cmd = "wget http://ppa.launchpad.net/kiwixteam/ppa/ubuntu/pool/main/k/kiwix/$debFile -O $distributionDirectory/install/$debFile"; `$cmd`;
-}
-
 # Download the file with DLL for Visual Studio redit. binaries
 $logger->info("Download vcredist_x86.exe");
 $cmd = "wget http://download.kiwix.org/dev/vcredist_x86.exe -O $distributionDirectory/bonus/vcredist_x86.exe"; `$cmd`;
-
-# Download and unzip Windows binary
-$logger->info("Download and unzip Windows binary");
-$cmd = "wget \`curl --silent --user-agent \"Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.7.5) Gecko/20041202 Firefox/1.0\" http://www.kiwix.org/index.php/Main_Page | grep \"/download\" | grep zip | grep https | sed 's/.*http/http/' | sed 's/download.*/download/' \` -O $distributionDirectory/kiwix.zip"; `$cmd`;
-$cmd = "cd $distributionDirectory/ ; unzip -n kiwix.zip" ; `$cmd`;
-$cmd = "rm $distributionDirectory/kiwix.zip" ; `$cmd`;
 
 # Download the autorun
 $logger->info("Download autorun");
