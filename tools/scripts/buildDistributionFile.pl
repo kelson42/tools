@@ -134,7 +134,9 @@ $cmd = "cd $distributionDirectory/autorun/ ; wget http://download.kiwix.org/dev/
 
 # Try to remove link if exists
 foreach my $zimPath (@zimPaths) {
-    $cmd = "cd $distributionDirectory/data/content/ ; unlink $zimPath"; `$cmd`;
+    if (-e $distributionDirectory."/data/content/".$zimPath."aa") {
+	$cmd = "cd $distributionDirectory/data/content/ ; unlink $zimPath"; `$cmd`;
+    }
 }
 
 # Build ISO
