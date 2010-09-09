@@ -134,7 +134,11 @@ $cmd = "cd $distributionDirectory/autorun/ ; wget http://download.kiwix.org/dev/
 
 # Try to remove link if exists
 foreach my $zimPath (@zimPaths) {
-    if (-e $distributionDirectory."/data/content/".$zimPath."aa") {
+    # Extract the zimFile
+    $zimPath =~ /.*\/([^\/]*)$/;
+    my $zimFile = $1;
+
+    if (-e $distributionDirectory."/data/content/".$zimFile."aa") {
 	$cmd = "cd $distributionDirectory/data/content/ ; unlink $zimPath"; `$cmd`;
     }
 }
