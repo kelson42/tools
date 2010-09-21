@@ -870,7 +870,6 @@ sub extractTitleFromHtml {
 	my $title = $1;
 
 	# Remove HTML tags in title
-	$title =~ s/<(.*?)>//g;
 	$title =~ s/&lt;(.*?)&gt;//g;
 
 	return decode_entities($title);
