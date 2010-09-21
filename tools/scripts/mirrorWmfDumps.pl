@@ -88,8 +88,11 @@ foreach my $table ("revision", "page", "text", "imagelinks", "templatelinks", "i
     $sth->execute() or die ("Unable to execute request.");
 }
 
-# Upload the SQL
+# Upload the XML
 my $mysqlCmd = "mysql --user=$databaseUsername --password=$databasePassword $databaseName";
+$cmd = "cd $mwDumperDir; java -classpath ./src org.mediawiki.dumper.Dumper --format=sql:1.5 ../$projectCode-$version-pages-articles.xml.bz2 | $mysqlCmd"; `$cmd`;
+
+# Upload the SQL
 $cmd = "gzip -d -c $tmpDir/$projectCode-$version-interwiki.sql.gz | $mysqlCmd"; `$cmd`;
 $cmd = "gzip -d -c $tmpDir/$projectCode-$version-image.sql.gz | $mysqlCmd"; `$cmd`;
 $cmd = "gzip -d -c $tmpDir/$projectCode-$version-imagelinks.sql.gz | $mysqlCmd"; `$cmd`;
@@ -103,8 +106,5 @@ $cmd = "gzip -d -c $tmpDir/$projectCode-$version-langlinks.sql.gz | $mysqlCmd"; 
 unless ($withoutImages) {
     $cmd = "gzip -d -c $tmpDir/$projectCode-$version-image.sql.gz | $mysqlCmd"; `$cmd`;
 }
-
-# Upload the XML
-$cmd = "cd $mwDumperDir; java -classpath ./src org.mediawiki.dumper.Dumper --format=sql:1.5 ../$projectCode-$version-pages-articles.xml.bz2 | $mysqlCmd"; `$cmd`;
 
 exit;
