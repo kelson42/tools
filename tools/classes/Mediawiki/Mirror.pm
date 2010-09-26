@@ -913,7 +913,7 @@ sub addPageToDownload {
 
 	lock($pageDownloadMutex);
 	unless ( exists($pageDownloadQueue{$page})) {
-	    $pageDownloadQueue{$page} = $revisionId;
+	    $pageDownloadQueue{$page} = $page." ".$revisionId;
 	}
     } else {
 	$self->log("error", "empty page title given to addPageToDownload()");
@@ -928,10 +928,10 @@ sub getPageToDownload {
     if ($self->getPageDownloadQueueSize()) {
 
 	lock($pageDownloadMutex);
-	($page) = keys(%pageDownloadQueue);
-	$revision = $pageDownloadQueue{$page};
+	my ($key) = keys(%pageDownloadQueue);
+	($page, $revision) = split(/ /, $pageDownloadQueue{$key});
 
-	delete($pageDownloadQueue{$page});
+	delete($pageDownloadQueue{$key});
     }
 
     unless (Encode::is_utf8($page)) {
