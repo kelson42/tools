@@ -29,15 +29,28 @@ sub readFromWeb {
 
     my $ua = LWP::UserAgent->new();
     my $parser = new XML::DOM::Parser (LWP_UserAgent => $ua);
-    my $url = "http://".$host."/".($path ? $path."/" : "")."api.php?action=sitematrix&format=xml";
-    my $doc = $parser->parsefile($url);
 
-    @nodes = (@{$doc->getElementsByTagName("special")}, @{$doc->getElementsByTagName("language")});
-    foreach my $node (@nodes) {
-	my $code = $node->getAttributeNode("code")->getValue();
-	push(@interwikis, $code);
+    my $url = "http://".$host."/".($path ? $path."/" : "")."api.php?action=sitematrix&format=xml";
+    my $doc; eval { $doc = $parser->parsefile($url); };
+    
+    if ($doc) {
+	@nodes = (@{$doc->getElementsByTagName("special")}, @{$doc->getElementsByTagName("language")});
+	foreach my $node (@nodes) {
+	    my $code = $node->getAttributeNode("code")->getValue();
+	    push(@interwikis, $code);
+	}
     }
 
+    unless (scalar(@interwikis)) {
+	$url = "http://".$host."/".($path ? $path."/" : "")."api.php?action=query&meta=siteinfo&siprop=interwikimap&format=xml";
+	$doc = $parser->parsefile($url);
+	
+	@nodes = (@{$doc->getElementsByTagName("iw")});
+	foreach my $node (@nodes) {
+	    my $code = $node->getAttributeNode("prefix")->getValue();
+	    push(@interwikis, $code);
+	}
+    }
 }
 
 sub writeToDatabase {
