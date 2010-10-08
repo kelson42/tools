@@ -99,7 +99,7 @@ sub expandCategories {
 		$entries = $entries.$entry."\n";
 	    }
 
-	    foreach my $categoryEntry ($site->listCategoryEntries($category, 5, $namespace)) {
+	    foreach my $categoryEntry ($site->listCategoryEntries($category, 7, $namespace)) {
 		$categoryEntry =~ s/ /_/g;
 		$entries = $entries.$categoryEntry."\n";
 	    }
