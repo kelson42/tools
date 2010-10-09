@@ -395,7 +395,7 @@ sub uploadPage {
 	    'title' => $title,
 	    'format' => 'xml',
 	};
-	
+
 	if ($createOnly) {
 	    $postValues->{'createonly'} = '1';
 	}
@@ -444,7 +444,6 @@ sub makeHttpRequest {
     my ($self, $method, $url, $httpHeaders, $formValues) = @_;
     
     my $httpResponse;
-    my $loopCount = 0;
 
     if ($method eq "POST") {
 	$httpResponse= $self->userAgent()->post(
@@ -511,8 +510,9 @@ sub makeSiteRequest {
     my ($self, $url, $values, $method) = @_;
     my $httpResponse;
     my $httpHeaders = { "Accept-Charset" => "utf-8"};
-    my $count=0;
     my $loop=0;
+    my $loopCount=0;
+    my $maxLoopCount = 5;
 
     unless (defined($method)) {
 	$method = "GET";
@@ -530,10 +530,17 @@ sub makeSiteRequest {
 	}
 
 	if ($httpResponse->code() != 200) {
-	    $count++;
-	    $self->log("info", "Unable to make the following API request, HTTP error code was '".$httpResponse->code()."', ($count time) on '".$url."'. Response content is ".$httpResponse->content().":\n");
-	    sleep($count);
-	    $loop = 1;
+	    $loopCount++;
+	    $self->log("error", "Unable to make the following API request. ".Dumper($values)."\n\n, HTTP error code was '".$httpResponse->code()."', ($loopCount time) on '".$url."'. Response content is ".$httpResponse->content().":\n");
+	    sleep($loopCount);
+
+	    if ($loopCount > $maxLoopCount) {
+		$self->log("info", "Max Loop Count reaches, will NOT retry...");
+		$loop = 0;
+	    } else {
+		$self->log("info", "Will retry..."); 
+		$loop = 1;
+	    }
 	} else {
 	    $loop = 0;
 	}
@@ -695,7 +702,7 @@ sub _uploadImageFromUrl {
 # After hours it doe not work anymore
 sub uploadImageFromUrl {
     my($self, $title, $url, $summary) = @_;
-    my $status;
+    my $status = 0;
 
     my $httpPostRequestParams = {
 	'action' => 'upload',
@@ -706,7 +713,7 @@ sub uploadImageFromUrl {
 #	'asyncdownload' => '1',
 	'ignorewarnings' => '1',
     };
-    
+
     my $httpResponse = $self->makeApiRequest($httpPostRequestParams, "POST" );
     my $content = $httpResponse->content;
 
@@ -714,8 +721,8 @@ sub uploadImageFromUrl {
 
     if ($content =~ /error\ code\=\"([^\"]+)\"/) {
 	$self->log("error", "Error by uploading image '$title' : $1");
-    }
-    elsif ($content =~ /upload_session_key\=\"([\d]+)\"/ || $content =~ /result=\"success\"/i ) {
+	$status = 0;
+    } elsif ($content =~ /upload_session_key\=\"([\d]+)\"/) {
 	my $sessionKey = $1;
 	$httpResponse = $self->makeApiRequest( { 'action' => 'upload', 'httpstatus' => '1', 'sessionkey' => "$sessionKey", 'format' => 'xml', 'token' => $self->editToken() } , 'POST');
 
@@ -725,8 +732,12 @@ sub uploadImageFromUrl {
     } elsif ($content =~ /queued\=\"1"/) {
 	$self->log("info", "Status upload $title : queued");
 	$status = 1;
+    } elsif ($content =~ /result=\"success\"/i) {
+	$self->log("info", "File $title successfuly uploaded.");
+	$status = 1;
     } else {
 	$self->log("error", "Error by uploading image '$title' : $content");
+	$status = 0;
     }
 
     return $status;
