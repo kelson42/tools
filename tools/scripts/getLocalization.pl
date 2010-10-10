@@ -114,6 +114,7 @@ foreach my $language (@languages) {
 	}
 
 	if ($filename && $codepage) {
+	    $source =~ s/^.*(LANG_CODEPAGE|LANG_FILENAME).*$//mg;
 	    $filename = $installerPath.$filename;
 	    my $tmpFilename = $filename.".utf8";
 
