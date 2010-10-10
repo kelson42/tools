@@ -24,6 +24,7 @@ my $allLanguages;
 my $path;
 my $source;
 my $rev;
+my $cmd;
 
 ## Get console line arguments
 GetOptions('language=s' => \@languages, 
@@ -32,10 +33,10 @@ GetOptions('language=s' => \@languages,
 	   );
 
 if (!$path) {
-    print "usage: ./getLocalization.pl --path=./ [--language=en-US] [--allLanguages]\n";
+    print STDERR "usage: ./getLocalization.pl --path=./ [--language=en-US] [--allLanguages]\n";
     exit;
-} elsif (! -d $path) {
-    print "'$path' is not a directory or does not exist.\n";
+} elsif (! -d $path || ! -d $path."/kiwix/") {
+    print STDERR "'$path' is not a directory, does not exist or is not the Kiwix source directory 'moulinkiwix'.\n";
     exit;
 }
 
@@ -73,8 +74,9 @@ foreach my $language (@languages) {
     # create directory
     unless ( -d $path."/".$language) { mkdir $path."/".$language; }
     unless ( -d $path."/".$language."/main") { mkdir $path."/".$language."/main"; }
-    my $localePath = $path."/".$language."/main/";
-    
+    my $localePath = $path."/kiwix/chrome/locale/".$language."/main/";
+    my $installerPath = $path."/installer/translations/";    
+
     # get help.html
     ($source) = $site->downloadPage("Translation/languages/".$language."/help.html");
     if ($source) {
@@ -94,6 +96,31 @@ foreach my $language (@languages) {
     if ($source) {
 	$source =~ s/^<[\/]*source[^>]*>[\n]*//mg;
 	writeFile($localePath."main.properties", $source);
+    }
+    
+    # get installer
+    ($source) = $site->downloadPage("Translation/languages/".$language."/installer");
+    if ($source) {
+	$source =~ s/^<[\/]*source[^>]*>[\n]*//mg;
+	my $filename;
+	my $codepage;
+
+	if ($source =~ /\!define LANG_FILENAME "([^\"]*)"/) {
+	    $filename = $1;
+	}
+
+	if ($source =~ /\!define LANG_CODEPAGE "([^\"]*)"/) {
+	    $codepage = $1;
+	}
+
+	if ($filename && $codepage) {
+	    $filename = $installerPath.$filename;
+	    my $tmpFilename = $filename.".utf8";
+
+	    writeFile($tmpFilename, $source);
+	    $cmd = "iconv -f UTF-8 -t $codepage $tmpFilename > $filename"; `$cmd`;
+	    $cmd = "rm $tmpFilename"; `$cmd`;
+	}
     }
 }
 
