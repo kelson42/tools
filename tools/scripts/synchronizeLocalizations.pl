@@ -73,9 +73,47 @@ if (!scalar(@languages) || $allLanguages) {
 # Get the masters
 my ($masterDtdSource) = $site->downloadPage("Translation/languages/".$masterLanguage."/main.dtd");
 my ($masterPropertiesSource) = $site->downloadPage("Translation/languages/".$masterLanguage."/main.properties");
+my ($masterInstallerSource) = $site->downloadPage("Translation/languages/".$masterLanguage."/installer");
 
 # Update each language
 foreach my $language (@languages) {
+
+    # Update installer
+    my $languageInstallerHash = getInstallerHash($language);
+    my $languageInstallerSource = $masterInstallerSource;
+    while ($masterInstallerSource =~ /^(\!define )([^ ].*?)( ")(.*)(".*)$/mg ) {
+	my $prefix = $1;
+	my $name = $2;
+	my $middle = $3; 
+	my $value = $4;
+	my $postfix = $5;
+
+	if (exists($languageInstallerHash->{$name})) {
+	    $value = $languageInstallerHash->{$name};
+	}
+
+	$languageInstallerSource =~ s/\Q$1$2$3$4$5\E/$prefix$name$middle$value$postfix/;
+
+    }
+    while ($masterInstallerSource =~ /^(\!insertmacro LANG_STRING )([^ ].*?)( ")(.*)(".*)$/mg ) {
+	my $prefix = $1;
+	my $name = $2;
+	my $middle = $3; 
+	my $value = $4;
+	my $postfix = $5;
+
+	if (exists($languageInstallerHash->{$name})) {
+	    $value = $languageInstallerHash->{$name};
+	}
+
+	$languageInstallerSource =~ s/\Q$1$2$3$4$5\E/$prefix$name$middle$value$postfix/;
+
+    }
+
+    # Upload installer
+    $site->uploadPage("Translation/languages/".$language."/installer", $languageInstallerSource, 
+		      "installer update...");
+    $logger->info("'Translation/languages/".$language."/installer' updated.");
 
     # Update js properties
     my $languagePropertiesHash = getPropertiesHash($language);
@@ -136,6 +174,22 @@ sub getPropertiesHash {
     my ($source) = $site->downloadPage("Translation/languages/".$language."/main.properties");
     my %languageHash;
     while ($source =~ /^([^<].*?)\=(.*)$/mg ) {
+	$languageHash{$1} = $2;
+    }
+
+    return \%languageHash;
+}
+
+sub getInstallerHash {
+    my $language = shift;
+
+    my ($source) = $site->downloadPage("Translation/languages/".$language."/installer");
+    my %languageHash;
+
+    while ($source =~ /^\!define ([^ ].*?) "(.*)".*$/mg ) {
+	$languageHash{$1} = $2;
+    }
+    while ($source =~ /^\!insertmacro LANG_STRING ([^ ].*?) "(.*)".*$/mg ) {
 	$languageHash{$1} = $2;
     }
 
