@@ -186,11 +186,13 @@ sub getInstallerHash {
     my ($source) = $site->downloadPage("Translation/languages/".$language."/installer");
     my %languageHash;
 
-    while ($source =~ /^\!define ([^ ].*?) "(.*)".*$/mg ) {
-	$languageHash{$1} = $2;
-    }
-    while ($source =~ /^\!insertmacro LANG_STRING ([^ ].*?) "(.*)".*$/mg ) {
-	$languageHash{$1} = $2;
+    if ($source) {
+	while ($source =~ /^\!define ([^ ].*?) "(.*)".*$/mg ) {
+	    $languageHash{$1} = $2;
+	}
+	while ($source =~ /^\!insertmacro LANG_STRING ([^ ].*?) "(.*)".*$/mg ) {
+	    $languageHash{$1} = $2;
+	}
     }
 
     return \%languageHash;
