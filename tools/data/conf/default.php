@@ -58,8 +58,8 @@ $wgAllowCopyUploads = true;
 
 # memory
 $wgMaxShellMemory = 502400;
-$wgMaxShellTime = 180;
-$wgMaxShellFileSize = 202400;
+$wgMaxShellTime = 3600;
+$wgMaxShellFileSize = 404800;
 $wgMimeDetectorCommand= 'file -bi ';
 $wgVerifyMimeType = false;
 
@@ -151,4 +151,7 @@ $wgAutoloadLocalClasses['Title'] = 'skins/Title.php';
 
 # ploticus
 putenv("GDFONTPATH=/usr/share/fonts/truetype/freefont"); 
+
+# no category limit
+$wgCategoryPagingLimit = 999999999;
 ?>
