@@ -24,7 +24,7 @@ my $dbHandler;
 my $dbName;
 my $dbUser;
 my $dbPassword;
-my $dbPort = "5433";
+my $dbPort = "5432";
 my $dbHost = "localhost";
 my $mediawikiOptim;
 my %urls;
