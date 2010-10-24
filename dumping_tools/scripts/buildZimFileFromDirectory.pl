@@ -24,13 +24,14 @@ my $compressAll;
 my $zimFilePath="./articles";
 my $dbUser="kiwix";
 my $dbHost="localhost";
-my $dbPort="5433";
+my $dbPort="5432";
 my $dbPassword="";
 my $rewriteCDATA;
 my $strict;
 my $mediawikiOptim;
 my $shortenUrls;
 my $avoidForceHtmlCharsetToUtf8;
+my $doNotDeleteDbAtTheEnd;
 my $dbName=time();
 my %metadata;
 
@@ -45,6 +46,7 @@ GetOptions('writerPath=s' => \$writerPath,
 	   'dbPassword=s' => \$dbPassword,
 	   'mediawikiOptim' => \$mediawikiOptim,
 	   'rewriteCDATA' => \$rewriteCDATA,
+	   'doNotDeleteDbAtTheEnd' => \$doNotDeleteDbAtTheEnd,
 	   'strict' => \$strict,
 	   'compressAll' => \$compressAll,
 	   'shortenUrls' => \$shortenUrls,
@@ -57,7 +59,7 @@ GetOptions('writerPath=s' => \$writerPath,
 	   );
 
 if (!$htmlPath || !$welcomePage || !$metadata{'Language'} || !$metadata{'Title'} || !$metadata{'Creator'} || !$metadata{'Description'}) {
-    print "usage: ./builZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html --language=fr --title=foobar --creator=foobar --decription=mydescription [--dbUser=foobar] [--dbPassword=testpass] [--writerPath=./zimWriter] [--zimFilePath=articles.zim] [--dbName=kiwix_db] [--dbPort=5432] [--dbHost=localhost] [--rewriteCDATA] [--mediawikiOptim] [--shortenUrls] [--strict] [--avoidForceHtmlCharsetToUtf8] [--compressAll]\n";
+    print "usage: ./builZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html --language=fr --title=foobar --creator=foobar --decription=mydescription [--dbUser=foobar] [--dbPassword=testpass] [--writerPath=./zimWriter] [--zimFilePath=articles.zim] [--dbName=kiwix_db] [--dbPort=5432] [--dbHost=localhost] [--rewriteCDATA] [--mediawikiOptim] [--shortenUrls] [--strict] [--avoidForceHtmlCharsetToUtf8] [--compressAll] [--doNotDeleteDbAtTheEnd]\n";
     exit;
 }
 
@@ -128,5 +130,7 @@ $writer->fillDatabase();
 $writer->buildZimFile();
 
 # delete database
-$writer->deleteDatabase();
+unless ($doNotDeleteDbAtTheEnd) {
+    $writer->deleteDatabase();
+}
 

@@ -550,9 +550,12 @@ sub copyFilesToDatabase {
 sub buildZimFile {
     my $self = shift;
     my $dbName = $self->dbName();
+    my $dbPort = $self->dbPort();
+    my $dbPassword = $self->dbPassword();
+    my $dbUser = $self->dbUser();
     my $writerPath = $self->writerPath();
     my $zimFilePath = $self->zimFilePath();
-    my $command = "$writerPath -s 1024 --db \"postgresql:dbname=$dbName user=kiwix port=$dbPort\" $zimFilePath";
+    my $command = "$writerPath --db \"postgresql:dbname='$dbName' user='$dbUser' password='$dbPassword' port='$dbPort'\" $zimFilePath";
 
     # call the zim writer
     $self->log("info", "Creating the zim file : $command");
