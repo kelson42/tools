@@ -68,7 +68,7 @@ if ($writerPath) {
 	exit;
     }
 } else {
-    $writerPath = whereis("zimwriter");
+    $writerPath = whereis('zimwriterdb') || whereis("zimwriter");
 }
 
 # test the html directory
