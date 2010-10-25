@@ -10,6 +10,7 @@ use Getopt::Long;
 my @zimPaths;
 my $filePath;
 my $tmpDirectory = "/tmp/";
+my $liveInstance;
 my $lang = "en";
 my $type;
 my $cmd;
@@ -23,13 +24,14 @@ my $logger = Log::Log4perl->get_logger("buildDistributionFile.pl");
 GetOptions('zimPath=s' => \@zimPaths,
 	   'tmpDirectory=s' => \$tmpDirectory,
 	   'filePath=s' => \$filePath,
+	   'liveInstance' => \$liveInstance,
 	   'type=s' => \$type,
 	   'lang=s' => \$lang,
     );
 
 # Check if we have all the mandatory variable set
 if (!scalar(@zimPaths) || !$filePath || (!($type eq "iso") && !($type eq "portable"))) {
-    print "usage: ./buildIso.pl --filePath=dvd.iso --zimPath=articles.zim --type=[iso|portable] [--tmpDirectory=/tmp/] [--lang=en|fr]\n";
+    print "usage: ./buildIso.pl --filePath=dvd.iso --zimPath=articles.zim --type=[iso|portable] [--tmpDirectory=/tmp/] [--lang=en|fr] [--liveInstance]\n";
     exit
 }
 
@@ -141,6 +143,11 @@ foreach my $zimPath (@zimPaths) {
     if (-e $distributionDirectory."/data/content/".$zimFile."aa") {
 	$cmd = "cd $distributionDirectory/data/content/ ; unlink $zimPath"; `$cmd`;
     }
+}
+
+# live instance
+if ($liveInstance) {
+	$cmd = "touch $distributionDirectory/live"; `$cmd`;
 }
 
 # Build ISO
