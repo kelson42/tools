@@ -147,7 +147,7 @@ foreach my $zimPath (@zimPaths) {
 
 # live instance
 if ($liveInstance) {
-	$cmd = "touch $distributionDirectory/live"; `$cmd`;
+	$cmd = "touch $distributionDirectory/kiwix/live"; `$cmd`;
 }
 
 # Build ISO
