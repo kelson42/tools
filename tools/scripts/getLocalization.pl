@@ -123,6 +123,18 @@ foreach my $language (@languages) {
 	    $cmd = "rm $tmpFilename"; `$cmd`;
 	}
     }
+
+    # get the autorun
+    ($source) = $site->downloadPage("Translation/languages/".$language."/dvd_launcher.xml");
+    if ($source) {
+	$source =~ s/^<[\/]*source[^>]*>[\n]*//mg;
+	my $filename = $language.".xml";
+	$filename =~ s/-[^\.]+//;
+
+	if ($filename) {
+	    writeFile($path."/autorun/ui/".$filename, $source);
+	}
+    }
 }
 
 sub writeFile {
