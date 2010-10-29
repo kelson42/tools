@@ -124,7 +124,7 @@ foreach my $zimPath (@zimPaths) {
 
 # Download the file with DLL for Visual Studio redit. binaries
 $logger->info("Download vcredist_x86.exe");
-$cmd = "wget http://download.kiwix.org/dev/vcredist_x86.exe -O $distributionDirectory/bonus/vcredist_x86.exe"; `$cmd`;
+$cmd = "wget http://download.kiwix.org/dev/vcredist_x86.exe -O $distributionDirectory/install/vcredist_x86.exe"; `$cmd`;
 
 # Download the autorun
 $logger->info("Download autorun");
