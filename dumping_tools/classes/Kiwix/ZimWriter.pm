@@ -47,62 +47,18 @@ my %additionalKeywords;
 
 my $mimeDetector;
 
-my %mimeTypes = (
-    "text/html" => 0,
-    "text/plain" => 1,
-    "image/jpeg" => 2,
-    "image/png" => 3,
-    "image/tiff" => 4,
-    "text/css" => 5,
-    "image/gif" => 6,
-    "application/javascript" => 8,
-    "image/icon" => 9,
-    "application/pdf" => 10,
-    "application/x-bittorrent" => 11,
-    "application/x-shockwave-flash" => 12,
-    "image/vnd.microsoft.icon" => 13,
-    "application/zip" => 14,
-    "image/svg+xml" => 15,
-    "audio/x-wav" => 16,
-    "application/vnd.ms-powerpoint" => 17,
-    "application/x-gzip" => 18,
-    "1" => 19,
-    "application/x-debian-package" => 20,
-    "audio/x-pn-realaudio-plugin" => 21,
-    "application/x-tar" => 22,
-    "application/x-gtar" => 23,
-    "application/x-msdos-program" => 24,
-    "application/vnd.ms-fontobject" => 25,
-    "application/octet-stream" => 26,
-    );
-
+my %mimeTypes;
 my %mimeTypesCompression = (
     "text/html" => 1,
     "text/plain" => 1,
-    "image/jpeg" => 0,
-    "image/png" => 0,
     "image/tiff" => 1,
     "text/css" => 1,
-    "image/gif" => 0,
     "application/javascript" => 1,
-    "image/icon" => 0,
     "application/pdf" => 1,
-    "application/x-bittorrent" => 0,
-    "application/x-shockwave-flash" => 0,
-    "image/vnd.microsoft.icon" => 0,
-    "application/zip" => 0,
     "image/svg+xml" => 1,
-    "audio/x-wav" => 0,
-    "application/vnd.ms-powerpoint" => 1,
-    "application/x-gzip" => 0,
-    "1" => 1,
-    "application/x-debian-package" => 0,
-    "audio/x-pn-realaudio-plugin" => 0,
     "application/x-tar" => 1,
     "application/x-gtar" => 1,
-    "application/x-msdos-program" => 0,
-    "application/vnd.ms-fontobject" => 0,
-    "application/octet-stream" => 0,
+    "1" => 1 # for the metadatas
     );
 
 sub new {
@@ -453,6 +409,23 @@ sub computeNewUrls {
 	print STDERR "Unable to find the welcome page '$welcomePage'.";
 	exit 1;
     }
+
+    # prepare the mimeTypes and mimeTypesCompression hash tables
+    foreach my $file (keys(%urls)) {
+	# mime-type
+	my $mimetype = $self->mimeDetector()->getMimeType($file);
+	
+	# Fill the mimeTypes hash if necessary
+	if (!exists($mimeTypes{$mimetype})) {
+	    $mimeTypes{$mimetype} = scalar(keys(%mimeTypes)) + 1;
+	}
+	
+	# Fill the mimeTypesCompression if necessary
+	if (!exists($mimeTypesCompression{$mimetype})) {
+	    my $compression = (($self->compressAll() || $mimetype =~ /^text\/.*$/) ? 1 : 0);
+	    $mimeTypesCompression{$mimetype} = $compression;
+	}
+    }
 }
 
 sub getNamespace {
@@ -687,10 +660,6 @@ sub copyFileToDatabase {
 
     # mime-type
     $hash{mimetype} = $self->mimeDetector()->getMimeType($file);
-    if (!exists($mimeTypes{$hash{mimetype}}) || !exists($mimeTypesCompression{$hash{mimetype}})) {
-	print $hash{mimetype}.", mime-type from '".$file."' is not known...\n";
-	exit;
-    }
 
     # namespace
     $hash{namespace} = getNamespace($file);
