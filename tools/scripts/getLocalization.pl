@@ -72,8 +72,8 @@ foreach my $language (@languages) {
     $logger->info("Getting locale '$language'.");
     
     # create directory
-    unless ( -d $path."/".$language) { mkdir $path."/".$language; }
-    unless ( -d $path."/".$language."/main") { mkdir $path."/".$language."/main"; }
+    unless ( -d $path."/kiwix/chrome/locale/".$language) { mkdir $path."/kiwix/chrome/locale/".$language; }
+    unless ( -d $path."/kiwix/chrome/locale/".$language."/main") { mkdir $path."/kiwix/chrome/locale/".$language."/main"; }
     my $localePath = $path."/kiwix/chrome/locale/".$language."/main/";
     my $installerPath = $path."/installer/translations/";    
 
