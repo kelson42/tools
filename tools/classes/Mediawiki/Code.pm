@@ -9,6 +9,7 @@ use XML::DOM;
 use Compress::Zlib;
 use HTML::Entities qw(decode_entities);
 
+my $svnUrl;
 my $directory;
 my $runMaintenanceUpdate;
 my $logger;
@@ -37,10 +38,17 @@ sub get {
     my $html = $self->downloadTextFromUrl($url);
 
     if ("Mediawiki" =~ /$filter/i ) {
-	if ($html =~ /<td>.*www\.mediawiki\.org.*<\/td>.*[\s]*.*<td>.*r([\d]+).*<\/td>/m ) {
-	    $mediawikiRevision = $1;
+	if ($html =~ /<td>.*www\.mediawiki\.org.*<\/td>.*[\s]*.*<td>.*href="([^"]+)".*<\/td>/m ) {
+	    my $url = $1;
+	    $url =~ s/viewvc/svnroot/;
+	    $url =~ s/\?pathrev=/ /;
+	    ($svnUrl, $mediawikiRevision) = split(/ /, $url);
 	} else {
 	    $self->log("warn", "The website does not seems to be a Mediawiki installation.\n");
+	}
+
+	unless ($svnUrl) {
+	    $self->log("error", "Unable to retrieve the svn url.\n");
 	}
     }
 
@@ -227,7 +235,7 @@ sub applyCustomisations {
 
     # compile textvc
     $self->log("info", "Compile the math rendere tool.");	
-    $cmd = "cd $directory/math ; make -s clean all";
+    $cmd = "cd $directory/math ; make -s all";
     `$cmd`;
 
     # Set link color to 'black' in the timeline extension
@@ -262,18 +270,21 @@ sub getSvnCommands {
     my $svnCommands = "";
 
     if ("Mediawiki" =~ /$filter/i ) {
-	$svnCommands .= "svn co -r ".$mediawikiRevision." http://svn.wikimedia.org/svnroot/mediawiki/trunk/phase3 ".$self->directory()."\n";
+	$svnCommands .= "svn co -r ".$mediawikiRevision." ".$svnUrl." ".$self->directory()."\n";
     }
 
     foreach my $extension (@extensions) {
-	$svnCommands .= "svn co -r ".$extension->{version}." http://svn.wikimedia.org/svnroot/mediawiki/trunk/extensions/".$extension->{path}." ".$self->directory()."/extensions/".$extension->{path}."\n";
+	unless ($extension->{version} eq $mediawikiRevision) {
+	    $svnCommands .= "rm -rf ".$self->directory()."/extensions/".$extension->{path}."\n";
+	    $svnCommands .= "svn co -r ".$extension->{version}." ".$svnUrl."/extensions/".$extension->{path}." ".$self->directory()."/extensions/".$extension->{path}."\n";
+	}
     }
 
-    # download in addtion ExtensionFunctions.php
-    $svnCommands .= " wget -O ".$self->directory()."/extensions/ExtensionFunctions.php /var/www/mirror/fr/extensions/ExtensionFunctions.php http://svn.wikimedia.org/svnroot/mediawiki/trunk/extensions/ExtensionFunctions.php\n";
+    # download in addtion ExtensionFunctions.php (seems not being used anymore)
+    # $svnCommands .= " wget -O ".$self->directory()."/extensions/ExtensionFunctions.php /var/www/mirror/fr/extensions/ExtensionFunctions.php http://svn.wikimedia.org/svnroot/mediawiki/trunk/extensions/ExtensionFunctions.php\n";
 
-    # tidy
-    $svnCommands .= "svn co http://svn.wikimedia.org/svnroot/mediawiki/trunk/extensions/tidy ".$self->directory()."/extensions/tidy\n";
+    # tidy (seems not being used anymore)
+    # $svnCommands .= "svn co http://svn.wikimedia.org/svnroot/mediawiki/trunk/extensions/tidy ".$self->directory()."/extensions/tidy\n";
 
     return $svnCommands;
 }
