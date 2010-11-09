@@ -235,7 +235,7 @@ sub applyCustomisations {
 
     # compile textvc
     $self->log("info", "Compile the math rendere tool.");	
-    $cmd = "cd $directory/math ; make -s all";
+    $cmd = "cd $directory/math ; make -f Makefile -s clean all";
     `$cmd`;
 
     # Set link color to 'black' in the timeline extension
