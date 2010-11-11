@@ -712,7 +712,7 @@ sub copyFileToDatabase {
 		# Add the local anchor if necessary
 		if ($url =~ /\#/) {
 		    my @urlParts = split( /\#/, $url );
-		    $newUrl .= "#".$urlParts[1];
+		    $newUrl .= "#".($urlParts[1] || "");
                 }
             }		
 	    
