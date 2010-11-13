@@ -721,6 +721,12 @@ sub uploadImageFromUrl {
 
     if ($content =~ /error\ code\=\"([^\"]+)\"/) {
 	$self->log("error", "Error by uploading image '$title' : $1");
+
+	if ($content =~ /badtoken/i) {
+	    $self->loadEditToken();
+	    $self->log("info", "Reloading edit token...");
+	}
+
 	$status = 0;
     } elsif ($content =~ /upload_session_key\=\"([\d]+)\"/) {
 	my $sessionKey = $1;
