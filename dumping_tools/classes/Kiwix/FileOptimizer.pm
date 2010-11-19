@@ -13,9 +13,6 @@ use threads;
 use threads::shared;
 
 my $contentPath : shared;
-my $optPngPath : shared;
-my $optGifPath : shared;
-my $optJpgPath : shared;
 my $removeTitleTag : shared;
 my $ignoreHtml : shared;
 
@@ -34,9 +31,6 @@ sub new {
     my $self = {};
 
     bless($self, $class);
-    $self->optPngPath(whereis("opt-png"));
-    $self->optGifPath(whereis("opt-gif"));
-    $self->optJpgPath(whereis("opt-jpg"));
 
     return $self;
 }
@@ -48,18 +42,6 @@ sub optimize {
     unless ($self->contentPath) {
 	$self->log("error", "You have to give a path to explore to search files to be optmized.");
 	return;
-    }
-
-    if (!$self->optPngPath()) {
-	die("Sorry, but opt-png does not seems not be installed on your system.");
-    }
-
-    if (!$self->optGifPath()) {
-	die("Sorry, but opt-gif does not seems not be installed on your system.");
-    }
-
-    if (!$self->optJpgPath()) {
-	die("Sorry, but opt-jpg does not seems not be installed on your system.");
     }
 
     # Start the threads to optimize files
@@ -124,31 +106,19 @@ sub optimizeFiles {
 sub optimizePng {
     my $self = shift;
     my $file = shift;
-    
-    my $bin = $self->optPngPath();
-    $file =~ s/`/\\`/mg;
-
-    `$bin "$file"`;
+    `opt-png "$file"`;
 }
 
 sub optimizeGif {
     my $self = shift;
     my $file = shift;
-    
-    my $bin = $self->optGifPath();
-    $file =~ s/`/\\`/mg;
-
-    `$bin "$file"`;
+    `opt-gif "$file"`;
 }
 
 sub optimizeJpg {
     my $self = shift;
     my $file = shift;
-    
-    my $bin = $self->optJpgPath();
-    $file =~ s/`/\\`/mg;
-
-    `$bin "$file"`;
+    `opt-jpg "$file"`;
 }
 
 sub optimizeHtml {
@@ -224,27 +194,6 @@ sub ignoreHtml {
     return $ignoreHtml;
 }
 
-sub optPngPath {
-    my $self = shift;
-    lock($optPngPath);
-    if (@_) { $optPngPath = shift }
-    return $optPngPath;
-}
-
-sub optJpgPath {
-    my $self = shift;
-    lock($optJpgPath);
-    if (@_) { $optJpgPath = shift }
-    return $optJpgPath;
-}
-
-sub optGifPath {
-    my $self = shift;
-    lock($optGifPath);
-    if (@_) { $optGifPath = shift }
-    return $optGifPath;
-}
-
 sub isRunnable {
     my $self = shift;
     lock($isRunnable);
@@ -254,9 +203,7 @@ sub isRunnable {
 
 sub delay {
     my $self = shift;
-    lock($delay);
-    if (@_) { $delay = shift }
-    return $delay;
+    return int(rand(5));
 }
 
 sub threadCount {
