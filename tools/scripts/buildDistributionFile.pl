@@ -124,15 +124,12 @@ foreach my $zimPath (@zimPaths) {
 
 # Download the file with DLL for Visual Studio redit. binaries
 $logger->info("Download vcredist_x86.exe");
-$cmd = "wget http://download.kiwix.org/dev/vcredist_x86.exe -O $distributionDirectory/install/vcredist_x86.exe"; `$cmd`;
+$cmd = "rm -f $distributionDirectory/install/vcredist_x86.exe ; wget http://download.kiwix.org/dev/vcredist_x86.exe -O $distributionDirectory/install/vcredist_x86.exe"; `$cmd`;
 
 # Download the autorun
 $logger->info("Download autorun");
-$cmd = "cd $distributionDirectory/autorun/ ; wget http://download.kiwix.org/dev/launcher/mingwm10.dll"; `$cmd`;
-$cmd = "cd $distributionDirectory/autorun/ ; wget http://download.kiwix.org/dev/launcher/libgcc_s_dw2-1.dll"; `$cmd`;
-$cmd = "cd $distributionDirectory/autorun/ ; wget http://download.kiwix.org/dev/launcher/QtGui4.dll"; `$cmd`;
-$cmd = "cd $distributionDirectory/autorun/ ; wget http://download.kiwix.org/dev/launcher/QtCore4.dll"; `$cmd`;
-$cmd = "cd $distributionDirectory/autorun/ ; wget http://download.kiwix.org/dev/launcher/autorun-$lang.exe -O autorun.exe"; `$cmd`;
+$cmd = "cd $distributionDirectory/ ; rm -rf autorun ; wget http://download.kiwix.org/dev/launcher/autorun.zip; unzip autorun.zip ; rm autorun.zip"; `$cmd`;
+$cmd = "cd $distributionDirectory/ ; sed -i -e 's/autorun\.exe/autorun\.exe \-\-lang=$lang/' autorun.inf"; `$cmd`;
 
 # Try to remove link if exists
 foreach my $zimPath (@zimPaths) {
