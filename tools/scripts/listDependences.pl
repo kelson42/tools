@@ -128,6 +128,8 @@ if ($databaseName) {
 	    $logger->info("Get template dependences of the page '$page'.");
 	    my @templateDependences = $site->templateDependences($page);
 	    $logger->info(scalar(@templateDependences)." template dependences found.");
+	    print $page."\n";
+	    print Dumper(@templateDependences)."\n";
 	    foreach my $dep (@templateDependences) {
 		my $template = $dep->{title};
 		unless ($templateDependences{$template}) {
