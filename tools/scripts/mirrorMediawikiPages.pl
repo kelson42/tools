@@ -122,7 +122,10 @@ if ($commonHost && !$commonRegexp) {
 if ($readFromStdin) {
     while (my $page = <STDIN>) {
 	$page =~ s/\n//;
-	push(@pages, $page);
+
+	if (length($page)) {
+	    push(@pages, $page);
+	}
     }
 } else  {
     if ($sourceUsername && !$sourcePassword) {
