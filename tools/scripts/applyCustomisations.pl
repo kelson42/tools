@@ -142,7 +142,7 @@ $entries = getList("Mirrors/$projectCode/template_black_list.txt");
 $entries = expandCategories($entries, 10);
 
 foreach my $entry (split(/\n/, $entries)) {
-    if ($entry =~ /^(.+) (.+)$/) {
+    if ($entry =~ /^(.+?) (.+)$/) {
 	$entry = $1;
 	my $replacement = $2;
 	if ($site->exists($entry)) {
