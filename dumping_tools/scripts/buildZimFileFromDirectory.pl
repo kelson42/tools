@@ -64,13 +64,14 @@ if (!$htmlPath || !$welcomePage || !$metadata{'Language'} || !$metadata{'Title'}
 }
 
 # try to detect the zimwriter path or test it (if given)
-if ($writerPath) {
-    unless (-x $writerPath) {
-	$logger->error("The zim writer '$writerPath' does not exist or is not executable.");
-	exit;
-    }
-} else {
+unless ($writerPath) {
     $writerPath = whereis('zimwriterdb') || whereis("zimwriter");
+}
+
+# Check if with have a writerpath
+unless (-x $writerPath) {
+    $logger->error("The zim writer '$writerPath' does not exist or is not executable.");
+    exit;
 }
 
 # test the html directory
