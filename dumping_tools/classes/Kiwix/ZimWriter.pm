@@ -549,8 +549,16 @@ sub createDatabase {
     my $dbName = $self->dbName();
     my $dbUser = $self->dbUser();
 
+    # Set the password as env variable
+    $self->log("info", "Set the password as env variable...");
     $ENV{'PGPASSWORD'} = $self->dbPassword();
+
+    # Create the db
+    $self->log("info", "Create the DB `createdb -U $dbUser $dbName`...");
     `createdb -U $dbUser $dbName `;
+
+    # Create the table in the DB
+    $self->log("info", "Create the DB `cat zim-postgresql.sql | psql -U $dbUser -d $dbName`...");
     `cat zim-postgresql.sql | psql -U $dbUser -d $dbName`;
 }
 
