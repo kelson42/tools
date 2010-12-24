@@ -103,7 +103,7 @@ foreach my $zimPath (@zimPaths) {
     # Index
     my $zimFileIndex = "$distributionDirectory/data/index/$zimFile.idx";
     $logger->info("Compute index for $zimFile");
-    $cmd = "kiwix-index $zimPath $zimFileIndex"; `$cmd`;
+    $cmd = "kiwix-index --backend=xapian $zimPath $zimFileIndex"; `$cmd`;
 
     # Compact
     $logger->info("Compact index $zimFileIndex");
