@@ -9,7 +9,7 @@ use XML::DOM;
 use DBI;
 
 my $logger;
-my @interwikis;
+my %interwikis = ( "ckb" => 42 );
 
 sub new {
     my $class = shift;
@@ -25,7 +25,6 @@ sub readFromWeb {
     my $host = shift || "";
     my $path = shift || "";
     my @nodes;
-    @interwikis = ();
 
     my $ua = LWP::UserAgent->new();
     my $parser = new XML::DOM::Parser (LWP_UserAgent => $ua);
@@ -37,18 +36,16 @@ sub readFromWeb {
 	@nodes = (@{$doc->getElementsByTagName("special")}, @{$doc->getElementsByTagName("language")});
 	foreach my $node (@nodes) {
 	    my $code = $node->getAttributeNode("code")->getValue();
-	    push(@interwikis, $code);
+	    $interwikis{$code} = 42;
 	}
-    }
-
-    unless (scalar(@interwikis)) {
+    } else {
 	$url = "http://".$host."/".($path ? $path."/" : "")."api.php?action=query&meta=siteinfo&siprop=interwikimap&format=xml";
 	$doc = $parser->parsefile($url);
 	
 	@nodes = (@{$doc->getElementsByTagName("iw")});
 	foreach my $node (@nodes) {
 	    my $code = $node->getAttributeNode("prefix")->getValue();
-	    push(@interwikis, $code);
+	    $interwikis{$code} = 42;
 	}
     }
 }
@@ -72,7 +69,7 @@ sub writeToDatabase {
     $sth = $dbh->prepare($req)  or die ("Unable to prepare request.");
     $sth->execute() or die ("Unable to execute request.");    
 
-    foreach my $interwiki (@interwikis) {
+    foreach my $interwiki (keys(%interwikis)) {
         $req = "INSERT INTO interwiki (iw_prefix, iw_url) VALUES ('$interwiki', 'http://$interwiki.wikipedia.org')";
 	$sth = $dbh->prepare($req)  or die ("Unable to prepare request.");
 	$sth->execute() or die ("Unable to execute request.");    
