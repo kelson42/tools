@@ -72,6 +72,11 @@ foreach my $category (@categories) {
 
 # Print to the output
 foreach my $entry (keys(%entries)) {
+
+    unless (Encode::is_utf8($entry)) {
+	$entry = decode_utf8($entry);
+    }
+
     print $entry."\n";
 }
 
