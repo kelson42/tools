@@ -25,6 +25,9 @@ my %natureCodes = (
     "nom" => { "code" =>  "N", "abbr" => "n.", "label" => "Nom" },
     "loc-phr" => { "code" =>  "LOC", "abbr" => "loc.", "label" => "Locution" },
     "adj" => { "code" =>  "A", "abbr" => "adj.", "label" => "Adjectif" },
+    "adv" => { "code" =>  "ADV", "abbr" => "adv.", "label" => "Adverbe" },
+    "conj-coord-" => { "code" =>  "CONJ", "abbr" => "conj. coord.", "label" => "Conjonction de coordination" },
+    "pronom-pers" => { "code" =>  "PROPERS", "abbr" => "pronom pers.", "label" => "Pronom personel" },
 );
 my $supportedNaturesRegex = join("|", keys(%natureCodes));
 
@@ -121,7 +124,7 @@ sub extractTranslationsFromWikiCode {
     my $languageCode = shift;
     my @translations;
 
-    while ($wikiCode =~ /\{\{trad(\+|\-|)\|$languageCode\|([^\}]*)\}\}/ig ) {
+    while ($wikiCode =~ /\{\{trad(\+|\-|)+\|$languageCode\|([^\}]*)\}\}/ig ) {
 	push (@translations, $2);
     }
 
@@ -141,13 +144,11 @@ sub extractAllTranslationsFromWikiCode {
 
     # Go through all derivatives if possible
     my $genericWikiCode = $wikiCode;
-    while ($wikiCode =~ /{{(\(|boîte[_|\ ]début)\|(.*?)(\|.*?|}})\n(.*?){{(\)|boîte[_|\ ]fin)}}/sgi ) {
-	my $derivative = $2;
-	my $subContent = $4;
-	$genericWikiCode =~ s/\Q$subContent\E//;
-	$derivative =~ s/{{.*?}}//g;
-	$derivative =~ s/^[ ]+//g;
-	$derivative = $frenchWord unless ($derivative);
+    while ($wikiCode =~ /({{)(\(|boîte[_|\ ]début)(\|)(.*?)(\|.*?|}})(\n)(.*?)({{)(\)|boîte[_|\ ]fin)(}})/sgi ) {
+	my $derivative = $4;
+	my $subContent = $7;
+	my $all = $1.$2.$3.$4.$5.$6.$7.$8.$9.$10;
+	$genericWikiCode =~ s/\Q$all\E//;
 
 	# try to find the translations for the french word
 	my $languageDerivativeTranslations = ($languageCode eq "fr" ? [($frenchWord)] : 
@@ -157,6 +158,10 @@ sub extractAllTranslationsFromWikiCode {
 
 	# Save the translations
 	if (scalar(@$languageDerivativeTranslations) && scalar(@$secondLanguageDerivativeTranslations)) {
+	    $derivative =~ s/{{.*?}}//g;
+	    $derivative =~ s/^[ ]+//g;
+	    $derivative = $frenchWord unless ($derivative);
+
 	    $translations{$derivative} = { "nature" => $nature,
 					   $languageCode => $languageDerivativeTranslations,
 					   $secondLanguageCode => $secondLanguageDerivativeTranslations,
@@ -165,10 +170,11 @@ sub extractAllTranslationsFromWikiCode {
 	    push(@$secondLanguageWords, @$secondLanguageDerivativeTranslations);
 	}
     }
-    
+ 
     # Try to find the generic translation
-    if ($genericWikiCode =~ /{{(trad\-trier|\-trad\-)}}(.*?){{\)}}/si ) {
+    if ($genericWikiCode =~ /{{(trad\-trier|\-trad\-)}}(.*?){{(\)|\-[[:alpha:]]+\-)}}/si ) {
 	my $subContent = $2;
+
 	my $languageGenericTranslations = ($languageCode eq "fr" ? [($frenchWord)] : 
 					   extractTranslationsFromWikiCode($subContent, $languageCode));
 	my $secondLanguageGenericTranslations = ($secondLanguageCode eq "fr" ? [($frenchWord)] : 
@@ -183,7 +189,7 @@ sub extractAllTranslationsFromWikiCode {
 	    push(@$secondLanguageWords, @$secondLanguageGenericTranslations);
 	}
     }
-    
+
     return \%translations;
 }
 
@@ -233,7 +239,7 @@ sub buildTranslationTable {
     # Go through the word list
     foreach my $frenchWord (@$frenchWords) {
 	my ($content, $revision) = $site->downloadPage($frenchWord);
-	
+
 	# Get the French language paragraph
 	$content = extractLanguageParagraphFromWikiCode($content, "fr");
 	next unless ($content);
@@ -387,6 +393,7 @@ my $allSecondLanguageEmbeddedIns = ($secondLanguageCode eq "fr" ? $allFrenchWord
 
 # Reduce list of words for both languages
 $logger->info("Computing list intersections...");
+
 my $languageWords = getListIntersection($allLanguageEmbeddedIns, $allFrenchWords);
 my $secondLanguageWords = getListIntersection($allSecondLanguageEmbeddedIns, $allFrenchWords);
 my $frenchWords = getListIntersection($languageWords, $secondLanguageWords);
@@ -400,7 +407,6 @@ $secondLanguageWords = [()];
 $logger->info("Building Translation table...");
 my $translationTable = buildTranslationTable($frenchWords, $languageCode, $secondLanguageCode, 
 					     $languageWords, $secondLanguageWords);
-
 
 # Remove duplicates
 my %languageTmpHash = map { $_, 1 } @$languageWords; $languageWords = [keys(%languageTmpHash)];
