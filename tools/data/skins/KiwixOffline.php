@@ -76,7 +76,7 @@ class KiwixOfflineTemplate extends QuickTemplate {
 <body<?php if($this->data['body_ondblclick']) { ?> ondblclick="<?php $this->text('body_ondblclick') ?>"<?php } ?>
 <?php if($this->data['body_onload']) { ?> onload="<?php $this->text('body_onload') ?>"<?php } ?>
  class="mediawiki <?php $this->text('dir') ?> <?php $this->text('pageclass') ?> <?php $this->text('skinnameclass') ?>" style="margin: 0 1em 1em 1em; background: #FFFFFF">
-OA	<div id="globalWrapper"><div id="bodyContent">
+	<div id="globalWrapper"><div id="bodyContent">
 		<a name="top" id="top"></a>
 		<h1 class="firstHeading"><?php $this->html('title'); ?></h1>
 			<?php $this->html('bodytext') ?>
