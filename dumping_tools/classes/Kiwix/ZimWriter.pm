@@ -135,7 +135,7 @@ sub getUrlCounts {
 
 	# CDATA links
 	if ($self->rewriteCDATA) {
-	    while ($data =~ /\@import\ \"([^\"]+)\"/gm) {
+	    while ($data =~ /\@import.*?\"([^\"]+)\"/gm) {
 		push(@$links, {"src"=>$1, "tag"=>"CDATA"} );
 	    }
 	}
@@ -754,7 +754,7 @@ sub copyFileToDatabase {
 	    my %links;
 	    
 	    # Get links to rewrite
-	    while ($data =~ /\@import\ \"([^\"]+)\"/gm) {
+	    while ($data =~ /\@import.*?\"([^\"]+)\"/gm) {
 		$links{$1} = 1;
 	    }
 	    
