@@ -203,7 +203,7 @@ class KiwixBaseSkin extends SkinTemplate {
 		     $content = str_replace($match[0], "", $content);
 		     
 		     // update following summary indexes
-		     $indexNumbers = split('[.]', $indexNumber);
+		     $indexNumbers = explode('.', $indexNumber);
 		     $last = $indexNumbers[count($indexNumbers) - 1];
 		     $prefix = substr($indexNumber, 0, strlen($indexNumber) - strlen($last));
 		     
@@ -243,7 +243,7 @@ class KiwixBaseSkin extends SkinTemplate {
 		     $content = str_replace($match[0], "", $content);
 
 		     // update following summary indexes
-		     $indexNumbers = split('[.]', $indexNumber);
+		     $indexNumbers = explode('.', $indexNumber);
 		     $last = $indexNumbers[count($indexNumbers) - 1];
 		     $prefix = substr($indexNumber, 0, strlen($indexNumber) - strlen($last));
 		     
