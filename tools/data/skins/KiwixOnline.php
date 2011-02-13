@@ -58,7 +58,7 @@ class KiwixOnlineTemplate extends QuickTemplate {
 	<head>
 		<meta http-equiv="Content-Type" content="<?php $this->text('mimetype') ?>; charset=<?php $this->text('charset') ?>" />
 		<?php $this->html('headlinks') ?>
-		<title><?php $this->text('title') ?></title>
+		<title><?php echo strip_tags($this->data['title']) ?></title>
 		<?php $this->html('csslinks') ?>
 
 		<!--[if lt IE 7]><script type="<?php $this->text('jsmimetype') ?>" src="<?php $this->text('stylepath') ?>/common/IEFixes.js?<?php echo $GLOBALS['wgStyleVersion'] ?>"></script>
@@ -103,9 +103,8 @@ class KiwixOnlineTemplate extends QuickTemplate {
 			<?php if($this->data['showjumplinks']) { ?><div id="jump-to-nav"><?php $this->msg('jumpto') ?> <a href="#column-one"><?php $this->msg('jumptonavigation') ?></a>, <a href="#searchInput"><?php $this->msg('jumptosearch') ?></a></div><?php } ?>
 			<!-- start content -->
 			<?php $this->html('bodytext') ?>
-		        
-			   <?php /* With categories */ if($this->data['catlinks']) { $this->html('catlinks'); } ?>
-
+			<?php /* With categories */ if($this->data['catlinks']) { $this->html('catlinks'); } ?>
+			
 			<!-- end content -->
 			<?php if($this->data['dataAfterContent']) { $this->html ('dataAfterContent'); } ?>
 			<div class="visualClear"></div>

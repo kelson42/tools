@@ -137,10 +137,11 @@ class KiwixBaseSkin extends SkinTemplate {
 	function outputPage( OutputPage $out )  {
 		 $content = $out->mBodytext;
 
+		 //<div class="rellink relarticle mainarticle">Main article: Geography of Chicago</div>
+
 		 // remove links to disemb. and other (if no link inside)
-		 preg_match_all('/<div class="(detail|homonymie|dablink|detail principal)".*?<\/div>/s', $content, $matches);
+		 preg_match_all('/<div class="(rellink|detail|homonymie|dablink|detail principal)[^"]*?">.*?<\/div>/s', $content, $matches);
 		 foreach ($matches[0] as $match) {
-		   
 		   // remove only html code without links or latex generated mathematics images
 		   if (!preg_match("/.*?<a.*?/s", $match) && 
 		       !preg_match("/.*?<img class=\"tex\".*?/s", $match) && 
@@ -172,7 +173,7 @@ class KiwixBaseSkin extends SkinTemplate {
 
 		 $offset = 0;
 
-		 while ( preg_match('/(<p><a name=\"[^\"]*\" id=\"[^\"]*\"><\/a><\/p>[\n\r\t]<h|<h)([\d])([^>]*>[ ]*<span class=\"[^\"]*\">.*?<\/span><\/h[\d]>[\n\r\t]*)(<p><a name=\"[^\"]*\" id=\"[^\"]*\"><\/a><\/p>[\n\r\t]<h|<h)([\d])([^>]*>[ ]*<span class=\"[^\"]*\">.*?<\/span><\/h[\d]>)/', $content, $matches, PREG_OFFSET_CAPTURE, $offset) && count($matches)) {
+		 while ( preg_match('/(<p><a name=\"[^\"]*\" id=\"[^\"]*\"><\/a><\/p>[\n\r\t]<h|<h)([\d])([^>]*>[ ]*<span[^>]+?>.*?<\/span><\/h[\d]>[\n\r\t]*)(<p><a name=\"[^\"]*\" id=\"[^\"]*\"><\/a><\/p>[\n\r\t]<h|<h)([\d])([^>]*>[ ]*<span class=\"[^\"]*\">.*?<\/span><\/h[\d]>)/', $content, $matches, PREG_OFFSET_CAPTURE, $offset) && count($matches)) {
 
 		   // set the offset for the future
 		   $offset = $matches[0][1] + 1 ;
@@ -221,22 +222,19 @@ class KiwixBaseSkin extends SkinTemplate {
 		 //  <!-- end content -->
 		 $offset = 0;
 
-		 if ( preg_match('/(<p><a name=\"[^\"]*\" id=\"[^\"]*\"><\/a><\/p>[\n\r\t]<h|<h)([\d])(>[ ]*<span class=\"[^\"]*\">.*?<\/span><\/h[\d]>[\n\r\t]*)(\<\!\-\-\ |\<br\/\>\<div\ class\=\"kf\"|\<div\ class\=\"kf\")/', $content, $matches, PREG_OFFSET_CAPTURE, $offset) && count($matches)) {
+		 if ( preg_match('/(<p><a name=\"[^\"]*\" id=\"[^\"]*\"><\/a><\/p>[\n\r\t]<h|<h)([\d])(>[ ]*<span[^>]+?>.*?<\/span><\/h[\d]>[\n\r\t]*)(\<\!\-\-\ |\<br\/\>\<div\ class\=\"kf\"|\<div\ class\=\"kf\")/', $content, $matches, PREG_OFFSET_CAPTURE, $offset) && count($matches)) {
 
 		   // set the offset for the future
 		   $offset = $matches[0][2] + 1 ;
 
-		   // exlude the case of under chapter
-		   if ($matches[2][0] >= $matches[5][0]) {
-
-		     // remove the empty paragraph
+		   // remove the empty paragraph
 		     $toRemove = $matches[1][0].$matches[2][0].$matches[3][0];
 		     $content = str_replace($toRemove, "", $content);
 		     		     
 		     // remove the index entry
-		     preg_match('/<p><a name=\"([^\"]*)\"/', $toRemove, $match);
+		     preg_match('/id=\"([^\"]*)\"/', $toRemove, $match);
 		     $anchorName = $match[1];
-		     
+
 		     // get sumary index number
 		     preg_match("/<li.*?#$anchorName.*?<span class=\"tocnumber\">([\d\.]*)<\/span>.*?<\/li>/", $content, $match);
 		     $indexNumber = $match[1];
@@ -254,7 +252,6 @@ class KiwixBaseSkin extends SkinTemplate {
 		       $content = str_replace($match[0], $match[1].($last-1).$match[3], $content);
 		       $last++;
 		     };
-		   }
 
 		 };
 

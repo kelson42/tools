@@ -49,7 +49,7 @@ class KiwixOfflineTemplate extends QuickTemplate {
 	} ?>xml:lang="<?php $this->text('lang') ?>" lang="<?php $this->text('lang') ?>" dir="<?php $this->text('dir') ?>">
 	<head>
 		<meta http-equiv="Content-Type" content="<?php $this->text('mimetype') ?>; charset=<?php $this->text('charset') ?>" />
-		<title><?php $this->text('title') ?></title>
+		<title><?php echo strip_tags($this->data['title']) ?></title>
 		<?php $this->html('csslinks') ?>
 
 		<?php print Skin::makeGlobalVariablesScript( $this->data ); ?>
@@ -79,8 +79,10 @@ class KiwixOfflineTemplate extends QuickTemplate {
 	<div id="globalWrapper"><div id="bodyContent">
 		<a name="top" id="top"></a>
 		<h1 class="firstHeading"><?php $this->html('title'); ?></h1>
-			<?php $this->html('bodytext') ?>
-   		        <?php /* With categories */ if($this->data['catlinks']) { $this->html('catlinks'); } ?>
+		<?php $this->html('bodytext') ?>
+		<?php /* With categories */ if($this->data['catlinks']) { $this->html('catlinks'); } ?>
+
+
 </div></div>
 <?php $this->html('bottomscripts'); /* JS call to runBodyOnloadHook */ ?>
 </body></html>
