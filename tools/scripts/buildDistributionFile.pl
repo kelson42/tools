@@ -31,7 +31,7 @@ GetOptions('zimPath=s' => \@zimPaths,
 
 # Check if we have all the mandatory variable set
 if (!scalar(@zimPaths) || !$filePath || (!($type eq "iso") && !($type eq "portable"))) {
-    print "usage: ./buildIso.pl --filePath=dvd.iso --zimPath=articles.zim --type=[iso|portable] [--tmpDirectory=/tmp/] [--lang=en|fr] [--liveInstance]\n";
+    print "usage: ./buildDistributionFile.pl --filePath=dvd.iso --zimPath=articles.zim --type=[iso|portable] [--tmpDirectory=/tmp/] [--lang=en|fr] [--liveInstance]\n";
     exit
 }
 
@@ -57,20 +57,20 @@ $cmd = "rm -rf \`find $distributionDirectory -name \"*.svn\"\`"; `$cmd`;
 
  # Download the source code
 $logger->info("Download Kiwix source code");
-$cmd = "cd $distributionDirectory ; wget http://download.kiwix.org/kiwix/unstable/latest/\` curl --silent http://download.kiwix.org/kiwix/unstable/latest/ |  grep bz2 | sed 's/.*href=\"//' | sed 's/\".*//' \`"; `$cmd`;
+$cmd = "cd $distributionDirectory ; wget --trust-server-names http://download.kiwix.org/src/kiwix-unstable-src.tar.bz2"; `$cmd`;
 
 # Download deb files
 $logger->info("Download Kiwix deb packages");
-$cmd = "curl --silent http://download.kiwix.org/kiwix/unstable/latest/ | grep deb | sed 's/.*href=\"//' | sed 's/\".*//'";
+$cmd = "curl --silent http://download.kiwix.org/bin/unstable/ | grep deb | sed 's/.*href=\"//' | sed 's/\".*//'";
 my @debFiles = split(/\n/, `$cmd 2>&1`);
 
 foreach my $debFile (@debFiles) {
-    $cmd = "wget http://download.kiwix.org/kiwix/unstable/latest/$debFile -O $distributionDirectory/install/$debFile"; `$cmd`;
+    $cmd = "wget http://download.kiwix.org/bin/unstable/$debFile -O $distributionDirectory/install/$debFile"; `$cmd`;
 }
 
 # Download and unzip Windows binary
 $logger->info("Download and unzip Windows binary");
-$cmd = "wget http://download.kiwix.org/kiwix/unstable/latest/\` curl --silent http://download.kiwix.org/kiwix/unstable/latest/ | grep zip | sed 's/.*href=\"//' | sed 's/\".*//' \` -O $distributionDirectory/kiwix.zip"; `$cmd`;
+$cmd = "wget http://download.kiwix.org/bin/unstable/\` curl --silent http://download.kiwix.org/bin/unstable/ | grep zip | sed 's/.*href=\"//' | sed 's/\".*//' \` -O $distributionDirectory/kiwix.zip"; `$cmd`;
 $cmd = "cd $distributionDirectory/ ; unzip -n kiwix.zip" ; `$cmd`;
 $cmd = "rm $distributionDirectory/kiwix.zip" ; `$cmd`;
 
