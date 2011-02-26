@@ -2,6 +2,7 @@ package Kiwix::ZimWriter;
 
 use strict;
 use warnings;
+use HTML::Entities;
 use Data::Dumper;
 use Kiwix::PathExplorer;
 use Kiwix::MimeDetector;
@@ -9,7 +10,6 @@ use Kiwix::UrlRewriter;
 use HTML::LinkExtractor;
 use HTML::Entities;
 use URI::Escape;
-#use Math::BaseArith;
 use DBI qw(:sql_types);
 use Cwd 'abs_path';
 use DBD::Pg;
@@ -851,6 +851,7 @@ sub extractTitleFromHtml {
 
 	# Remove HTML tags in title
 	$title =~ s/&lt;(.*?)&gt;//g;
+	$title = HTML::Entities::decode($title);
 
 	return decode_entities($title);
     }
