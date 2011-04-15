@@ -34,6 +34,7 @@ my $file;
 my $htmlFilterRegexp = "^.*\.(html|htm)\$";
 my $jsFilterRegexp = "^.*\.(js)\$";
 my $cssFilterRegexp = "^.*\.(css)\$";
+my $faviconFilterRegexp = "^favicon\.(ico|png)\$";
 my $rewriteCDATA;
 my $shortenUrls;
 my $strict;
@@ -433,8 +434,8 @@ sub getNamespace {
 
     if ($file =~ /$htmlFilterRegexp/i) {
 	return "A";
-    } elsif ($file =~ /$cssFilterRegexp/i || $file =~ /$jsFilterRegexp/i) {
-	return "I";
+    } elsif ($file =~ /$cssFilterRegexp/i || $file =~ /$jsFilterRegexp/i || $file =~ /$faviconFilterRegexp/ ) {
+	return "-";
     } else {
 	return "I";
     }
