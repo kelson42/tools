@@ -90,7 +90,12 @@ foreach my $table ("revision", "page", "text", "imagelinks", "templatelinks", "i
 
 # Upload the XML
 my $mysqlCmd = "mysql --user=$databaseUsername --password=$databasePassword $databaseName";
-$cmd = "cd $mwDumperDir; java -classpath ./src org.mediawiki.dumper.Dumper --format=sql:1.5 ../$projectCode-$version-pages-articles.xml.bz2 | $mysqlCmd"; `$cmd`;
+
+$cmd = "cd $mwDumperDir; java -classpath ./src org.mediawiki.dumper.Dumper --format=sql:1.5 ../$projectCode-$version-pages-articles.xml.bz2 | bzip2 > $projectCode-sql.bz2";
+system "$cmd";
+
+$cmd = "cd $mwDumperDir; bzip2 -c -d $projectCode-sql.bz2 | $mysqlCmd";
+system "$cmd";
 
 # Upload the SQL
 $cmd = "gzip -d -c $tmpDir/$projectCode-$version-interwiki.sql.gz | $mysqlCmd"; `$cmd`;
