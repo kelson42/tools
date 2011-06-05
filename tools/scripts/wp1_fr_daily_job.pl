@@ -109,7 +109,9 @@ my $content = "
 ";
 
 foreach my $title (@titles) {
-    $content .= "* [[".$title."]] (".$hash{$title}.")\n"
+    if ($title) {
+	$content .= "* [[".$title."]] (".$hash{$title}.")\n";
+    }
 } 
 
 $content .= "\n<!-- FIN DE LA ZONE DE TRAVAIL DU BOT -->";
