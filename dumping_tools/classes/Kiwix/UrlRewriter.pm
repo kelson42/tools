@@ -57,12 +57,16 @@ my %escape = (
     '>' => '&gt;',
     '"' => '&quot;',
     '&' => '&amp;',
+    '\+' => '%2B',
 	      );
-my $esc_re = join '|', keys %escape;
+my $esc_re = "(".join('|', keys %escape).")";
+
+# Necessary otherwise $escape{$1} matchs nothing 
+$escape{'+'} = '%2B'; 
 
 sub _escape {
     my $str = shift;
-    $str =~ s/($esc_re)/$escape{$1}/g;
+    $str =~ s/$esc_re/$escape{$1}/g;
     $str;
 }
 
