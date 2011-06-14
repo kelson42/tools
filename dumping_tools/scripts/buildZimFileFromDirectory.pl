@@ -67,6 +67,10 @@ if (!$htmlPath || !$welcomePage || !$metadata{'Language'} || !$metadata{'Title'}
 unless ($writerPath) {
     $writerPath = whereis('zimwriterdb') || whereis("zimwriter");
 }
+unless ($writerPath) {
+    print STDERR "Unable to find zimwriter or zimwriterdb\n";
+    exit;
+}
 
 # Check if with have a writerpath
 unless (-x $writerPath) {
