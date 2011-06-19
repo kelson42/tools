@@ -20,6 +20,7 @@ my $logger = Log::Log4perl->get_logger("builZimFileFromDirectory.pl");
 my $writerPath;
 my $htmlPath;
 my $welcomePage;
+my $favicon;
 my $compressAll;
 my $zimFilePath="./articles";
 my $dbUser="kiwix";
@@ -51,6 +52,7 @@ GetOptions('writerPath=s' => \$writerPath,
 	   'compressAll' => \$compressAll,
 	   'shortenUrls' => \$shortenUrls,
 	   'welcomePage=s' => \$welcomePage,
+	   'favicon=s' => \$favicon,
 	   'avoidForceHtmlCharsetToUtf8' => \$avoidForceHtmlCharsetToUtf8,
 	   'language=s' => \$metadata{'Language'},
 	   'title=s' => \$metadata{'Title'},
@@ -58,8 +60,8 @@ GetOptions('writerPath=s' => \$writerPath,
 	   'description=s' => \$metadata{'Description'},
 	   );
 
-if (!$htmlPath || !$welcomePage || !$metadata{'Language'} || !$metadata{'Title'} || !$metadata{'Creator'} || !$metadata{'Description'}) {
-    print "usage: ./builZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html --language=fr --title=foobar --creator=foobar --decription=mydescription [--dbUser=foobar] [--dbPassword=testpass] [--writerPath=./zimWriter] [--zimFilePath=articles.zim] [--dbName=kiwix_db] [--dbPort=5432] [--dbHost=localhost] [--rewriteCDATA] [--mediawikiOptim] [--shortenUrls] [--strict] [--avoidForceHtmlCharsetToUtf8] [--compressAll] [--doNotDeleteDbAtTheEnd]\n";
+if (!$htmlPath || !$welcomePage || !$favicon || !$metadata{'Language'} || !$metadata{'Title'} || !$metadata{'Creator'} || !$metadata{'Description'}) {
+    print "usage: ./builZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html --favicon=images/favicon.png --language=fr --title=foobar --creator=foobar --decription=mydescription [--dbUser=foobar] [--dbPassword=testpass] [--writerPath=./zimWriter] [--zimFilePath=articles.zim] [--dbName=kiwix_db] [--dbPort=5432] [--dbHost=localhost] [--rewriteCDATA] [--mediawikiOptim] [--shortenUrls] [--strict] [--avoidForceHtmlCharsetToUtf8] [--compressAll] [--doNotDeleteDbAtTheEnd]\n";
     exit;
 }
 
@@ -99,6 +101,12 @@ unless ( -f $htmlPath."/".$welcomePage) {
     exit;    
 }
 
+# check if the favicon exists
+unless ( -f $htmlPath."/".$favicon) {
+    print(STDERR "The file ".$htmlPath."/".$favicon." does not exist.\n");
+    exit;    
+}
+
 # Add auto. the date metadata
 my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
 $metadata{"Date"} = (1900+$year)."-".sprintf("%02d", $mon+1)."-".sprintf("%02d", $mday);
@@ -116,6 +124,7 @@ $writer->dbPort($dbPort);
 $writer->dbHost($dbHost);
 $writer->dbPassword($dbPassword);
 $writer->welcomePage($welcomePage);
+$writer->favicon($favicon);
 $writer->mediawikiOptim($mediawikiOptim);
 $writer->rewriteCDATA($rewriteCDATA);
 $writer->strict($strict);

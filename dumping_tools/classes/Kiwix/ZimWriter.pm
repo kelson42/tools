@@ -18,6 +18,7 @@ my $logger;
 my $writerPath;
 my $htmlPath;
 my $welcomePage;
+my $favicon;
 my $compressAll;
 my $zimFilePath;
 my $dbHandler;
@@ -48,7 +49,10 @@ my %additionalKeywords;
 
 my $mimeDetector;
 
-my %mimeTypes;
+my %mimeTypes = (
+    "text/plain" => 1,
+);
+
 my %mimeTypesCompression = (
     "text/html" => 1,
     "text/plain" => 1,
@@ -411,6 +415,15 @@ sub computeNewUrls {
 	exit 1;
     }
 
+    # update the favicon
+    if (exists($urls{$favicon})) {
+	$favicon = $urls{$favicon};
+    } else {
+	$self->log("error", "Unable to find the favicon '$favicon'.");
+	print STDERR "Unable to find the welcome page '$favicon'.";
+	exit 1;
+    }
+
     # prepare the mimeTypes and mimeTypesCompression hash tables
     foreach my $file (keys(%urls)) {
 	# mime-type
@@ -623,7 +636,7 @@ sub fillDatabase {
 	$sth->bind_param(2, $key);
 	$sth->bind_param(3, $key);
 	$sth->bind_param(4, $redirect);
-	$sth->bind_param(5, 1);
+	$sth->bind_param(5, $mimeTypes{"text/plain"});
     	$sth->bind_param(6, $metadata->{$key}, { pg_type => DBD::Pg::PG_BYTEA } );
 	
 	$sth->execute();
@@ -640,6 +653,28 @@ sub fillDatabase {
     my $result = $sth->fetchrow_hashref();
     $welcomePage = $result->{'aid'};
     $sth->finish();
+
+    # Fill with the favicon
+    $self->log("info", "Fill with the favicon.");
+    $sth = $self->dbHandler()->prepare("select aid, mimetype from article where namespace='I' and url='$favicon'");
+    $sth->execute();
+    $result = $sth->fetchrow_hashref();
+    $favicon = $result->{'aid'};
+    my $faviconMimeType = $result->{'mimetype'};
+    $sth->finish();
+
+    # Insert the favicon
+    $sql = "insert into article (namespace, title, url, redirect, mimetype, data) values (?, ?, ?, ?, ?, ?)";
+    $sth = $self->dbHandler()->prepare($sql);
+
+    $sth->bind_param(1, "-");
+    $sth->bind_param(2, "favicon");
+    $sth->bind_param(3, "favicon");
+    $sth->bind_param(4, $favicon);
+    $sth->bind_param(5, $faviconMimeType);
+    $sth->bind_param(6, undef, { pg_type => DBD::Pg::PG_BYTEA } );
+    $sth->execute();
+    if ($self->dbHandler()->err()) { die "$DBI::errstr\n"; }
 
     # fill the zimfile table
     $sql = "insert into zimfile (filename, mainpage) values ('".$self->zimFilePath()."', '".$welcomePage."')";
@@ -975,6 +1010,12 @@ sub welcomePage {
     my $self = shift;
     if (@_) { $welcomePage = shift } 
     return $welcomePage;
+}
+
+sub favicon {
+    my $self = shift;
+    if (@_) { $favicon = shift } 
+    return $favicon;
 }
 
 sub compressAll {
