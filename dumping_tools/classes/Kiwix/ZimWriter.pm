@@ -38,6 +38,7 @@ my $cssFilterRegexp = "^.*\.(css)\$";
 my $faviconFilterRegexp = "^favicon\.(ico|png)\$";
 my $rewriteCDATA;
 my $shortenUrls;
+my $removeUnusedRedirects;
 my $strict;
 my $avoidForceHtmlCharsetToUtf8;
 my $metadata;
@@ -147,6 +148,23 @@ sub getUrlCounts {
 
 	# Analyze the links
 	foreach my $link (@$links) {
+	    # If redirect add target title as keyword
+	    if ($link->{'tag'} =~ /meta/i) {
+		if (exists($link->{'http-equiv'}) && $link->{'http-equiv'} =~ /Refresh/i) {
+		    if ($link->{'content'} =~ /url\=(.*)/) {
+			my $target = $1;
+			$target = removeLocalTagFromUrl($target);
+			$target =~ s/\n//g;
+			$target = uri_unescape($target);
+			$target = getAbsoluteUrl($file, $self->htmlPath(), $target);
+			if (my $title = extractTitleFromHtml(\$data) ) {
+			    $additionalKeywords{$target} = ($additionalKeywords{$target} ? $additionalKeywords{$target}.", " : "").$title;
+			    $self->log("info", "New 'redirect keyword' for '$target' : '$title'");
+			}
+		    }
+		}
+	    }
+
 	    # Exceptions
 	    if ($link->{'tag'} =~ /meta/i || $link->{'tag'} =~ /form/i ) {
 		next;
@@ -174,52 +192,39 @@ sub getUrlCounts {
 		$url = uri_unescape($url);
 		$self->incrementCount(getAbsoluteUrl($file, $self->htmlPath(), $url));
 	    } 
-
-	    # refresh/redirect link
-	    elsif (exists($link->{'http-equiv'}) && $link->{'http-equiv'} =~ /Refresh/i) {
-		if ($link->{'content'} =~ /url\=(.*)/) {
-		    my $target = $1;
-		    $target = removeLocalTagFromUrl($target);
-		    $target =~ s/\n//g;
-		    $target = uri_unescape($target);
-		    $target = getAbsoluteUrl($file, $self->htmlPath(), $target);
-		    if (my $title = extractTitleFromHtml(\$data) ) {
-			$additionalKeywords{$target} = ($additionalKeywords{$target} ? $additionalKeywords{$target}.", " : "").$title;
-			$self->log("info", "New 'redirect keyword' for '$target' : '$title'");
-		    }
-		}
-	    }
 	}
     }
 
     $self->log("info", "Finished with counting links.");
     
     # remove unused redirects
-    $self->log("info", "Removing unused redirects...");
-    foreach my $file (keys(%urls)) {
-	if ($urls{$file} <= 1 && 
-	    $file =~ /$htmlFilterRegexp/i && 
-	    -f $self->htmlPath().$file) {
-
-	    $self->log("info", "Removing unused redirects... looking at $file");
-
-	    # read file
-	    my $path = $self->htmlPath().$file;
-	    my $data = $self->readFile($path);
-
-	    # is redirect?
-	    my $linkExtractor = HTML::LinkExtractor->new();
-	    $linkExtractor->parse(\$data);
-	    my $links = $linkExtractor->links();
-	    foreach my $link (@$links) {
-		next unless (exists($link->{'http-equiv'}) && $link->{'http-equiv'} =~ /Refresh/i );
-		$self->log("info", "Removing redirect $file.");
-		delete($urls{$file});
-		last;
+    if ($removeUnusedRedirects) {
+	$self->log("info", "Removing unused redirects...");
+	foreach my $file (keys(%urls)) {
+	    if ($urls{$file} <= 1 && 
+		$file =~ /$htmlFilterRegexp/i && 
+		-f $self->htmlPath().$file) {
+		
+		$self->log("info", "Removing unused redirects... looking at $file");
+		
+		# read file
+		my $path = $self->htmlPath().$file;
+		my $data = $self->readFile($path);
+		
+		# is redirect?
+		my $linkExtractor = HTML::LinkExtractor->new();
+		$linkExtractor->parse(\$data);
+		my $links = $linkExtractor->links();
+		foreach my $link (@$links) {
+		    next unless (exists($link->{'http-equiv'}) && $link->{'http-equiv'} =~ /Refresh/i );
+		    $self->log("info", "Removing redirect $file.");
+		    delete($urls{$file});
+		    last;
+		}
 	    }
 	}
+	$self->log("info", "Finished with removing unused redirects.");
     }
-    $self->log("info", "Finished with removing unused redirects.");
 }
 
 sub mediawikiOptim {
@@ -656,11 +661,10 @@ sub fillDatabase {
 
     # Fill with the favicon
     $self->log("info", "Fill with the favicon.");
-    $sth = $self->dbHandler()->prepare("select aid, mimetype from article where namespace='I' and url='$favicon'");
+    $sth = $self->dbHandler()->prepare("select url from article where namespace='I' and url='$favicon'");
     $sth->execute();
     $result = $sth->fetchrow_hashref();
-    $favicon = $result->{'aid'};
-    my $faviconMimeType = $result->{'mimetype'};
+    $favicon = $result->{'url'};
     $sth->finish();
 
     # Insert the favicon
@@ -671,7 +675,7 @@ sub fillDatabase {
     $sth->bind_param(2, "favicon");
     $sth->bind_param(3, "favicon");
     $sth->bind_param(4, $favicon);
-    $sth->bind_param(5, $faviconMimeType);
+    $sth->bind_param(5, undef);
     $sth->bind_param(6, undef, { pg_type => DBD::Pg::PG_BYTEA } );
     $sth->execute();
     if ($self->dbHandler()->err()) { die "$DBI::errstr\n"; }
@@ -986,6 +990,12 @@ sub shortenUrls {
     my $self = shift;
     if (@_) { $shortenUrls = shift } 
     return $shortenUrls;
+}
+
+sub removeUnusedRedirects {
+    my $self = shift;
+    if (@_) { $removeUnusedRedirects = shift } 
+    return $removeUnusedRedirects;
 }
 
 sub dbUser {
