@@ -31,6 +31,7 @@ my $rewriteCDATA;
 my $strict;
 my $mediawikiOptim;
 my $shortenUrls;
+my $removeUnusedRedirects;
 my $avoidForceHtmlCharsetToUtf8;
 my $doNotDeleteDbAtTheEnd;
 my $dbName=time();
@@ -51,6 +52,7 @@ GetOptions('writerPath=s' => \$writerPath,
 	   'strict' => \$strict,
 	   'compressAll' => \$compressAll,
 	   'shortenUrls' => \$shortenUrls,
+	   'removeUnusedRedirects' => \$removeUnusedRedirects,
 	   'welcomePage=s' => \$welcomePage,
 	   'favicon=s' => \$favicon,
 	   'avoidForceHtmlCharsetToUtf8' => \$avoidForceHtmlCharsetToUtf8,
@@ -61,7 +63,7 @@ GetOptions('writerPath=s' => \$writerPath,
 	   );
 
 if (!$htmlPath || !$welcomePage || !$favicon || !$metadata{'Language'} || !$metadata{'Title'} || !$metadata{'Creator'} || !$metadata{'Description'}) {
-    print "usage: ./builZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html --favicon=images/favicon.png --language=fr --title=foobar --creator=foobar --decription=mydescription [--dbUser=foobar] [--dbPassword=testpass] [--writerPath=./zimWriter] [--zimFilePath=articles.zim] [--dbName=kiwix_db] [--dbPort=5432] [--dbHost=localhost] [--rewriteCDATA] [--mediawikiOptim] [--shortenUrls] [--strict] [--avoidForceHtmlCharsetToUtf8] [--compressAll] [--doNotDeleteDbAtTheEnd]\n";
+    print "usage: ./builZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html --favicon=images/favicon.png --language=fr --title=foobar --creator=foobar --decription=mydescription [--dbUser=foobar] [--dbPassword=testpass] [--writerPath=./zimWriter] [--zimFilePath=articles.zim] [--dbName=kiwix_db] [--dbPort=5432] [--dbHost=localhost] [--rewriteCDATA] [--mediawikiOptim] [--shortenUrls] [--removeUnusedRedirects] [--strict] [--avoidForceHtmlCharsetToUtf8] [--compressAll] [--doNotDeleteDbAtTheEnd]\n";
     exit;
 }
 
@@ -130,6 +132,7 @@ $writer->rewriteCDATA($rewriteCDATA);
 $writer->strict($strict);
 $writer->avoidForceHtmlCharsetToUtf8($avoidForceHtmlCharsetToUtf8);
 $writer->shortenUrls($shortenUrls);
+$writer->removeUnusedRedirects($removeUnusedRedirects);
 $writer->metadata(\%metadata);
 
 # Create database
