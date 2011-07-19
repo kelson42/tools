@@ -28,7 +28,7 @@ $wgStrictFileExtensions = false;
 
 # image shared dir
 $wgUseSharedUploads = true;
-$wgSharedUploadPath = "http://commons.wikimedia.org.mirror2.kiwix.org/images";
+$wgSharedUploadPath = "http://commons.wikimedia.org.mirror.kiwix.org/images";
 $wgFetchCommonsDescriptions = false;
 $wgSharedUploadDirectory = "/var/www/mirror/commons_wikimedia_org/images";
 $wgSharedUploadDBname = "mirror_commons_wikimedia_org";
@@ -57,7 +57,7 @@ $wgEnableUploads = true;
 $wgAllowCopyUploads = true;
 
 # memory
-$wgMaxShellMemory = 502400;
+$wgMaxShellMemory = 1502400;
 $wgMaxShellTime = 3600;
 $wgMaxShellFileSize = 404800;
 $wgMimeDetectorCommand= 'file -bi ';
