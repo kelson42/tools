@@ -48,15 +48,21 @@ if (!scalar(@languages) && !$allLanguages) {
 
 # Get all languages if necessary
 if (!scalar(@languages) || $allLanguages) {
-    @languages = ("ar", "ca", "de", "es", "fa", "fr", "he". "it", "ml", "nl", "pl", "pt", "zh");
+    @languages = ("ar", "ca", "de", "es", "fa", "fr", "he", "it", "ml", "nl", "pl", "pt", "zh");
 }
 
 # Initialize $languageMainDtdSourceMaster
 my $languageMainDtdSourceMaster = readFile($path."/kiwix/chrome/locale/en/main/main.dtd");
+my $languageMainPropertiesSourceMaster = readFile($path."/kiwix/chrome/locale/en/main/main.properties");
 
 # Get all languages
 foreach my $language (@languages) {
     $logger->info("Getting locale '$language'.");
+
+    # create directory if necessary
+    unless ( -d $path."/kiwix/chrome/locale/".$language) { mkdir $path."/kiwix/chrome/locale/".$language; }
+    unless ( -d $path."/kiwix/chrome/locale/".$language."/main") { mkdir $path."/kiwix/chrome/locale/".$language."/main"; }
+    my $localePath = $path."/kiwix/chrome/locale/".$language."/main/";
     
     # get translation from translatewiki.net
     my $content = get("http://sandbox.translatewiki.net/w/i.php?title=Special:Translate&task=export-to-file&group=out-kiwix&language=$language&limit=2500");
@@ -76,16 +82,24 @@ foreach my $language (@languages) {
 
 	$languageMainDtdSource =~ s/\Q$1$2$3$4$5\E/$prefix$value$postfix/;
     }
-    print $languageMainDtdSource;
+    writeFile($localePath."main.dtd", $languageMainDtdSource);
 
-    # Upload dtd
+    # Update js properties file
+    my $mainPropertiesHash = getLocaleHash($content, "ui\.messages\.|");
+    my $languageMainPropertiesSource = $languageMainPropertiesSourceMaster;
 
-    # create the js
-
-    # create directory if necessary
-    unless ( -d $path."/kiwix/chrome/locale/".$language) { mkdir $path."/kiwix/chrome/locale/".$language; }
-    unless ( -d $path."/kiwix/chrome/locale/".$language."/main") { mkdir $path."/kiwix/chrome/locale/".$language."/main"; }
-    my $localePath = $path."/kiwix/chrome/locale/".$language."/main/";
+    while ($languageMainPropertiesSourceMaster =~ /^([^<].*?)(\=)(.*)$/mg) {
+	my $name = $1;
+	my $middle = $2;
+	my $value = $3;
+	
+	if (exists($mainPropertiesHash->{$name})) {
+	    $value = $mainPropertiesHash->{$name};
+	}
+	
+	$languageMainPropertiesSource =~ s/\Q$1$2$3\E/$name$middle$value/;
+    }
+    writeFile($localePath."main.properties", $languageMainPropertiesSource);
 }
 
 sub getLocaleHash {
