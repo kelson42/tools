@@ -32,7 +32,7 @@ my %urls;
 my %deadUrls;
 my @files;
 my $file;
-my $htmlFilterRegexp = "^.*\.(html|htm)\$";
+my $htmlFilterRegexp = "^.*\.(html|htm|xhtml)\$";
 my $jsFilterRegexp = "^.*\.(js)\$";
 my $cssFilterRegexp = "^.*\.(css)\$";
 my $faviconFilterRegexp = "^favicon\.(ico|png)\$";
@@ -42,6 +42,7 @@ my $removeUnusedRedirects;
 my $strict;
 my $avoidForceHtmlCharsetToUtf8;
 my $metadata;
+my $doNotIgnoreFiles;
 
 my %bestResolutionSizes;
 my %bestResolutionUrls;
@@ -56,6 +57,7 @@ my %mimeTypes = (
 
 my %mimeTypesCompression = (
     "text/html" => 1,
+    "application/xhtml+xml" => 1,
     "text/plain" => 1,
     "image/tiff" => 1,
     "text/css" => 1,
@@ -104,7 +106,6 @@ sub getUrlCounts {
     my $self = shift;
 
     foreach my $file (keys(%urls)) {
-
 	# deal with the css
 	if ($file =~ /$cssFilterRegexp/i) {
 	    $file = $self->htmlPath().$file;
@@ -359,7 +360,7 @@ sub computeNewUrls {
 	    my $newUrlBase;
 	    my $newUrl;
 	    my $file = $self->htmlPath().$url;
-	    my $extension;
+	    my $extension = "";
 
 	    # only html
 	    if ($url =~ /$htmlFilterRegexp/i) {
@@ -376,10 +377,10 @@ sub computeNewUrls {
 	    # else
 	    unless ($newUrlBase) {
 		$url =~ /^(.*\/|)([^\/]*)(\..*)$/;
-		$newUrlBase = $2;
-		$extension=$3;
+		$newUrlBase=$2 || $url;
+		$extension=$3 || "";
 	    }
-	
+
 	    $newUrlBase =~ s/[_]+/_/ig;
 	    $newUrl = $newUrlBase.$extension;
 
@@ -901,7 +902,7 @@ sub ignoreFile {
     my $self = shift;
     my $file = shift;
 
-    if ( $file =~ /^.*\.htm$/i || $file =~ /^.*\.html$/i || 
+    if ( $self->doNotIgnoreFiles() || $file =~ /^.*\.htm$/i || $file =~ /^.*\.html$/i || $file =~ /^.*\.xhtml$/i ||
 	 $file =~ /^.*\.jpeg$/i || $file =~ /^.*\.jpg$/i ||
 	 $file =~ /^.*\.png$/i || $file =~ /^.*\.css$/i ||
 	 $file =~ /^.*\.svg$/i || $file =~ /^.*\.js$/i || $file =~ /^.*\.gif$/i
@@ -1047,6 +1048,12 @@ sub mimeDetector {
     my $self = shift;
     if (@_) { $mimeDetector = shift } 
     return $mimeDetector;
+}
+
+sub doNotIgnoreFiles {
+    my $self = shift;
+    if (@_) { $doNotIgnoreFiles = shift } 
+    return $doNotIgnoreFiles;
 }
 
 sub metadata {

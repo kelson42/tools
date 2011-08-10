@@ -34,6 +34,7 @@ my $shortenUrls;
 my $removeUnusedRedirects;
 my $avoidForceHtmlCharsetToUtf8;
 my $doNotDeleteDbAtTheEnd;
+my $doNotIgnoreFiles;
 my $dbName=time();
 my %metadata;
 
@@ -49,6 +50,7 @@ GetOptions('writerPath=s' => \$writerPath,
 	   'mediawikiOptim' => \$mediawikiOptim,
 	   'rewriteCDATA' => \$rewriteCDATA,
 	   'doNotDeleteDbAtTheEnd' => \$doNotDeleteDbAtTheEnd,
+	   'doNotIgnoreFiles' => \$doNotIgnoreFiles,
 	   'strict' => \$strict,
 	   'compressAll' => \$compressAll,
 	   'shortenUrls' => \$shortenUrls,
@@ -63,7 +65,7 @@ GetOptions('writerPath=s' => \$writerPath,
 	   );
 
 if (!$htmlPath || !$welcomePage || !$favicon || !$metadata{'Language'} || !$metadata{'Title'} || !$metadata{'Creator'} || !$metadata{'Description'}) {
-    print "usage: ./builZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html --favicon=images/favicon.png --language=fr --title=foobar --creator=foobar --decription=mydescription [--dbUser=foobar] [--dbPassword=testpass] [--writerPath=./zimWriter] [--zimFilePath=articles.zim] [--dbName=kiwix_db] [--dbPort=5432] [--dbHost=localhost] [--rewriteCDATA] [--mediawikiOptim] [--shortenUrls] [--removeUnusedRedirects] [--strict] [--avoidForceHtmlCharsetToUtf8] [--compressAll] [--doNotDeleteDbAtTheEnd]\n";
+    print "usage: ./builZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html --favicon=images/favicon.png --language=fr --title=foobar --creator=foobar --decription=mydescription [--dbUser=foobar] [--dbPassword=testpass] [--writerPath=./zimWriter] [--zimFilePath=articles.zim] [--dbName=kiwix_db] [--dbPort=5432] [--dbHost=localhost] [--rewriteCDATA] [--mediawikiOptim] [--shortenUrls] [--removeUnusedRedirects] [--strict] [--avoidForceHtmlCharsetToUtf8] [--compressAll] [--doNotDeleteDbAtTheEnd] [--doNotIgnoreFiles]\n";
     exit;
 }
 
@@ -134,6 +136,7 @@ $writer->avoidForceHtmlCharsetToUtf8($avoidForceHtmlCharsetToUtf8);
 $writer->shortenUrls($shortenUrls);
 $writer->removeUnusedRedirects($removeUnusedRedirects);
 $writer->metadata(\%metadata);
+$writer->doNotIgnoreFiles($doNotIgnoreFiles);
 
 # Create database
 $writer->createDatabase();
