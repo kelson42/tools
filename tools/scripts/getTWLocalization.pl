@@ -65,7 +65,7 @@ foreach my $language (@languages) {
     my $localePath = $path."/kiwix/chrome/locale/".$language."/main/";
     
     # get translation from translatewiki.net
-    my $content = get("http://sandbox.translatewiki.net/w/i.php?title=Special:Translate&task=export-to-file&group=out-kiwix&language=$language&limit=2500");
+    my $content = get("http://www.translatewiki.net/w/i.php?title=Special:Translate&task=export-to-file&group=out-kiwix&language=$language&limit=2500");
 
     # Update main dtd
     my $mainDtdHash = getLocaleHash($content, "ui\.|main");
