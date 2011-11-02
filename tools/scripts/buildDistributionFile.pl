@@ -55,7 +55,7 @@ $logger->info("Checkout the SVN dvd directory template");
 $cmd = "svn co https://kiwix.svn.sourceforge.net/svnroot/kiwix/moulinkiwix/dvd $distributionDirectory"; `$cmd`;
 $cmd = "rm -rf \`find $distributionDirectory -name \"*.svn\"\`"; `$cmd`;
 
- # Download the source code
+# Download the source code
 $logger->info("Download Kiwix source code");
 $cmd = "cd $distributionDirectory ; wget --trust-server-names http://download.kiwix.org/src/kiwix-unstable-src.tar.bz2"; `$cmd`;
 
@@ -100,31 +100,15 @@ foreach my $zimPath (@zimPaths) {
     $zimPath =~ /.*\/([^\/]*)$/;
     my $zimFile = $1;
 
-    # Index
-    my $zimFileIndex = "$distributionDirectory/data/index/$zimFile.idx";
-    $logger->info("Compute index for $zimFile");
-    $cmd = "kiwix-index --backend=xapian $zimPath $zimFileIndex"; `$cmd`;
+    # Create the index and library
+    $logger->info("Create new library file ro $zimFile.");
+    $cmd = "kiwix-install --buildIndex --backend=xapian ADDCONTENT $zimPath $distributionDirectory/"; `$cmd`;
 
-    # Compact
+    # Compact index
+    my $zimFileIndex = "$distributionDirectory/data/index/$zimFile.idx";
     $logger->info("Compact index $zimFileIndex");
     $cmd = "kiwix-compact $zimFileIndex"; `$cmd`;
-
-    # Compute the zimId
-    $cmd = "zimdump -F $zimPath | grep uuid | sed 's/uuid: //'";
-    my $zimFileId = `$cmd 2>&1`;
-    $zimFileId =~ s/\r|\n//g;
-
-    # Create the library
-    $logger->info("Create new library file ro $zimFile.");
-    my $libraryPath = "$distributionDirectory/data/library/$zimFile.library";
-    $logger->info("Create the library for $zimFile : ");
-    my $xmlContent = "<library current=\"$zimFileId\"><book id=\"$zimFileId\" path=\"$zimFile\" indexPath=\"$zimFile.idx\" indexType=\"xapian\"/></library>\n";
-    writeFile($libraryPath, $xmlContent);
 }
-
-# Download the file with DLL for Visual Studio redit. binaries
-$logger->info("Download vcredist_x86.exe");
-$cmd = "rm -f $distributionDirectory/install/vcredist_x86.exe ; wget http://download.kiwix.org/dev/vcredist_x86.exe -O $distributionDirectory/install/vcredist_x86.exe"; `$cmd`;
 
 # Download the autorun
 $logger->info("Download autorun");
@@ -144,7 +128,7 @@ foreach my $zimPath (@zimPaths) {
 
 # live instance
 if ($liveInstance) {
-	$cmd = "touch $distributionDirectory/kiwix/live"; `$cmd`;
+    $cmd = "touch $distributionDirectory/kiwix/live"; `$cmd`;
 }
 
 # Build ISO
