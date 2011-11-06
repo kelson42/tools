@@ -13,7 +13,9 @@ use Whereis;
 
 # log
 use Log::Log4perl;
-Log::Log4perl->init("../conf/log4perl");
+use File::Spec::Functions qw(rel2abs);
+use File::Basename;
+Log::Log4perl->init(dirname(rel2abs($0))."/../conf/log4perl");
 my $logger = Log::Log4perl->get_logger("builZimFileFromDirectory.pl");
 
 # get the params
