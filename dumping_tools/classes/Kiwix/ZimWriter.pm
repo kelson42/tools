@@ -35,7 +35,7 @@ my $file;
 my $htmlFilterRegexp = "^.*\.(html|htm|xhtml)\$";
 my $jsFilterRegexp = "^.*\.(js)\$";
 my $cssFilterRegexp = "^.*\.(css)\$";
-my $faviconFilterRegexp = "^favicon\.(ico|png)\$";
+my $faviconFilterRegexp = "^favicon\.png\$";
 my $rewriteCDATA;
 my $shortenUrls;
 my $removeUnusedRedirects;

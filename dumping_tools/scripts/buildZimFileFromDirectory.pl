@@ -39,6 +39,7 @@ my $doNotDeleteDbAtTheEnd;
 my $doNotIgnoreFiles;
 my $dbName=time();
 my %metadata;
+my $writer = Kiwix::ZimWriter->new();
 
 # Get console line arguments
 GetOptions('writerPath=s' => \$writerPath, 
@@ -113,12 +114,17 @@ unless ( -f $htmlPath."/".$favicon) {
     exit;    
 }
 
+# Favicon must be png
+unless ($write->mimeDetector->getMimeType($htmlPath."/".$favicon) eq "image/png") {
+    print(STDERR "The favicon file ".$htmlPath."/".$favicon." must be a PNG file.\n");
+    exit;
+}
+
 # Add auto. the date metadata
 my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
 $metadata{"Date"} = (1900+$year)."-".sprintf("%02d", $mon+1)."-".sprintf("%02d", $mday);
 
 # initialization
-my $writer = Kiwix::ZimWriter->new();
 $writer->logger($logger);
 $writer->writerPath($writerPath);
 $writer->htmlPath($htmlPath);
