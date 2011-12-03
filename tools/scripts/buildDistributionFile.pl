@@ -68,6 +68,12 @@ foreach my $debFile (@debFiles) {
     $cmd = "wget http://download.kiwix.org/bin/unstable/$debFile -O $distributionDirectory/install/$debFile"; `$cmd`;
 }
 
+# Download and unzip linux binary
+$logger->info("Download and unzip Linux binary");
+$cmd = "wget http://download.kiwix.org/bin/unstable/\` curl --silent http://download.kiwix.org/bin/unstable/ | grep bz2 | sed 's/.*href=\"//' | sed 's/\".*//' \` -O $distributionDirectory/kiwix-linux.tar.bz2"; `$cmd`;
+$cmd = "cd $distributionDirectory/ ; tar -xvjf kiwix-linux.tar.bz2 ; mv kiwix kiwix-linux" ; `$cmd`;
+$cmd = "rm $distributionDirectory/kiwix-linux.tar.bz2" ; `$cmd`;
+
 # Download and unzip Windows binary
 $logger->info("Download and unzip Windows binary");
 $cmd = "wget http://download.kiwix.org/bin/unstable/\` curl --silent http://download.kiwix.org/bin/unstable/ | grep zip | sed 's/.*href=\"//' | sed 's/\".*//' \` -O $distributionDirectory/kiwix.zip"; `$cmd`;
