@@ -9,14 +9,11 @@ use warnings;
 use Getopt::Long;
 use Data::Dumper;
 use Kiwix::ZimWriter;
+use Kiwix::Logger;
 use Whereis;
 
 # log
-use Log::Log4perl;
-use File::Spec::Functions qw(rel2abs);
-use File::Basename;
-Log::Log4perl->init(dirname(rel2abs($0))."/../conf/log4perl");
-my $logger = Log::Log4perl->get_logger("builZimFileFromDirectory.pl");
+my $logger = Kiwix::Logger->new("builZimFileFromDirectory.pl");
 
 # get the params
 my $writerPath;
@@ -115,7 +112,7 @@ unless ( -f $htmlPath."/".$favicon) {
 }
 
 # Favicon must be png
-unless ($write->mimeDetector->getMimeType($htmlPath."/".$favicon) eq "image/png") {
+unless ($writer->mimeDetector->getMimeType($htmlPath."/".$favicon) eq "image/png") {
     print(STDERR "The favicon file ".$htmlPath."/".$favicon." must be a PNG file.\n");
     exit;
 }
@@ -161,4 +158,3 @@ $writer->buildZimFile();
 unless ($doNotDeleteDbAtTheEnd) {
     $writer->deleteDatabase();
 }
-
