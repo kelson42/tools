@@ -580,8 +580,9 @@ sub createDatabase {
     `createdb -U $dbUser $dbName `;
 
     # Create the table in the DB
-    $self->log("info", "Create the DB `cat ".dirname(rel2abs($0))."/zim-postgresql.sql | psql -U $dbUser -d $dbName`...");
-    `cat zim-postgresql.sql | psql -U $dbUser -d $dbName`;
+    my $sqlFilePath=dirname(rel2abs($0))."/zim-postgresql.sql";
+    $self->log("info", "Create the DB `cat $sqlFilePath | psql -U $dbUser -d $dbName`...");
+    `cat $sqlFilePath | psql -U $dbUser -d $dbName`;
 }
 
 # delete database
