@@ -12,6 +12,8 @@ use HTML::Entities;
 use URI::Escape;
 use DBI qw(:sql_types);
 use Cwd 'abs_path';
+use File::Spec::Functions qw(rel2abs);
+use File::Basename;
 use DBD::Pg;
 
 my $logger;
@@ -578,7 +580,7 @@ sub createDatabase {
     `createdb -U $dbUser $dbName `;
 
     # Create the table in the DB
-    $self->log("info", "Create the DB `cat zim-postgresql.sql | psql -U $dbUser -d $dbName`...");
+    $self->log("info", "Create the DB `cat ".dirname(rel2abs($0))."/zim-postgresql.sql | psql -U $dbUser -d $dbName`...");
     `cat zim-postgresql.sql | psql -U $dbUser -d $dbName`;
 }
 
