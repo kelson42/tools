@@ -13,7 +13,7 @@ use Kiwix::Logger;
 use Whereis;
 
 # log
-my $logger = Kiwix::Logger->new("builZimFileFromDirectory.pl");
+my $logger = Kiwix::Logger->new("buildZimFileFromDirectory.pl");
 
 # get the params
 my $writerPath;
