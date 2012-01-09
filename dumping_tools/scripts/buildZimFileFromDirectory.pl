@@ -61,11 +61,12 @@ GetOptions('writerPath=s' => \$writerPath,
 	   'language=s' => \$metadata{'Language'},
 	   'title=s' => \$metadata{'Title'},
 	   'creator=s' => \$metadata{'Creator'},
+	   'publisher=s' => \$metadata{'Publisher'},
 	   'description=s' => \$metadata{'Description'},
 	   );
 
-if (!$htmlPath || !$welcomePage || !$favicon || !$metadata{'Language'} || !$metadata{'Title'} || !$metadata{'Creator'} || !$metadata{'Description'}) {
-    print "usage: buildZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html --favicon=images/favicon.png --language=fr --title=foobar --creator=foobar --description=mydescription [--dbUser=foobar] [--dbPassword=testpass] [--writerPath=./zimWriter] [--zimFilePath=articles.zim] [--dbName=kiwix_db] [--dbPort=5432] [--dbHost=localhost] [--rewriteCDATA] [--mediawikiOptim] [--shortenUrls] [--removeUnusedRedirects] [--strict] [--avoidForceHtmlCharsetToUtf8] [--compressAll] [--doNotDeleteDbAtTheEnd] [--doNotIgnoreFiles]\n";
+if (!$htmlPath || !$welcomePage || !$favicon || !$metadata{'Language'} || !$metadata{'Title'} || !$metadata{'Creator'} || !$metadata{'Publisher'} || !$metadata{'Description'}) {
+    print "usage: buildZimFileFromDirectory.pl --htmlPath=./html --welcomePage=index.html --favicon=images/favicon.png --language=fra --title=foobar --creator=foobar --publisher=wmf --description=mydescription [--dbUser=foobar] [--dbPassword=testpass] [--writerPath=./zimWriter] [--zimFilePath=articles.zim] [--dbName=kiwix_db] [--dbPort=5432] [--dbHost=localhost] [--rewriteCDATA] [--mediawikiOptim] [--shortenUrls] [--removeUnusedRedirects] [--strict] [--avoidForceHtmlCharsetToUtf8] [--compressAll] [--doNotDeleteDbAtTheEnd] [--doNotIgnoreFiles]\n";
     exit;
 }
 
