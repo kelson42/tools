@@ -10,9 +10,8 @@ use Data::Dumper;
 use Kiwix::HtmlDumper;
 
 # log
-use Log::Log4perl;
-Log::Log4perl->init("../conf/log4perl");
-my $logger = Log::Log4perl->get_logger("dumpHtml.pl");
+use Kiwix::Logger;
+my $logger = Kiwix::Logger->new("dumpHtml.pl");
 
 # get the params
 my $htmlPath;
