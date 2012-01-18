@@ -33,6 +33,11 @@ sub _start_tag {
     my $links = $HTML::Tagset::linkElements{$tagname} || [];
     $links = [$links] unless ref $links;
 
+    # Need to add special treatmen for <source src=...> used for HTML5 video
+    if ($tagname eq 'source') {
+	push(@$links, 'src');
+    }
+
     for my $link (@$links) {
 	next unless exists $attr->{$link};
 	$attr->{$link}  = $self->{resolvelink_callback}->($attr->{$link});

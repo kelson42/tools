@@ -135,7 +135,7 @@ sub getUrlCounts {
 	$file = $self->htmlPath().$file;
 	
 	# Parse the file
-	my $linkExtractor = HTML::LinkExtractor->new();
+	my $linkExtractor = $self->getLinkExtractor();
 	$linkExtractor->parse($file);
 	my $links = $linkExtractor->links();
 
@@ -215,7 +215,7 @@ sub getUrlCounts {
 		my $data = $self->readFile($path);
 		
 		# is redirect?
-		my $linkExtractor = HTML::LinkExtractor->new();
+		my $linkExtractor = $self->getLinkExtractor();
 		$linkExtractor->parse(\$data);
 		my $links = $linkExtractor->links();
 		foreach my $link (@$links) {
@@ -401,7 +401,6 @@ sub computeNewUrls {
 
 	    # set the value in 
 	    $newUrlsReverse{$newUrl} = $url;
-
 	    $urls{$url} = $newUrl;
 	}
 	
@@ -775,7 +774,7 @@ sub copyFileToDatabase {
     }
     
     # redirect
-    my $linkExtractor = HTML::LinkExtractor->new();
+    my $linkExtractor = $self->getLinkExtractor();
     $linkExtractor->parse(\$data);
     my $links = $linkExtractor->links();
     foreach my $link (@$links) {
@@ -875,6 +874,15 @@ sub copyFileToDatabase {
     }
     
     return \%hash;
+}
+
+sub getLinkExtractor() {
+    my $linkExtractor = HTML::LinkExtractor->new();
+
+    # Need to add special treatmen for <source src=...> used for HTML5 video
+    $HTML::LinkExtractor::TAGS{'source'} = ['src'];
+
+    return $linkExtractor;
 }
 
 sub removeUnwantedFiles {
