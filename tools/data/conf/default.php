@@ -21,6 +21,7 @@ function add_include_path ($path)
 }
 
 add_include_path("/usr/share");
+add_include_path($IP);
 
 # images 
 $wgFileExtensions = array( 'png', 'gif', 'jpg', 'jpeg', 'mp3', 'ogg', 'pdf', 'svg' );
@@ -154,4 +155,7 @@ putenv("GDFONTPATH=/usr/share/fonts/truetype/freefont");
 
 # no category limit
 $wgCategoryPagingLimit = 999999999;
+
+# avoid stats
+$wgStatsMethod = false;
 ?>
