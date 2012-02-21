@@ -23,3 +23,9 @@ Template:Autobiografi
 Template:Substub
 Template:Commonsbilleder
 Template:FF-eftersyn
+Template:commons_left
+Template:Stationsbilledesavnes
+Template:Geomærkning_savnes
+Template:Ordbog
+Template:Tomt_afsnit
+Templae:Tætpå
