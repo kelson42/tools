@@ -11,9 +11,8 @@ use Data::Dumper;
 use Kiwix::FileOptimizer;
 
 # log
-use Log::Log4perl;
-Log::Log4perl->init("../conf/log4perl");
-my $logger = Log::Log4perl->get_logger("optimizeContents.pl");
+use Kiwix::Logger;
+my $logger = Kiwix::Logger->new("optimizeContents.pl");
 
 # get the params
 my $contentPath;
