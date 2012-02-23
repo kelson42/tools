@@ -57,6 +57,8 @@ my %mimeTypes = (
     "text/plain" => 1,
 );
 
+my %counter;
+
 my %mimeTypesCompression = (
     "text/html" => 1,
     "application/xhtml+xml" => 1,
@@ -632,6 +634,17 @@ sub fillDatabase {
 	$self->executeSql("insert into mimetype (id, mimetype, compress) values ('".$mimeTypeCode."', '".$mimeType."', '".($mimeTypeCompression ? "true"  : "false")."')");
     }
 
+    # fill the article table
+    $self->copyFilesToDatabase();
+
+    # Create the counter metadata
+    $self->log("info", "Create the counter metadata.");
+    my $counterValue = "";
+    foreach my $key (keys(%counter)) {
+	$counterValue .= $key . '=' . $counter{$key} . ";";
+    }
+    $metadata->{'Counter'} = $counterValue;
+
     # Put the metadata
     foreach my $key (keys(%$metadata)) {
 	my $redirect;
@@ -650,9 +663,6 @@ sub fillDatabase {
 	$sth->execute();
 	if ($self->dbHandler()->err()) { die "$DBI::errstr\n"; }
     }
-
-    # fill the article table
-    $self->copyFilesToDatabase();
 
     # Fill with the mainpage
     $self->log("info", "Fill with the main page.");
@@ -812,6 +822,12 @@ sub copyFileToDatabase {
 
     # data
     if (!$hash{redirect}) {
+
+	# increment the counter
+	unless (exists($counter{ $hash{mimetype} })) {
+	    $counter{ $hash{mimetype} } = 0;
+	}
+	$counter{ $hash{mimetype} } += 1;
 
 	# if necessary deal with additional keywords
 	if ($hash{mimetype} =~ /text\/html/ && exists($additionalKeywords{substr($file, length($htmlPath))})) {
