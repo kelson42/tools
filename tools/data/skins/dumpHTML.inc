@@ -19,7 +19,7 @@ class DumpHTML {
 	var $interwiki = true;
 
 	# Depth of HTML directory tree
-	var $depth = 3;
+	var $depth = 4;
 
 	# Directory that commons images are copied into
 	var $sharedStaticDirectory;
