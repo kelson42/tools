@@ -84,19 +84,22 @@ sub findAndResizeImages {
 	my $file = $self->getImageToResize();
 
 	if ($file) {
-	    my ($width, $height, $size, $format) = $imager->Ping($file);
+	    print STDERR "Get Infos from $file\n";
+
 	    my $logInfo = "";
+	    my ($width, $height, $size, $format) = $imager->Ping($file);
 	    if ($width && $width > $self->maxWidth() && $height < $width) {
 		$logInfo = "Resizing $file : $width x $height";
 		my $cmd = "convert \"$file\" -resize ".$self->maxWidth()."x \"$file\"";
-		`$cmd`
+		`$cmd`;
 	    } elsif ($height && $height > $self->maxHeight()) {
 		$logInfo = "Resizing $file : $width x $height";
 		my $cmd = "convert \"$file\" -resize x".$self->maxHeight()." \"$file\"";
-		`$cmd`
+		`$cmd`;
 	    } else {
 		$logInfo = "Nothing to do for $file ($width x $height).";
 	    }
+	    
 	    print STDERR $logInfo."\n";
 	    $self->log("info", $logInfo);
 	} else {
