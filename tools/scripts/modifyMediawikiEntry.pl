@@ -35,8 +35,8 @@ GetOptions('host=s' => \$host,
            'entry=s' => \@entries,
     );
 
-if (!$host || (!$readFromStdin && !$file && !scalar(@entries)) || !($action =~ /^(touch|delete|empty|restore|replace|stub)$/)) {
-    print "usage: ./modifyMediawikiEntry.pl --host=my.wiki.org [--file=my_file] [--path=w] [--entry=my_page] [--readFromStdin] [--action=touch|delete|empty|restore|replace|stub] [--username=foobar] [--password=mypass]\n";
+if (!$host || (!$readFromStdin && !$file && !scalar(@entries)) || !($action =~ /^(touch|delete|empty|restore|rollback|replace|stub)$/)) {
+    print "usage: ./modifyMediawikiEntry.pl --host=my.wiki.org [--file=my_file] [--path=w] [--entry=my_page] [--readFromStdin] [--action=touch|delete|empty|restore|rollback|replace|stub] [--username=foobar] [--password=mypass]\n";
     exit;
 }
 
@@ -87,6 +87,8 @@ foreach my $entry (@entries) {
 	$status = $site->uploadPage($entry, "");
     } elsif ($action eq "restore") {
 	$status = $site->restorePage($entry, "");
+    } elsif ($action eq "rollback") {
+	$status = $site->rollbackPage($entry, "");
     } elsif ($action eq "replace") {
 	my ($title, $newContent) = split(/ /, $entry);
 	$status = $site->uploadPage($title, $newContent);

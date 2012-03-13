@@ -175,6 +175,37 @@ sub restorePage {
     return 1;
 }
 
+sub rollbackPage {
+    my ($self, $page) = @_;
+    my $rollbackToken;
+
+    my $httpResponse = $self->makeApiRequest( { 'action' => 'query', 'prop' => 'revisions', 'rvtoken' => 'rollback', 'format' => 'xml', 'titles' => $page } , 'GET');
+    if ($httpResponse->content() =~ /rollbacktoken=\"(.*?)\"/ ) {
+	$rollbackToken = $1;
+    } else {
+	$self->log("info", "Was unable to get rollbacktoken correctly : (".$httpResponse->content().").");
+	return 0;
+    }
+
+    $httpResponse = $self->makeApiRequest(
+	{
+	    "action" => "rollback",
+	    "title" => $page,
+	    "token" => $rollbackToken,
+	    "format"=> "xml",
+	    "user" => $self->user(),
+	    "reason"=> "42"
+	},
+	"POST"
+	);
+
+    if ( $httpResponse->content() =~ /\<error\ /) {
+	return 0;
+    }
+    
+    return 1;
+}
+
 sub getRedirectionRegex {
     my $self = shift;
 
