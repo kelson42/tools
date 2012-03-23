@@ -71,7 +71,7 @@ foreach my $debFile (@debFiles) {
 # Download and unzip linux binary
 $logger->info("Download and unzip Linux binary");
 $cmd = "wget http://download.kiwix.org/bin/unstable/\` curl --silent http://download.kiwix.org/bin/unstable/ | grep bz2 | sed 's/.*href=\"//' | sed 's/\".*//' \` -O $distributionDirectory/kiwix-linux.tar.bz2"; `$cmd`;
-$cmd = "cd $distributionDirectory/ ; tar -xvjf kiwix-linux.tar.bz2 ; mv kiwix kiwix-linux" ; `$cmd`;
+$cmd = "cd $distributionDirectory/ ; mkdir tmp ; tar --directory=tmp -xvjf kiwix-linux.tar.bz2 ; cd tmp ; mv kiwix ../kiwix-linux ; cd .. ; rm -rf tmp" ; `$cmd`;
 $cmd = "rm $distributionDirectory/kiwix-linux.tar.bz2" ; `$cmd`;
 
 # Download and unzip Windows binary
@@ -79,24 +79,6 @@ $logger->info("Download and unzip Windows binary");
 $cmd = "wget http://download.kiwix.org/bin/unstable/\` curl --silent http://download.kiwix.org/bin/unstable/ | grep zip | sed 's/.*href=\"//' | sed 's/\".*//' \` -O $distributionDirectory/kiwix.zip"; `$cmd`;
 $cmd = "cd $distributionDirectory/ ; unzip -n kiwix.zip" ; `$cmd`;
 $cmd = "rm $distributionDirectory/kiwix.zip" ; `$cmd`;
-
-# Copy the ZIMs
-$logger->info("Copying the ZIM files");
-foreach my $zimPath (@zimPaths) {
-    my $zimSize = -s $zimPath;
-    if ($zimSize > 4293918720) {
-	my $prefix = $zimPath; $prefix =~ s/.*\///g;
-	$cmd = "cd $distributionDirectory/data/content/; split --bytes=4095M $zimPath $prefix"; `$cmd`;
-	$cmd = "cd $distributionDirectory/data/content/ ; ln -s $zimPath"; `$cmd`;
-    } else {
-	$logger->info("Check ZIM file $zimPath");
-	$cmd = "cp $zimPath $distributionDirectory/data/content/"; `$cmd`;
-    }
-}
-
-# Update @zimPaths
-my $output = `find /tmp/kiwix_iso_tmp_directory/data/content/ -name \"*.zim\" 2>&1`;
-@zimPaths = split (/\n/, $output);
 
 # Compute and compact the indexes
 $logger->info("Compute and compact the indexes");
@@ -116,21 +98,24 @@ foreach my $zimPath (@zimPaths) {
     $cmd = "kiwix-compact $zimFileIndex"; `$cmd`;
 }
 
+# Update @zimPaths
+my $output = `find /tmp/kiwix_iso_tmp_directory/data/content/ -name \"*.zim\" 2>&1`;
+@zimPaths = split (/\n/, $output);
+
+# Splitting the ZIMs
+$logger->info("Splitting the ZIM files");
+foreach my $zimPath (@zimPaths) {
+    my $zimSize = -s $zimPath;
+    if ($zimSize > 4293918720) {
+	my $prefix = $zimPath; $prefix =~ s/.*\///g;
+	$cmd = "cd $distributionDirectory/data/content/; split --bytes=2000M $zimPath $prefix"; `$cmd`;
+    }
+}
+
 # Download the autorun
 $logger->info("Download autorun");
 $cmd = "cd $distributionDirectory/ ; rm -rf autorun ; wget http://download.kiwix.org/dev/launcher/autorun.zip; unzip autorun.zip ; rm autorun.zip"; `$cmd`;
 $cmd = "cd $distributionDirectory/ ; sed -i -e 's/autorun\.exe/autorun\.exe \-\-lang=$lang/' autorun.inf"; `$cmd`;
-
-# Try to remove link if exists
-foreach my $zimPath (@zimPaths) {
-    # Extract the zimFile
-    $zimPath =~ /.*\/([^\/]*)$/;
-    my $zimFile = $1;
-
-    if (-e $distributionDirectory."/data/content/".$zimFile."aa") {
-	$cmd = "cd $distributionDirectory/data/content/ ; unlink $zimPath"; `$cmd`;
-    }
-}
 
 # live instance
 if ($liveInstance) {
