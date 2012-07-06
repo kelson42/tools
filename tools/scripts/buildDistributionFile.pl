@@ -14,6 +14,7 @@ my $liveInstance;
 my $lang = "en";
 my $type;
 my $cmd;
+my $cmdOutput;
 
 # Instance logger
 use Log::Log4perl;
@@ -90,7 +91,9 @@ foreach my $zimPath (@zimPaths) {
 
     # Create the index and library
     $logger->info("Create new library file ro $zimFile.");
-    $cmd = "kiwix-install --buildIndex --backend=xapian ADDCONTENT $zimPath $distributionDirectory/"; `$cmd`;
+    $cmd = "kiwix-install --buildIndex --backend=xapian ADDCONTENT $zimPath $distributionDirectory/"; $cmdOutput = `$cmd`;
+    print STDERR $cmdOutput;
+    $logger->info($cmd);
 
     # Compact index
     my $zimFileIndex = "$distributionDirectory/data/index/$zimFile.idx";
@@ -106,9 +109,13 @@ my $output = `find /tmp/kiwix_iso_tmp_directory/data/content/ -name \"*.zim\" 2>
 $logger->info("Splitting the ZIM files");
 foreach my $zimPath (@zimPaths) {
     my $zimSize = -s $zimPath;
-    if ($zimSize > 4293918720) {
+    if ($zimSize > 2097152000) {
 	my $prefix = $zimPath; $prefix =~ s/.*\///g;
 	$cmd = "cd $distributionDirectory/data/content/; split --bytes=2000M $zimPath $prefix"; `$cmd`;
+    }
+
+    if (-e $zimPath."aa") {
+	$cmd = "cd $distributionDirectory/data/content/ ; rm $zimPath"; `$cmd`;
     }
 }
 
