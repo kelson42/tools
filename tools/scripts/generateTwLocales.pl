@@ -36,7 +36,7 @@ if (!$path) {
     print STDERR "usage: ./generateTwLocales.pl --path=./ [--language=en-US] [--allLanguages]\n";
     exit;
 } elsif (! -d $path) {
-    print STDERR "'$path' is not a directory, does not exist or is not the Kiwix source directory 'moulinkiwix'.\n";
+    print STDERR "'$path' is not a directory.\n";
     exit;
 }
 
