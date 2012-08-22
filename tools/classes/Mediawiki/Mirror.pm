@@ -66,8 +66,8 @@ my @templateDependenceThreads;
 my @redirectThreads;
 my @embeddedInThreads;
 
-my $pageDownloadThreadCount = 1;
-my $pageUploadThreadCount = 3;
+my $pageDownloadThreadCount = 4;
+my $pageUploadThreadCount = 6;
 my $imageDownloadThreadCount = 1;
 my $imageUploadThreadCount = 2;
 my $imageDependenceThreadCount = 3;
@@ -629,9 +629,9 @@ sub getPageToCheckTemplateDependence {
 	}
     }
 
-    unless (Encode::is_utf8($page)) {
-	$page = decode_utf8($page);
-    }
+#    unless (Encode::is_utf8($page)) {
+#	$page = decode_utf8($page);
+#    }
 
     return $page;
 }
@@ -720,9 +720,9 @@ sub getPageToCheckRedirects {
 	}
     }
 
-    unless (Encode::is_utf8($page)) {
-	$page = decode_utf8($page);
-    }
+#    unless (Encode::is_utf8($page)) {
+#	$page = decode_utf8($page);
+#    }
 
     return $page;
 }
@@ -833,9 +833,9 @@ sub getPageToCheckImageDependence {
 	}
     }
 
-    unless (Encode::is_utf8($page)) {
-	$page = decode_utf8($page);
-    }
+#    unless (Encode::is_utf8($page)) {
+#	$page = decode_utf8($page);
+#    }
 
     return $page;
 }
