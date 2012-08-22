@@ -9,7 +9,7 @@ use XML::DOM;
 use DBI;
 
 my $logger;
-my %interwikis = ( "ckb" => 42, "kbd" => 42, "ltg" => 42, "ace" => 42, "frr" => 42, "pcd" => 42, "rue" => 42 );
+my %interwikis = ( "ckb" => 42, "kbd" => 42, "ltg" => 42, "ace" => 42, "frr" => 42, "pcd" => 42, "rue" => 42, "bjn" => 42 );
 
 sub new {
     my $class = shift;
