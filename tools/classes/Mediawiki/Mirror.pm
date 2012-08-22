@@ -1149,9 +1149,7 @@ sub connectToMediawiki {
     $site->httpPassword($httpPass);
     $site->httpRealm($httpRealm);
 
-    $site->setup();
-
-    if ($site->{error}) {
+    unless ($site->setup()) {
 	$self->isRunnable(0);
 	$self->log("error", "connection to the $host mediawiki failed.");
 	$site = undef;

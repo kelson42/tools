@@ -95,8 +95,11 @@ sub setup {
 
 	    } while ($httpResponse->content =~ /NeedToken/i && $connectionRetryCounter++ < 1);
 
-	    if ($httpResponse->content() =~ /wronpass/i ) {
+	    if ($httpResponse->content() =~ /wrongpass/i ) {
 		$self->log("info", "Failed to logged in '".$self->hostname()."' as '".$self->user()."' : wrong pass.");
+		$ok = 0;
+	    } elsif ($httpResponse->content() =~ /Throttled/i ) {
+		$self->log("info", "Failed to logged in '".$self->hostname()."' as '".$self->user()."' : throttled.");
 		$ok = 0;
 	    } elsif ($httpResponse->content() =~ /NotExists/i ) {
 		$self->log("info", "Failed to logged in '".$self->hostname()."' as '".$self->user()."' : wrong login.");
