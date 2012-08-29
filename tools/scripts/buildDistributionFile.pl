@@ -60,18 +60,10 @@ $cmd = "rm -rf \`find $distributionDirectory -name \"*.svn\"\`"; `$cmd`;
 $logger->info("Download Kiwix source code");
 $cmd = "cd $distributionDirectory ; wget --trust-server-names http://download.kiwix.org/src/kiwix-unstable-src.tar.gz"; `$cmd`;
 
-# Download deb files
-$logger->info("Download Kiwix deb packages");
-$cmd = "curl --silent http://download.kiwix.org/bin/unstable/ | grep deb | sed 's/.*href=\"//' | sed 's/\".*//'";
-my @debFiles = split(/\n/, `$cmd 2>&1`);
-
-foreach my $debFile (@debFiles) {
-    $cmd = "wget http://download.kiwix.org/bin/unstable/$debFile -O $distributionDirectory/install/$debFile"; `$cmd`;
-}
-
 # Download and unzip linux binary
 $logger->info("Download and unzip Linux binary");
-$cmd = "wget http://download.kiwix.org/bin/unstable/\` curl --silent http://download.kiwix.org/bin/unstable/ | grep bz2 | sed 's/.*href=\"//' | sed 's/\".*//' \` -O $distributionDirectory/kiwix-linux.tar.bz2"; `$cmd`;
+$cmd = "wget http://download.kiwix.org/bin/unstable/\` curl --silent http://download.kiwix.org/bin/unstable/ | grep bz2 | grep 686 | sed 's/.*href=\"//' | sed 's/\".*//' \` -O $distributionDirectory/kiwix-linux.tar.bz2"; `$cmd`;
+print STDERR $cmd;
 $cmd = "cd $distributionDirectory/ ; mkdir tmp ; tar --directory=tmp -xvjf kiwix-linux.tar.bz2 ; cd tmp ; mv kiwix ../kiwix-linux ; cd .. ; rm -rf tmp" ; `$cmd`;
 $cmd = "rm $distributionDirectory/kiwix-linux.tar.bz2" ; `$cmd`;
 
@@ -91,9 +83,13 @@ foreach my $zimPath (@zimPaths) {
 
     # Create the index and library
     $logger->info("Create new library file ro $zimFile.");
-    $cmd = "kiwix-install --buildIndex --backend=xapian ADDCONTENT $zimPath $distributionDirectory/"; $cmdOutput = `$cmd`;
-    print STDERR $cmdOutput;
+    $cmd = "kiwix-install --verbose --buildIndex --backend=xapian ADDCONTENT $zimPath $distributionDirectory/";
     $logger->info($cmd);
+    open(CMD, $cmd."|");
+    while (<CMD>) {
+	print ">>> $_";
+    }
+    close(CMD);
 
     # Compact index
     my $zimFileIndex = "$distributionDirectory/data/index/$zimFile.idx";
@@ -101,9 +97,17 @@ foreach my $zimPath (@zimPaths) {
     $cmd = "kiwix-compact $zimFileIndex"; `$cmd`;
 }
 
+if ( -d "$distributionDirectory/data/index/wikipedia_sw_all_04_2011.zim.idx") {
+    print STDERR "OK1\n";
+}
+
 # Update @zimPaths
 my $output = `find /tmp/kiwix_iso_tmp_directory/data/content/ -name \"*.zim\" 2>&1`;
 @zimPaths = split (/\n/, $output);
+
+if ( -d "$distributionDirectory/data/index/wikipedia_sw_all_04_2011.zim.idx") {
+    print STDERR "OK2\n";
+}
 
 # Splitting the ZIMs
 $logger->info("Splitting the ZIM files");
@@ -117,6 +121,10 @@ foreach my $zimPath (@zimPaths) {
     if (-e $zimPath."aa") {
 	$cmd = "cd $distributionDirectory/data/content/ ; rm $zimPath"; `$cmd`;
     }
+}
+
+if ( -d "$distributionDirectory/data/index/wikipedia_sw_all_04_2011.zim.idx") {
+    print STDERR "OK3\n";
 }
 
 # Download the autorun
@@ -135,7 +143,11 @@ if ($type eq "iso") {
     $cmd = "mkisofs -r -J -o  $filePath $distributionDirectory"; `$cmd`;
 } else { # portable
     $logger->info("Build the portable compacted file");
-    $cmd = "7za a -tzip -mx9 $filePath $distributionDirectory/*"; `$cmd`;
+    $cmd = "7za a -tzip -mx9 $filePath $distributionDirectory/* -mmt"; `$cmd`;
+}
+
+if ( -d "$distributionDirectory/data/index/wikipedia_sw_all_04_2011.zim.idx") {
+    print STDERR "OK4\n";
 }
 
 sub writeFile {
