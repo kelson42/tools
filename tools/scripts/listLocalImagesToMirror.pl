@@ -15,18 +15,27 @@ use Data::Dumper;
 
 # get the params
 my $directory;
+my $checkSize;
 
 ## Get console line arguments
 GetOptions(
 	   'directory=s' => \$directory, 
+           'checkSize' => \$checkSize
            );
 
 if (!$directory) {
-    print "Usage: listLocalImagesToMirror.pl --directory=/var/www/mirror/en\n";
+    print "Usage: listLocalImagesToMirror.pl --directory=/var/www/mirror/en [--checkSize]\n";
     exit;
 }
 
-# List iamges
-exec("cd $directory/maintenance ; php checkImages.php | sed -e \"s/: .*//\" | sed -e \"s/^/File:/\" | sed '\$d'");
+my $cmd;
+if ($checkSize) {
+$cmd = "cd $directory/maintenance ; php checkImages.php | sed -e \"s/: .*//\" | sed -e \"s/^/File:/\" | sed '\$d'"
+} else {
+$cmd = "cd $directory/maintenance ; php checkImages.php | grep missing | sed -e \"s/: .*//\" | sed -e \"s/^/File:/\" | sed '\$d'"
+}
+
+# List images
+exec($cmd);
 
 exit;
