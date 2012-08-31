@@ -53,7 +53,7 @@ $site->setup();
 # connect to commons
 my $commons = Mediawiki::Mediawiki->new();
 $commons->logger($logger);
-$commons->hostname("commons.wikimedia.org.mirror.kiwix.org");
+$commons->hostname("commons.wikimedia.org.zimfarm.kiwix.org");
 $commons->path($path);
 if ($username) {
     $commons->user($username);
