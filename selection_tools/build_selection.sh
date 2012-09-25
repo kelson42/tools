@@ -10,7 +10,7 @@ then
     exit
 fi
 
-CURRENT_VERSION=`curl -s http://download.wikimedia.org/$WIKI/latest/$WIKI-latest-abstract.xml-rss.xml | grep "</link>" | tail -n 1 | sed -e 's/<//g' | cut -d "/" -f 5`
+CURRENT_VERSION=`curl -s http://dumps.wikimedia.org/$WIKI/latest/$WIKI-latest-abstract.xml-rss.xml | grep "</link>" | tail -n 1 | sed -e 's/<//g' | cut -d "/" -f 5`
 
 if [ "$CURRENT_VERSION" = '' ];
 then
