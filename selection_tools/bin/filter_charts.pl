@@ -5,6 +5,7 @@ binmode STDERR, ":utf8";
 
 use utf8;
 use lib '../mirroring_tools/Mediawiki/';
+use lib '../tools/classes/';
 use lib "../dumping_tools/classes/";
 
 use strict;
@@ -15,7 +16,7 @@ use URI::Escape;
 use Data::Dumper;
 use Getopt::Long;
 use Kiwix::PathExplorer;
-use MediaWiki;
+use Mediawiki::Mediawiki;
 use Encode 'is_utf8';
 use Encode 'encode_utf8';
 use Encode 'decode_utf8';
@@ -32,13 +33,13 @@ if (!$language || !$chartsDirectory) {
 };
 
 # get the namespace in english
-my $enSite = MediaWiki->new();
+my $enSite = Mediawiki::Mediawiki->new();
 $enSite->hostname("en.wikipedia.org");
 $enSite->path("w");
 my %enNamespaces = $enSite->namespaces();
 
 # get the namespace in the language
-my $langSite = MediaWiki->new();
+my $langSite = Mediawiki::Mediawiki->new();
 $langSite->hostname("$language.wikipedia.org");
 $langSite->path("w");
 my %langNamespaces = $langSite->namespaces();
@@ -53,7 +54,7 @@ foreach my $code (keys(%enNamespaces)) {
     next unless ($code);
     $regex .= "(".$enNamespaces{$code}.":)|";
 }
-$regex .= "(Http:)|(WP:)|(Image:)|(Imagen:)|([0-9]+px)|([0-9A-Za-z]+\.png))";
+$regex .= "(Http:)|(WP:)|(Special:)|(Spécial:)|(Image:)|(Imagen:)|([0-9]+px)|([0-9A-Za-z]+\.png))";
 
 # get charts file path
 my @files;
@@ -99,23 +100,23 @@ foreach my $file ( @files ) {
 	# URL decoding
 	$name =~ s/%([0-9A-Fa-f]{2})/chr(hex($1))/eg;
 	
-	# Return if the title is too long
-	next if (length($name) > 255);
-
 	# Beautify the page name
 	$name =~ s/ /_/g;
 	$name =~ s/^[_]+//g;
 	$name =~ s/#.*//;
-	
+
 	# Check if the $name if utf8 valid
 	next unless (encode_utf8($name));
 	     
 	# Set the unicode flag
 	#$name = decode_utf8($name); seems to be to strict
 	$name = Encode::decode('UTF-8', $name);
-	
+
 	# Apply the filter to remove images, etc.
 	next if (!$name || $name =~ /^$regex/);
+
+	# Remove "undeinfed"
+	next if ($name eq "Undefined");
 	
 	# Make the incrementation
 	$urls{$name} += $count;
