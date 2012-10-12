@@ -587,17 +587,21 @@ sub makeSiteRequest {
 sub makeHashFromXml {
     my ($self, $xml, $forceArray) = @_;
 
+    # Remove trailing spaces or tabs
+    $xml =~ s/^[\ |\t]+//g;
+
     my @params;
     push(@params, $xml);
 
     if ($forceArray) {
 	push(@params, ForceArray => [($forceArray)] );
     }
-    
+
     my $hash = eval { XMLin( @params) } ;
-    
+
     if ($@ || !$hash) {
 	$self->log("info", "Unable to parse the following XML:\n".Dumper($xml));
+	$self->log("info", "  Reason is:\n$@\n");
 	$hash = undef;
     }
 
@@ -619,7 +623,7 @@ sub makeApiRequestAndParseResponse {
     do {
 	$httpResponse = $self->makeApiRequest($values, $method);
 	$xml = $self->makeHashFromXml($httpResponse->content(), $forceArray );
-	
+
 	unless ($xml) {
 	    $self->log("info", "Unable to makeAndParse API request, will retry...");
 	    sleep(1);
@@ -1028,7 +1032,7 @@ sub allPages {
 	if ($continue) {
 	    $httpPostRequestParams->{'apfrom'} = $continue;
 	}
-	
+
 	# make the http request and parse response
 	$xml = $self->makeApiRequestAndParseResponse(values=>$httpPostRequestParams, forceArray=>'p');
 
@@ -1319,7 +1323,6 @@ sub namespaces {
 	    );
 	
 	my $content = $httpResponse->content();
-	
 	my %hash;
 
 	# Add the special page namespace
