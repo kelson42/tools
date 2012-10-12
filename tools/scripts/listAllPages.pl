@@ -21,7 +21,9 @@ my $host = "";
 my $path = "";
 my $namespace;
 my $filter = "all";
-my $prefix;
+my $username = "";
+my $password = "";
+my $prefix = "";
 
 ## Get console line arguments
 GetOptions('host=s' => \$host, 
@@ -29,16 +31,24 @@ GetOptions('host=s' => \$host,
 	   'filter=s' => \$filter,
 	   'namespace=s' => \$namespace,
 	   'prefix=s' => \$prefix,
+	   'username=s' => \$username,
+	   'password=s' => \$password,
 	   );
 
 if (!$host || !($filter eq "all" || $filter eq "nonredirects" || $filter eq "redirects")) {
-    print "usage: ./listAllPages.pl --host=my.wiki.org [--path=w] [--namespace=0] [--filter=[all|redirects|nonredirects]] [--prefix=foobar]\n";
+    print "usage: ./listAllPages.pl --host=my.wiki.org --namespace=0 [--path=w] [--filter=[all|redirects|nonredirects]] [--prefix=foobar] [--username=foo] [--password=bar]\n";
     exit;
 }
 
 my $site = Mediawiki::Mediawiki->new();
 $site->hostname($host);
 $site->path($path);
+$site->logger($logger);
+if ($username) {
+    $site->user($username);
+    $site->password($password);
+}
+$site->setup();
 
 foreach my $page ($site->allPages($namespace, $filter, $prefix)) {
     print $page."\n";
