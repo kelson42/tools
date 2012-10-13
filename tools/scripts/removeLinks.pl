@@ -85,8 +85,15 @@ foreach my $page (@pages) {
 	    while ($oldContent =~ /\[\[([^\:]*?)\]\]/gm ) {
 		my $match = $1;
 		my $replacement = $match;
+
 		if ($match =~ /(.*)\|(.*)/) {
-		    $replacement = $2;
+		    my $target = $1;
+		    my $label = $2;
+
+		    # Check links in templates with dynamic values
+		    unless ($target =~ /{{{([a-zA-Z0-9])/ ) {
+			$replacement = $label;
+		    }
 		}
 		$content =~ s/\[\[\Q$match\E\]\]/$replacement/g;
 	    }
