@@ -75,6 +75,7 @@ $cmd = "echo 'CREATE DATABASE $databaseName' | mysql -u $databaseUsername -p$dat
 $cmd = "cat $tmpDir/$sourceDatabaseName.sql | mysql -u $databaseUsername -p$databasePassword $databaseName"; `$cmd`;
 
 # Copy the files
+$cmd = "mkdir \"$destinationPath\""; `$cmd`;
 $cmd = "for FILE in `find \"$sourcePath\" -mindepth 1 -maxdepth 1 | grep -v images | grep -v static | grep -v html | grep -v \".svn\"` ; do cp -rf \$FILE \"$destinationPath\" ; done"; `$cmd`;
 
 # Deal with images
