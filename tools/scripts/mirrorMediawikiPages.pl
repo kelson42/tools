@@ -121,6 +121,7 @@ if ($commonHost && !$commonRegexp) {
 
 if ($readFromStdin) {
     while (my $page = <STDIN>) {
+	$page =~ s/\r\n//;
 	$page =~ s/\n//;
 
 	if (length($page)) {
