@@ -37,6 +37,7 @@ if (!$host) {
 
 if ($readFromStdin) {
     while (my $page = <STDIN>) {
+	$page =~ s/\r\n//;
 	$page =~ s/\n//;
 	push(@pages, $page);
     }
@@ -48,7 +49,7 @@ $site->path($path);
 $site->logger($logger);
 
 
-my %pages = $site->exists(@pages);
+my %pages = $site->exist(@pages);
 
 foreach my $page (keys(%pages)) {
     if ($pages{$page}) {
