@@ -1,8 +1,4 @@
 #!/usr/bin/perl
-binmode STDOUT, ":utf8";
-binmode STDIN, ":utf8";
-
-use utf8;
 use lib '../classes/';
 use lib '../../dumping_tools/classes/';
 
@@ -11,6 +7,7 @@ use warnings;
 use Getopt::Long;
 use Getopt::Long;
 use Data::Dumper;
+use Encode;
 use Kiwix::PathExplorer;
 use Mediawiki::Mediawiki;
 
@@ -133,8 +130,6 @@ if ($verbose) {
     print scalar(@pictures)." file(s) to upload (*.tiff) where detected.\n";
 }
 
-print Dumper(@pictures);
-
 # Upload pictures
 my $pictureNameRegex = "^.*\\$fsSeparator";
 foreach my $picture (@pictures) {
@@ -144,7 +139,60 @@ foreach my $picture (@pictures) {
     my $id = $3;
     my $pictureName = "Neuchâtel_Herbarium_-_".ucfirst($genius)."_".lcfirst($specie)."_-_$id.tiff";
 
+    # Check if already done
+    my $doneFile = $picture.".done";
+    my $done;
+    if (-f $doneFile) {
+	$done = 42;
+    } else {
+	my $exists = $site->exists("File:$pictureName");
+	if ($exists) {
+	    $done = 42;
+	    writeFile($doneFile, "");
+	}
+    }
+    if ($done) {
+	if ($verbose) {
+	    print "'$pictureName' already uploaded...\n";
+	}
+	next;
+    }
+
     if ($verbose) {
 	print "Uploading '$pictureName'...\n";
     }
+    
+    my $content = readFile($picture);
+    my $status = $site->uploadImage($pictureName, $content, "Upload...");
+    
+    if ($status) {
+	if ($verbose) {
+	    print "'$pictureName' was successfuly uploaded.\n";
+	}
+	writeFile($picture.".done", "");
+    } else {
+	print STDERR "'$pictureName' failed to be uploaded.\n";
+	exit 1;
+    }
+}
+
+# Read/Write functions
+sub writeFile {
+    my $file = shift;
+    my $data = shift;
+    open (FILE, ">:utf8", "$file") or die "Couldn't open file: $file";
+    print FILE $data;
+    close (FILE);
+}
+
+sub readFile {
+    my $file = shift;
+    open FILE, $file or die $!;
+    binmode FILE;
+    my ($buf, $data, $n);
+    while (($n = read FILE, $data, 4) != 0) { 
+	$buf .= $data;
+    }
+    close(FILE);
+    return $buf;
 }
