@@ -10,6 +10,7 @@ use Data::Dumper;
 use Encode;
 use Kiwix::PathExplorer;
 use Mediawiki::Mediawiki;
+use HTML::Template;
 
 my $username;
 my $password;
@@ -60,32 +61,17 @@ unless ($delay =~ /^[0-9]+$/) {
     exit 1;
 }
 
-# Setup the connection to commons.wikimedia.org
-my $site = Mediawiki::Mediawiki->new();
-
-$site->hostname("commons.wikimedia.org.zimfarm.kiwix.org");
-
-#$site->hostname("commons.wikimedia.org");
-#$site->path("w");
-
-$site->user($username);
-$site->password($password);
-my $connected = $site->setup();
-if ($connected) {
-    if ($verbose) {
-	print "Successfuly connected to commons.wikimedia.org\n";
-    }
-} else {
-    print STDERR "Unable to connect with this username/password to commons.wikimedia.org\n";
-    exit 1;
-}
+# Connect to wikis
+my $commonsWiki = connectToMediawiki("commons.wikimedia.org.zimfarm.kiwix.org");
+my $enWiki =  connectToMediawiki("en.wikipedia.org", "w", 1);
+my $deWiki =  connectToMediawiki("de.wikipedia.org", "w", 1);
+my $frWiki =  connectToMediawiki("fr.wikipedia.org", "w", 1);
+my $itWiki =  connectToMediawiki("it.wikipedia.org", "w", 1);
 
 # Compute paths to go through
 my @directories;
 if (scalar(@filters)) {
-    if ($verbose) {
-	print scalar(@filters)." filters detected.\n";
-    }
+    printLog(scalar(@filters)." filters detected.");
     foreach my $filter (@filters) {
 	my $filterDirectory = $filter;
 	$filterDirectory =~ s/( |_)/$fsSeparator/;
@@ -98,16 +84,12 @@ if (scalar(@filters)) {
 	}
     }
 } else {
-    if ($verbose) {
-	print "No filter detected.\n";
-    }
+    printLog("No filter detected.");
     push(@directories, $baseDirectory);
 }
-if ($verbose) {
-    print "Following directory(ies) will be parsed:\n";
-    foreach my $directory (@directories) {
-	print "* $directory\n";
-    }
+printLog("Following directory(ies) will be parsed:");
+foreach my $directory (@directories) {
+    printLog("* $directory");
 }
 
 # Get pictures to upload
@@ -126,18 +108,48 @@ foreach my $directory (@directories) {
 	}
     }
 }
-if ($verbose) {
-    print scalar(@pictures)." file(s) to upload (*.tiff) where detected.\n";
-}
+printLog(scalar(@pictures)." file(s) to upload (*.tiff) where detected.");
 
 # Upload pictures
 my $pictureNameRegex = "^.*\\$fsSeparator";
+my $templateCode="=={{int:filedesc}}==
+
+{{Specimen
+|taxon=<TMPL_VAR NAME=GENIUS> <TMPL_VAR NAME=SPECIE>
+|authority=
+|institution={{Institution:University of Neuchâtel}}
+|description=
+<TMPL_IF NAME=IWEN>{{en|1=Neuchâtel Herbarium - ''[[:en:<TMPL_VAR NAME=IWEN>]]''}}</TMPL_IF>
+<TMPL_IF NAME=IWDE>{{de|1=Neuchâtel Herbarium - ''[[:de:<TMPL_VAR NAME=IWDE>]]''}}</TMPL_IF>
+<TMPL_IF NAME=IWFR>{{fr|1=Neuchâtel Herbarium - ''[[:fr:<TMPL_VAR NAME=IWFR>]]''}}</TMPL_IF>
+<TMPL_IF NAME=IWIT>{{it|1=Neuchâtel Herbarium - ''[[:it:<TMPL_VAR NAME=IWIT>]]''}}</TMPL_IF>
+
+{{Information field
+|name={{Occupation|1=Botanist}}|value=?}}
+|date=<TMPL_VAR NAME=DATE>
+|source={{own}}
+|author=[[User:Neuchâtel Herbarium|Neuchâtel Herbarium]]
+|permission=
+|other_versions=
+|other_fields=
+}}
+
+
+{{Neuchâtel Herbarium}}
+
+=={{int:license-header}}==
+{{self|cc-by-sa-3.0}}
+
+
+[[Category:<TMPL_VAR NAME=GENIUS> <TMPL_VAR NAME=SPECIE>]]
+";
+
 foreach my $picture (@pictures) {
     $picture =~ /$patternRegex/;
     my $genius = $1;
     my $specie = $2;
     my $id = $3;
-    my $pictureName = "Neuchâtel_Herbarium_-_".ucfirst($genius)."_".lcfirst($specie)."_-_$id.tiff";
+    my $pictureName = "Neuchâtel_Herbarium_-_".$genius."_".$specie."_-_$id.tiff";
 
     # Check if already done
     my $doneFile = $picture.".done";
@@ -145,30 +157,33 @@ foreach my $picture (@pictures) {
     if (-f $doneFile) {
 	$done = 42;
     } else {
-	my $exists = $site->exists("File:$pictureName");
+	my $exists = $commonsWiki->exists("File:$pictureName");
 	if ($exists) {
 	    $done = 42;
 	    writeFile($doneFile, "");
 	}
     }
     if ($done) {
-	if ($verbose) {
-	    print "'$pictureName' already uploaded...\n";
-	}
+	printLog("'$pictureName' already uploaded...");
 	next;
     }
+    printLog("Uploading '$pictureName'...");
 
-    if ($verbose) {
-	print "Uploading '$pictureName'...\n";
-    }
-    
+    # Preparing description
+    my $template = HTML::Template->new(scalarref => \$templateCode);
+    $template->param(GENIUS=>$genius);
+    $template->param(SPECIE=>$specie);
+    $template->param(IWEN=>$enWiki->exists("$genius $specie") ? "$genius $specie" : "");
+    $template->param(IWDE=>$deWiki->exists("$genius $specie") ? "$genius $specie" : "");
+    $template->param(IWFR=>$frWiki->exists("$genius $specie") ? "$genius $specie" : "");
+    $template->param(IWIT=>$itWiki->exists("$genius $specie") ? "$genius $specie" : "");
+
+    # Upload
     my $content = readFile($picture);
-    my $status = $site->uploadImage($pictureName, $content, "Upload...");
+    my $status = $commonsWiki->uploadImage($pictureName, $content, $template->output());
     
     if ($status) {
-	if ($verbose) {
-	    print "'$pictureName' was successfuly uploaded.\n";
-	}
+        printLog("'$pictureName' was successfuly uploaded.");
 	writeFile($picture.".done", "");
     } else {
 	print STDERR "'$pictureName' failed to be uploaded.\n";
@@ -195,4 +210,37 @@ sub readFile {
     }
     close(FILE);
     return $buf;
+}
+
+# Setup the connection to Mediawiki
+sub connectToMediawiki {
+    my $host = shift;
+    my $path = shift || "";
+    my $noAuthentication = shift;
+    my $site = Mediawiki::Mediawiki->new();
+    $site->hostname($host);
+    $site->path($path);
+    unless ($noAuthentication) {
+	$site->user($username);
+	$site->password($password);
+    }
+    my $connected = $site->setup();
+    if ($connected) {
+	if ($verbose) {
+	    printLog("Successfuly connected to $host");
+	}
+    } else {
+	print STDERR "Unable to connect with this username/password to commons.wikimedia.org\n";
+	exit 1;
+    }
+
+    return $site;
+}
+
+# Logging function
+sub printLog {
+    my $message = shift;
+    if ($verbose) {
+	print "$message\n";
+    }
 }
