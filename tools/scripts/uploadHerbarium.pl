@@ -1,22 +1,23 @@
 #!/usr/bin/perl
 binmode STDOUT, ":utf8";
 binmode STDIN, ":utf8";
-binmode STDERR, ":utf8";
 
 use utf8;
 use lib '../classes/';
+use lib '../../dumping_tools/classes/';
 
 use strict;
 use warnings;
 use Getopt::Long;
 use Getopt::Long;
 use Data::Dumper;
+use Kiwix::PathExplorer;
 use Mediawiki::Mediawiki;
 
 my $username;
 my $password;
-my $directory;
-my @genius;
+my $baseDirectory;
+my @filters;
 my $help;
 my $delay = 0;
 my $verbose;
@@ -25,18 +26,18 @@ sub usage() {
     print "uploadHerbarium.pl is a script to upload the Neuchatel herbarium pictures to Wikimedia Commons library.\n";
     print "\tuploadHerbarium --username=<COMMONS_USERNAME> --password=<COMMONS_PASSWORD> --directory=<PICTURE_DIRECTORY>\n\n";
     print "In addition, you can specify a few additional arguments:\n";
-    print "--genius=<GENIUS>                Upload only this/these genius\n";
-    print "--delay=<NUMBER_OF_SECONDS>      Wait between two uploads\n\n";
+    print "--filter=<GENIUS_OR_SPECIE>      Upload only this/these genius/species\n";
+    print "--delay=<NUMBER_OF_SECONDS>      Wait between two uploads\n";
     print "--help                           Print the help of the script\n";
-    print "--verbose                        Print debug information to the console";
+    print "--verbose                        Print debug information to the console\n";
 }
 
 GetOptions('username=s' => \$username, 
 	   'password=s' => \$password,
-	   'directory=s' => \$directory,
+	   'directory=s' => \$baseDirectory,
 	   'delay=s' => \$delay,
 	   'verbose' => \$verbose,
-	   'genius=s' => \@genius,
+	   'filter=s' => \@filters,
 	   'help' => \$help,
 );
 
@@ -46,14 +47,14 @@ if ($help) {
 }
 
 # Make a few security checks
-if (!$username || !$password || !$directory) {
+if (!$username || !$password || !$baseDirectory) {
     print "You have to give the following parameters (more information with --help):\n";
     print "\t--username=<COMMONS_USERNAME>\n\t--password=<COMMONS_PASSWORD>\n\t--directory=<PICTURE_DIRECTORY>\n";
     exit;
 };
 
-unless (-d $directory) {
-    print STDERR "'$directory' seems not to be a valid directory.\n";
+unless (-d $baseDirectory) {
+    print STDERR "'$baseDirectory' seems not to be a valid directory.\n";
     exit 1;
 }
 
@@ -84,23 +85,66 @@ if ($connected) {
 
 # Compute paths to go through
 my @directories;
-if (scalar(@genius)) {
+if (scalar(@filters)) {
     if ($verbose) {
-	print scalar(@genius)." filter(s) detected.\n";
+	print scalar(@filters)." filters detected.\n";
     }
-    foreach my $genius (@genius) {
-	push(@directories, $directory.$fsSeparator.$genius);
+    foreach my $filter (@filters) {
+	my $filterDirectory = $filter;
+	$filterDirectory =~ s/( |_)/$fsSeparator/;
+	my $wholeFilterDirectory = $baseDirectory.$fsSeparator.$filterDirectory;
+	if (-d $wholeFilterDirectory) {
+	    push(@directories, $wholeFilterDirectory);
+	} else {
+	    print STDERR "'$wholeFilterDirectory' is not a directory, please check your --filter argument(s).\n";
+	    exit 1;
+	}
     }
 } else {
     if ($verbose) {
 	print "No filter detected.\n";
     }
-    push(@directories, $directory);
+    push(@directories, $baseDirectory);
+}
+if ($verbose) {
+    print "Following directory(ies) will be parsed:\n";
+    foreach my $directory (@directories) {
+	print "* $directory\n";
+    }
 }
 
-print Dumper(@directories);
-
 # Get pictures to upload
+my @pictures;
+my $patternRegex = "(\\w+)\\$fsSeparator(\\w+)\\$fsSeparator(\\w+)\\.tiff\$";
+foreach my $directory (@directories) {
+    my $explorer = new Kiwix::PathExplorer();
+    $explorer->filterRegexp('\.tiff$');
+    $explorer->path($directory);
+    while (my $file = $explorer->getNext()) {
+	if (substr($file, length($baseDirectory)) =~ /$patternRegex/) {
+	    push(@pictures, $file);
+	} else {
+	    print STDERR "'$file' does not match the /GENIUS/SPECIE/ID.tiff pattern.\n";
+	    exit 1;
+	}
+    }
+}
+if ($verbose) {
+    print scalar(@pictures)." file(s) to upload (*.tiff) where detected.\n";
+}
+
+print Dumper(@pictures);
 
 # Upload pictures
+my $pictureNameRegex = "^.*\\$fsSeparator";
+foreach my $picture (@pictures) {
+    $picture =~ /$patternRegex/;
+    my $genius = $1;
+    my $specie = $2;
+    my $id = $3;
+    my $pictureName = "Neuchâtel_Herbarium_-_".ucfirst($genius)."_".lcfirst($specie)."_-_$id.tiff";
 
+    if ($verbose) {
+	print "Uploading '$pictureName'...\n";
+    }
+}
