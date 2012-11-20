@@ -24,14 +24,14 @@ add_include_path("/usr/share");
 add_include_path($IP);
 
 # images 
-$wgFileExtensions = array( 'png', 'gif', 'jpg', 'jpeg', 'mp3', 'ogg', 'pdf', 'svg' );
+$wgFileExtensions = array( 'png', 'gif', 'jpg', 'jpeg', 'mp3', 'ogg', 'pdf', 'svg', 'tiff' );
 $wgStrictFileExtensions = false;
 
 # image shared dir
 $wgUseSharedUploads = true;
-$wgSharedUploadPath = "http://commons.wikimedia.org.mirror.kiwix.org/images";
+$wgSharedUploadPath = "http://commons.wikimedia.org.zimfarm.kiwix.org/images";
 $wgFetchCommonsDescriptions = false;
-$wgSharedUploadDirectory = "/var/www/mirror/commons_wikimedia_org/images";
+$wgSharedUploadDirectory = "/var/www/mirrors/commons_wikimedia_org/images";
 $wgSharedUploadDBname = "mirror_commons_wikimedia_org";
 $wgCacheSharedUploads = false;
 
@@ -60,7 +60,7 @@ $wgAllowCopyUploads = true;
 # memory
 $wgMaxShellMemory = 1502400;
 $wgMaxShellTime = 3600;
-$wgMaxShellFileSize = 404800;
+$wgMaxShellFileSize = 6808800;
 $wgMimeDetectorCommand= 'file -bi ';
 $wgVerifyMimeType = false;
 
@@ -92,6 +92,9 @@ $wgJobRunRate = 0;
 
 # throttling
 $wgPasswordAttemptThrottle = array( 'count' => 424242424242, 'seconds' => 1 );
+
+# HTML5
+$wgHtml5 = false;
 
 # Indexing policy
 $wgExemptFromUserRobotsControl = Array();
