@@ -259,8 +259,7 @@ sub hasWriteApi {
     lock(%writeApiCache);
     unless (exists($writeApiCache{$self->hostname()})) {
 	my $httpResponse = $self->makeApiRequest( { 'action' => 'edit', 'format' => 'xml', 'token' => $self->editToken() }, "POST" );
-
-	if ($httpResponse->content() =~ /notitle/i ) {
+	if ($httpResponse->content() =~ /notitle/i || $httpResponse->content() =~ /notext/i) {
 	    $self->log("info", "Site ".$self->hostname()." has the Write API available.\n");
 	    $writeApiCache{$self->hostname()} = 1;
 	} else {
@@ -787,7 +786,7 @@ sub uploadImageFromUrl {
     return $status;
 }
 
-sub uploadImage {
+sub uploadImageWithoutApi {
     my($self, $title, $content, $summary) = @_;
 
     my $httpPostRequestParams = {
@@ -809,6 +808,67 @@ sub uploadImage {
     my $status = $httpResponse->code == 302;
 
     return $status;
+}
+
+sub uploadImage {
+    my ($self, $title, $content, $text, $summary, $ignoreWarning) = @_;
+    my $returnValue = 0;
+
+    if ($self->hasWriteApi()) {
+	unless ($self->editToken()) {
+	    unless ($self->loadEditToken()) {
+		$self->log("info", "Unable to load edit token for ".$self->hostname());
+	    }
+	}
+
+	my $postValues = {
+	    'action' => 'upload',
+	    'token' => $self->editToken(),
+	    'file' => [ undef, $title, Content => $content ],
+	    'text' => $text,
+	    'filename' => $title,
+	    'format' => "xml",
+	    'comment' => $summary,
+	    'ignorewarnings' => $ignoreWarning
+	};
+	
+	my $retryCounter = 0;
+	do {
+	    my $httpResponse = $self->makeHttpPostRequest($self->apiUrl(), $postValues, { Content_Type  => 'multipart/form-data' });
+
+	    if ($httpResponse->content() =~ /success/i || $httpResponse->content() =~ /articleexists/i ) {
+		if ($httpResponse->content() =~ /nochange=\"\"/i) {
+		    $returnValue = 2;
+		} else {
+		    $returnValue = 1;
+		}
+	    } elsif ($httpResponse->content() =~ /badtoken/i) {
+		$self->loadEditToken();
+		$postValues->{'token'} = $self->editToken();
+		$self->log("info", "Reloading edit token...");
+		$returnValue = 0;
+	    } elsif ($httpResponse->content() =~ /invalidtitle/i) {
+		$self->log("info", "Invalid title '$title', this page '$title' can simply not be uploaded.");
+		$returnValue = 0;
+		last;
+	    }
+
+	    if (!$returnValue && $retryCounter <= 15) {
+		$self->log("info", "Was unable to upload correctly page '$title' (".$httpResponse->content()."), will retry in ".($retryCounter++)." s.");
+		sleep($retryCounter);
+	    }
+
+	} while (!$returnValue && $retryCounter <= 15);
+
+	if ($retryCounter > 15) {
+	    $self->log("info", "Was unable to upload correctly page '$title'... I abandon now after 15 retries.");
+	}
+    } else {
+	$self->log("error", "Unable to write page '".$title."' on '".$self->hostname()."'. It works only with write api.");
+	$returnValue = 0;
+    }
+    
+    return $returnValue;
 }
 
 sub DESTROY
