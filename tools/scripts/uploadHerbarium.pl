@@ -62,7 +62,8 @@ unless ($delay =~ /^[0-9]+$/) {
 }
 
 # Connect to wikis
-my $commonsWiki = connectToMediawiki("commons.wikimedia.org.zimfarm.kiwix.org");
+#my $commonsWiki = connectToMediawiki("commons.wikimedia.org.zimfarm.kiwix.org");
+my $commonsWiki = connectToMediawiki("commons.wikimedia.org", "w");
 my $enWiki =  connectToMediawiki("en.wikipedia.org", "w", 1);
 my $deWiki =  connectToMediawiki("de.wikipedia.org", "w", 1);
 my $frWiki =  connectToMediawiki("fr.wikipedia.org", "w", 1);
