@@ -181,7 +181,7 @@ foreach my $picture (@pictures) {
 
     # Upload
     my $content = readFile($picture);
-    my $status = $commonsWiki->uploadImage($pictureName, $content, $template->output());
+    my $status = $commonsWiki->uploadImage($pictureName, $content, $template->output(), "Neuchâtel Herbarium picture $id", 1);
     
     if ($status) {
         printLog("'$pictureName' was successfuly uploaded.");
@@ -189,6 +189,12 @@ foreach my $picture (@pictures) {
     } else {
 	print STDERR "'$pictureName' failed to be uploaded.\n";
 	exit 1;
+    }
+
+    # Wait a few seconds
+    if ($delay) {
+      printLog("Waiting $delay s...");
+      sleep($delay);
     }
 }
 
