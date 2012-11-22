@@ -95,7 +95,7 @@ foreach my $directory (@directories) {
 
 # Get pictures to upload
 my @pictures;
-my $patternRegex = "(\\w+)\\$fsSeparator(\\w+)\\$fsSeparator(\\w+)\\.tiff\$";
+my $patternRegex = "(\\w+)\\$fsSeparator(\\w+)\\$fsSeparator(\\w+|)(\\$fsSeparator|)(\\w{12})\\.tiff\$";
 foreach my $directory (@directories) {
     my $explorer = new Kiwix::PathExplorer();
     $explorer->filterRegexp('\.tiff$');
@@ -149,8 +149,14 @@ foreach my $picture (@pictures) {
     $picture =~ /$patternRegex/;
     my $genius = $1;
     my $specie = $2;
-    my $id = $3;
-    my $pictureName = "Neuchâtel_Herbarium_-_".$genius."_".$specie."_-_$id.tiff";
+    my $subSpecie = $3;
+    my $id = $5;
+    my $pictureName;
+    if ($subSpecie) {
+      $pictureName = "Neuchâtel_Herbarium_-_".$genius."_".$specie."_ssp._".$subSpecie."_-_$id.tiff";
+    } else {
+      $pictureName = "Neuchâtel_Herbarium_-_".$genius."_".$specie."_-_$id.tiff";
+    }
 
     # Check if already done
     my $doneFile = $picture.".done";
@@ -181,8 +187,8 @@ foreach my $picture (@pictures) {
 
     # Upload
     my $content = readFile($picture);
-    my $status = $commonsWiki->uploadImage($pictureName, $content, $template->output(), "Neuchâtel Herbarium picture $id", 1);
-    
+    my $status = $commonsWiki->uploadImage($pictureName, $content, $template->output(), "Neuchâtel Herbarium picture $id", 0);
+
     if ($status) {
         printLog("'$pictureName' was successfuly uploaded.");
 	writeFile($picture.".done", "");
