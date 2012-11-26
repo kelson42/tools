@@ -26,6 +26,7 @@ my $projectCode = "";
 my $withoutImages;
 my $withPageLinks;
 my $withTemplateLinks;
+my $withMetaPages;
 my $tmpDir = "/tmp";
 my $version = "latest";
 my $cmd;
@@ -40,12 +41,13 @@ GetOptions('databaseHost=s' => \$databaseHost,
 	   'withoutImages' => \$withoutImages,
 	   'withTemplateLinks' => \$withTemplateLinks,
 	   'withPageLinks' => \$withPageLinks,
+	   'withMetaPages' => \$withMetaPages,
 	   'version=s' => \$version,
 	   'tmpDir=s' => \$tmpDir,
 	   );
 
 if (!$databaseName || !$projectCode) {
-    print "usage: ./mirrorWmfDumps.pl --projectCode=enwiki --databaseName=MYDB [--tmpDir=/tmp] [--databaseHost=localhost] [--databasePort=3306] [--databaseUsername=tom] [--databasePassword=fff] [--withoutImages] [--withTemplateLinks] [--withPageLinks] [--version=latest]\n";
+    print "usage: ./mirrorWmfDumps.pl --projectCode=enwiki --databaseName=MYDB [--tmpDir=/tmp] [--databaseHost=localhost] [--databasePort=3306] [--databaseUsername=tom] [--databasePassword=fff] [--withoutImages] [--withTemplateLinks] [--withPageLinks] [--version=latest] [--withMetaPages]\n";
     exit;
 }
 
@@ -58,7 +60,13 @@ $tmpDir = $tmpDir."/wmfDumps";
 `mkdir $tmpDir`;
 
 # Download the XML & SQL files
-$cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-pages-articles.xml.bz2"; `$cmd`;
+if ($withMetaPages) {
+    $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-pages-meta-current.xml.bz2";
+} else {
+    $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-pages-articles.xml.bz2";
+}
+`$cmd`;
+
 $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-interwiki.sql.gz"; `$cmd`;
 $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-redirect.sql.gz"; `$cmd`;
 $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-categorylinks.sql.gz"; `$cmd`;
@@ -91,7 +99,7 @@ my $sth;
 $dbh = DBI->connect($dsn, $databaseUsername, $databasePassword) or die ("Unable to connect to the database.");
 
 # Truncate necessary tables
-foreach my $table ("revision", "page", "text", "imagelinks", "templatelinks", "interwiki", "redirect", "externallinks", "image", "langlinks", "math", "logging", "recentchanges", "searchindex", "pagelinks", "l10n_cache", "job", "category", "categorylinks", "archive", "filearchive" ) {
+foreach my $table ("revision", "page", "text", "imagelinks", "templatelinks", "redirect", "externallinks", "image", "langlinks", "math", "logging", "recentchanges", "searchindex", "pagelinks", "l10n_cache", "job", "category", "categorylinks", "archive", "filearchive" ) {
     $req = "TRUNCATE $table";
     $sth = $dbh->prepare($req)  or die ("Unable to prepare request.");
     $sth->execute() or die ("Unable to execute request.");
@@ -100,7 +108,11 @@ foreach my $table ("revision", "page", "text", "imagelinks", "templatelinks", "i
 # Upload the XML
 my $mysqlCmd = "mysql --user=$databaseUsername --password=$databasePassword $databaseName";
 
-$cmd = "cd $mwDumperDir; java -classpath ./src org.mediawiki.dumper.Dumper --format=sql:1.5 ../$projectCode-$version-pages-articles.xml.bz2 | bzip2 > $projectCode-sql.bz2";
+if ($withMetaPages) {
+    $cmd = "cd $mwDumperDir; java -classpath ./src org.mediawiki.dumper.Dumper --format=sql:1.5 ../$projectCode-$version-pages-meta-current.xml.bz2 | bzip2 > $projectCode-sql.bz2";
+} else {
+    $cmd = "cd $mwDumperDir; java -classpath ./src org.mediawiki.dumper.Dumper --format=sql:1.5 ../$projectCode-$version-pages-articles.xml.bz2 | bzip2 > $projectCode-sql.bz2";
+}
 system "$cmd";
 
 $cmd = "cd $mwDumperDir; bzip2 -c -d $projectCode-sql.bz2 | $mysqlCmd";
