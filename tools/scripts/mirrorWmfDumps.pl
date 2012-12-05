@@ -67,7 +67,6 @@ if ($withMetaPages) {
 }
 `$cmd`;
 
-$cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-interwiki.sql.gz"; `$cmd`;
 $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-redirect.sql.gz"; `$cmd`;
 $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-categorylinks.sql.gz"; `$cmd`;
 $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-category.sql.gz"; `$cmd`;
@@ -120,7 +119,6 @@ print $cmd."\n";
 system "$cmd";
 
 # Upload the SQL
-$cmd = "gzip -d -c $tmpDir/$projectCode-$version-interwiki.sql.gz | $mysqlCmd"; `$cmd`;
 $cmd = "gzip -d -c $tmpDir/$projectCode-$version-redirect.sql.gz | $mysqlCmd"; `$cmd`;
 $cmd = "gzip -d -c $tmpDir/$projectCode-$version-categorylinks.sql.gz | $mysqlCmd"; `$cmd`;
 $cmd = "gzip -d -c $tmpDir/$projectCode-$version-langlinks.sql.gz | $mysqlCmd"; `$cmd`;
