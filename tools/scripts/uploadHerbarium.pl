@@ -146,7 +146,7 @@ my $templateCode="=={{int:filedesc}}==
 ";
 
 foreach my $picture (@pictures) {
-    $picture =~ /$patternRegex/;
+    substr($picture, length($baseDirectory)) =~ /$patternRegex/;
     my $genius = $1;
     my $specie = $2;
     my $subSpecie = $3;
