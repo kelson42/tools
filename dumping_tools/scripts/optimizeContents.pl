@@ -19,6 +19,7 @@ my $contentPath;
 my $removeTitleTag;
 my $ignoreHtml;
 my $threadCount=2;
+my $tmpDir="/tmp";
 
 # Get console line arguments
 GetOptions(
@@ -26,11 +27,20 @@ GetOptions(
     'removeTitleTag' => \$removeTitleTag,
     'ignoreHtml' => \$ignoreHtml,
     'threadCount=s' => \$threadCount,
+    'tmpDir=s' => \$tmpDir,
     );
 
 if (!$contentPath) {
-    print "usage: ./optimizeContents.pl --contentPath=./html [--removeTitleTag] [--ignoreHtml] [--threadCount=2]\n";
+    print "usage: ./optimizeContents.pl --contentPath=./html [--removeTitleTag] [--ignoreHtml] [--threadCount=2] [--tmpDir=/media/tmpfs]\n";
     exit;
+}
+
+# Check and set the tmp dir (necessary to have custom tmp dir for opt- tools
+if (! -d "$tmpDir") {
+    print STDERR "'$tmpDir' does not exists.";
+    exit 1;
+} else {
+    $ENV{TMPDIR}="$tmpDir";
 }
 
 # initialization
