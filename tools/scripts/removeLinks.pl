@@ -77,7 +77,7 @@ foreach my $page (@pages) {
 	}
     } elsif ($type eq "interwiki") {
 	if ($action eq "everything") {
-	    $content =~ s/\[\[([a-z]{2,3}|simple|be-x-old|zh-yue):.*\]\]//gi;
+	    $content =~ s/\[\[([a-z]{2,3}|[a-z]{2,3}-[a-z]{2,3}|simple|be-x-old):.*\]\]//gi;
 	}
     } elsif ($type eq "wiki") {
 	if ($action eq "linkonly") {
