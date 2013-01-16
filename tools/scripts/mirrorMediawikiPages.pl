@@ -16,14 +16,14 @@ use Term::Query qw( query query_table query_table_set_defaults query_table_proce
 
 # get the params
 my $sourceHost;
-my $sourcePath;
-my $sourceUsername;
-my $sourcePassword;
+my $sourcePath = "";
+my $sourceUsername = "";
+my $sourcePassword = "";
 
 my $destinationHost;
-my $destinationPath;
-my $destinationUsername;
-my $destinationPassword;
+my $destinationPath = "";
+my $destinationUsername = "";
+my $destinationPassword = "";
 
 my $commonHost;
 my $commonPath;
