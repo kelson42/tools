@@ -14,6 +14,7 @@ use threads::shared;
 
 my $contentPath : shared;
 my $removeTitleTag : shared;
+my $followSymlinks : shared;
 my $ignoreHtml : shared;
 
 my %queue : shared;
@@ -53,6 +54,7 @@ sub optimize {
     # Start the directory walker to find files to optimize
     my $explorer = new Kiwix::PathExplorer();
     $explorer->path($self->contentPath());
+    $explorer->followSymlinks($self->followSymlinks());
     while (my $file = $explorer->getNext()) {
 	$self->addFileToOptimize($file);
     }
@@ -192,6 +194,13 @@ sub ignoreHtml {
     lock($ignoreHtml);
     if (@_) { $ignoreHtml = shift }
     return $ignoreHtml;
+}
+
+sub followSymlinks {
+    my $self = shift;
+    lock($followSymlinks);
+    if (@_) { $followSymlinks = shift }
+    return $followSymlinks;
 }
 
 sub isRunnable {
