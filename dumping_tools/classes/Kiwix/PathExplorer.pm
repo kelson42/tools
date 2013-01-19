@@ -10,6 +10,9 @@ use threads::shared;
 # path to explore
 my $path : shared = "";
 
+# Should follow symlinks
+my $followSymlinks : shared = 0;
+
 # files
 my $filesMutex : shared = 1;
 my @files : shared;
@@ -98,7 +101,7 @@ sub explore {
     my $self = shift;
 
     # call find()
-    find(\&exploreCallback, $self->path());
+    find({ wanted => \&exploreCallback, follow =>  1}, $self->path());
 
     # set the exploring flag
     exploring(0);
@@ -113,9 +116,20 @@ sub exploreCallback {
     while (fileCount() > bufferSize() ) {
 	sleep(0.1);
     }
+    
+    my $filename;
+    if ($File::Find::fullname) {
+	if ($followSymlinks) {
+	    $filename = $File::Find::fullname;
+	} else {
+	    return;
+	}
+    } else {
+	$filename = $File::Find::name;
+    }
 
     lock($filesMutex);
-    push(@files, $File::Find::name);
+    push(@files, $filename);
 }
 
 sub reset {
@@ -150,6 +164,13 @@ sub path {
     lock($path);
     if (@_) { $path = shift }
     return $path;
+}
+
+sub followSymlinks {
+    my $self = shift;
+    lock($followSymlinks);
+    if (@_) { $followSymlinks = shift }
+    return $followSymlinks;
 }
 
 sub shiftFile() {
