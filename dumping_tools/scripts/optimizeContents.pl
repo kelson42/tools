@@ -17,6 +17,7 @@ my $logger = Kiwix::Logger->new("optimizeContents.pl");
 # get the params
 my $contentPath;
 my $removeTitleTag;
+my $followSymlinks;
 my $ignoreHtml;
 my $threadCount=2;
 my $tmpDir="/tmp";
@@ -25,13 +26,14 @@ my $tmpDir="/tmp";
 GetOptions(
     'contentPath=s' => \$contentPath,
     'removeTitleTag' => \$removeTitleTag,
+    'followSymlinks' => \$followSymlinks,
     'ignoreHtml' => \$ignoreHtml,
     'threadCount=s' => \$threadCount,
     'tmpDir=s' => \$tmpDir,
     );
 
 if (!$contentPath) {
-    print "usage: ./optimizeContents.pl --contentPath=./html [--removeTitleTag] [--ignoreHtml] [--threadCount=2] [--tmpDir=/media/tmpfs]\n";
+    print "usage: ./optimizeContents.pl --contentPath=./html [--removeTitleTag] [--followSymlinks] [--ignoreHtml] [--threadCount=2] [--tmpDir=/media/tmpfs]\n";
     exit;
 }
 
@@ -49,5 +51,6 @@ $optimizer->logger($logger);
 $optimizer->contentPath($contentPath);
 $optimizer->threadCount($threadCount);
 $optimizer->removeTitleTag($removeTitleTag);
+$optimizer->followSymlinks($followSymlinks);
 $optimizer->ignoreHtml($ignoreHtml);
 $optimizer->optimize();
