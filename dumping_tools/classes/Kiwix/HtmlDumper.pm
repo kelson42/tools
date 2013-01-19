@@ -7,7 +7,7 @@ use HTML::LinkExtractor;
 use Kiwix::PathExplorer;
 use URI::Escape;
 use File::Path qw(mkpath);
-use File::Copy;
+#use File::Copy;
 use Sys::Hostname;
 use Socket;
 
@@ -142,8 +142,10 @@ sub dump {
 	}
 
 	# copy the image file itself
-	copy($originalPath, $destinationPath);
-	$self->log("info", "cp \"$originalPath\" \"$destinationPath\"");
+	#copy($originalPath, $destinationPath);
+	symlink($originalPath, $destinationPath);
+	#$self->log("info", "cp \"$originalPath\" \"$destinationPath\"");
+	$self->log("info", "symlink \"$originalPath\" \"$destinationPath\"");
     }
 }
 
