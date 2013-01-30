@@ -95,21 +95,21 @@ foreach my $directory (@directories) {
 
 # Get pictures to upload
 my @pictures;
-my $patternRegex = "(\\w+)\\$fsSeparator(\\w+)\\$fsSeparator(\\w+|)(\\$fsSeparator|)(\\w{12})\\.tiff\$";
+my $patternRegex = "(\\w+)\\$fsSeparator(\\w+)\\$fsSeparator(\\w+|)(\\$fsSeparator|)(\\w{12})\\.(tif|tiff)\$";
 foreach my $directory (@directories) {
     my $explorer = new Kiwix::PathExplorer();
-    $explorer->filterRegexp('\.tiff$');
+    $explorer->filterRegexp('\.(tif|tiff)$');
     $explorer->path($directory);
     while (my $file = $explorer->getNext()) {
 	if (substr($file, length($baseDirectory)) =~ /$patternRegex/) {
 	    push(@pictures, $file);
 	} else {
-	    print STDERR "'$file' does not match the /GENIUS/SPECIE/ID.tiff pattern.\n";
+	    print STDERR "'$file' does not match the /GENIUS/SPECIE/ID.tif pattern.\n";
 	    exit 1;
 	}
     }
 }
-printLog(scalar(@pictures)." file(s) to upload (*.tiff) where detected.");
+printLog(scalar(@pictures)." file(s) to upload (*.tif) where detected.");
 
 # Upload pictures
 my $pictureNameRegex = "^.*\\$fsSeparator";
@@ -153,9 +153,9 @@ foreach my $picture (@pictures) {
     my $id = $5;
     my $pictureName;
     if ($subSpecie) {
-      $pictureName = "Neuchâtel_Herbarium_-_".$genius."_".$specie."_ssp._".$subSpecie."_-_$id.tiff";
+      $pictureName = "Neuchâtel_Herbarium_-_".$genius."_".$specie."_ssp._".$subSpecie."_-_$id.tif";
     } else {
-      $pictureName = "Neuchâtel_Herbarium_-_".$genius."_".$specie."_-_$id.tiff";
+      $pictureName = "Neuchâtel_Herbarium_-_".$genius."_".$specie."_-_$id.tif";
     }
 
     # Check if already done
