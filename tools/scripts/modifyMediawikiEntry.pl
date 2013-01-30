@@ -1,10 +1,13 @@
 #!/usr/bin/perl
+#binmode STDOUT, ":utf8";
+#binmode STDIN, ":utf8";
 
 use utf8;
 use lib "../classes/";
 
 use strict;
 use warnings;
+use Encode;
 use Getopt::Long;
 use Data::Dumper;
 use Mediawiki::Mediawiki;
@@ -23,6 +26,7 @@ my @entries;
 my $readFromStdin = 0;
 my $file = "";
 my $action = "touch";
+my @variables;
 
 ## Get console line arguments
 GetOptions('host=s' => \$host, 
@@ -31,12 +35,13 @@ GetOptions('host=s' => \$host,
 	   'username=s' => \$username,
 	   'password=s' => \$password,
 	   'action=s' => \$action,
+	   'variable=s@' => \@variables,
            'readFromStdin' => \$readFromStdin,
            'entry=s' => \@entries,
     );
 
-if (!$host || (!$readFromStdin && !$file && !scalar(@entries)) || !($action =~ /^(touch|delete|empty|restore|rollback|replace|stub)$/)) {
-    print "usage: ./modifyMediawikiEntry.pl --host=my.wiki.org [--file=my_file] [--path=w] [--entry=my_page] [--readFromStdin] [--action=touch|delete|empty|restore|rollback|replace|stub] [--username=foobar] [--password=mypass]\n";
+if (!$host || (!$readFromStdin && !$file && !scalar(@entries)) || !($action =~ /^(touch|delete|empty|restore|rollback|replace|stub|append)$/)) {
+    print "usage: ./modifyMediawikiEntry.pl --host=my.wiki.org [--file=my_file] [--path=w] [--entry=my_page] [--readFromStdin] [--action=touch|delete|empty|restore|rollback|replace|stub|append] [--variable={{footnote}}] [--username=foobar] [--password=mypass]\n";
     exit;
 }
 
@@ -49,6 +54,7 @@ if ($readFromStdin) {
     $logger->info("Read entries from stdin.");
     while (my $entry = <STDIN>) {
 	$entry =~ s/\n//;
+#	$entry = decode_utf8($entry);
 	push(@entries, $entry);
     }
 }
@@ -90,10 +96,19 @@ foreach my $entry (@entries) {
     } elsif ($action eq "rollback") {
 	$status = $site->rollbackPage($entry, "");
     } elsif ($action eq "replace") {
-	my ($title, $newContent) = split(/ /, $entry);
-	$status = $site->uploadPage($title, $newContent);
+	my $regex = $variables[0];
+	my $replacement = $variables[1];
+	unless ($regex && $replacement) {
+	    print STDERR "You have to define two varaibles as regex and replacement.\n";
+	}
+	my ($content, $revision) = $site->downloadPage($entry);
+	$content =~ s/$regex/$replacement/mg;
+	$status = $site->uploadPage($entry, $content);      
     } elsif ($action eq "stub") {
 	$status = $site->uploadPage($entry, "-");
+    } elsif ($action eq "append") {
+	my ($content, $revision) = $site->downloadPage($entry);
+	$status = $site->uploadPage($entry, $content.$variables[0]);
     } else {
 	$logger->info("This action is not valid, will exit.");
 	last;
