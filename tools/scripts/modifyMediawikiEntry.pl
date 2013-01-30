@@ -1,7 +1,4 @@
 #!/usr/bin/perl
-#binmode STDOUT, ":utf8";
-#binmode STDIN, ":utf8";
-
 use utf8;
 use lib "../classes/";
 
@@ -54,7 +51,6 @@ if ($readFromStdin) {
     $logger->info("Read entries from stdin.");
     while (my $entry = <STDIN>) {
 	$entry =~ s/\n//;
-#	$entry = decode_utf8($entry);
 	push(@entries, $entry);
     }
 }
