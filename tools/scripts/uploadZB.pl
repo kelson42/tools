@@ -13,22 +13,6 @@ use Mediawiki::Mediawiki;
 use HTML::Template;
 use MARC::File::XML;
 
-## Loading with USE options
-use MARC::File::XML ( BinaryEncoding => 'utf8', RecordFormat => 'UNIMARC' );
-
-## Setting the record format without USE options
-MARC::File::XML->default_record_format('USMARC');
-    
-## or reading with MARC::File::XML explicitly
-my $file = MARC::File::XML->in( "/tmp/wikim1_marcxml_z39s_out2-1.xml" );
-
-while (my $record = $file->next()) {
-    print "Title:\t\t".$record->title_proper()."\n";
-    print "Date:\t\t".$record->publication_date()."\n";
-    print "Author:\t\t".$record->author()."\n";
-    print "-------------\n";
-}
-
 my $username;
 my $password;
 my $pictureDirectory;
@@ -38,6 +22,8 @@ my $help;
 my $delay = 0;
 my $verbose;
 my $fsSeparator = '/';
+my %metadatas;
+
 sub usage() {
     print "uploadZB.pl is a script to upload files from the Zurich central library.\n";
     print "\tuploadZB --username=<COMMONS_USERNAME> --password=<COMMONS_PASSWORD> --directory=<PICTURE_DIRECTORY> --metadata=<XML_FILE>\n\n";
@@ -84,6 +70,62 @@ unless ($delay =~ /^[0-9]+$/) {
     print STDERR "The delay '$delay' seems not valid. This should be a number.\n";
     exit 1;
 }
+
+# Read the metadata file
+use MARC::File::XML ( BinaryEncoding => 'utf8', RecordFormat => 'UNIMARC' );
+MARC::File::XML->default_record_format('USMARC');
+my $metadataFileHandler = MARC::File::XML->in( $metadataFile );
+
+my $skippedCount = 0;
+while (my $record = $metadataFileHandler->next()) {
+    my $uid = $record->field('092') ? $record->field('092')->subfield("a") : "";
+    my $title = $record->title_proper();
+    my $date = $record->publication_date();
+    my $author = $record->author();
+    my $description = " ";
+
+    # Check the filter
+    if ($uid && scalar(@filters) && !(grep {$_ eq $uid} @filters)) {
+	$skippedCount++;
+	next;
+    }
+
+    # Make a few checks
+    unless ($uid) {
+	print STDERR "Unable to get the UID for a record.\n";
+	exit 1;
+    }
+    unless ($title) {
+	print STDERR "Unable to get the title for the record with UID $uid.\n";
+	exit 1;
+    }
+    unless ($date) {
+	print STDERR "Unable to get the creation date for the record with UID $uid.\n";
+#	exit 1;
+    }
+    unless ($author) {
+	print STDERR "Unable to get the author for the record with UID $uid.\n";
+#	exit 1;
+    }
+    unless ($description) {
+	print STDERR "Unable to get the description for the record with UID $uid.\n";
+	exit 1;
+    }
+    if (exists($metadatas{$uid})) {
+	print STDERR "We have a duplicate entry for the entry with UID $uid.\n";
+	exit 1
+    }
+
+    # Add to the metadata hash table
+    $metadatas{$uid} = { 
+	'title' => $title,
+	'date' => $date,
+	'author' => $author,
+	'description' => $description,
+    };
+}
+printLog(scalar(keys(%metadatas))." metadata entry(ies) read and $skippedCount skipeed.");
+
 
 # Read/Write functions
 sub writeFile {
