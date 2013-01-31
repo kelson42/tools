@@ -14,6 +14,8 @@ use Net::FTP;
 use File::Basename;
 
 my $jpegFile = "/tmp/uploadZB.tmp.jpg";
+my $jpegDescriptionFile = "/tmp/uploadZB.tmp.jpg.desc";
+my $commonsHost = "commons.wikimedia.org";
 my $ftpHost = "zb.kiwix.org";
 my $ftpPassword;
 my $ftpUsername;
@@ -27,6 +29,24 @@ my $delay = 0;
 my $verbose;
 my $fsSeparator = '/';
 my %metadatas;
+my $templateCode = "=={{int:filedesc}}==
+{{Information
+|description={{de|1=<TMPL_VAR NAME=DESCRIPTION>}}
+|date=<TMPL_VAR NAME=DATE>
+|source={{Zentralbibliothek_Zürich_backlink|<TMPL_VAR NAME=UID>}}
+|author=<TMPL_VAR NAME=AUTHOR>
+|permission=
+|other_versions=[[:File:<TMPL_VAR NAME=OTHER_VERSION>]]
+|other_fields=
+}}
+{{Zentralbibliothek_Zürich}}
+
+=={{int:license-header}}==
+{{PD-old}}
+
+[[Category:Media_contributed_by_Zentralbibliothek_Zürich]]
+";
+
 
 sub usage() {
     print "uploadZB.pl is a script to upload files from the Zurich central library.\n";
@@ -73,6 +93,10 @@ unless (-f $metadataFile) {
 unless ($delay =~ /^[0-9]+$/) {
     die "The delay '$delay' seems not valid. This should be a number.";
 }
+
+# Check connections to remote services
+connectToCommons();
+connectToFtp(); 
 
 # Read the metadata file
 use MARC::File::XML ( BinaryEncoding => 'utf8', RecordFormat => 'UNIMARC' );
@@ -153,22 +177,62 @@ foreach my $uid (keys(%metadatas)) {
 my $image = Image::Magick->new();
 my $error;
 foreach my $uid (keys(%metadatas)) {
-    my $filename = $metadatas{$uid}->{'filename'};
-    my $newFilenameBase = $metadatas{$uid}->{'newFilenameBase'};
-    printLog("Reading $filename...");
-    $error = $image->Read($filename);
-    
-    # Stop if error in imagemagick, except for: Incompatible type for "RichTIFFIPTC"
-    if ($error && !$error =~ /Exception 350/) { 
-	die "Error by reading ".$filename.": ".$error.".";
+    my $metadata = $metadatas{$uid};
+    my $filename = $metadata->{'filename'};
+    my $newFilenameBase = $metadata->{'newFilenameBase'};
+
+    # Preparing description
+    my $template = HTML::Template->new(scalarref => \$templateCode);
+    $template->param(DESCRIPTION=>$metadata->{'description'});
+    $template->param(DATE=>$metadata->{'date'});
+    $template->param(AUTHOR=>$metadata->{'author'});
+    $template->param(UID=>$uid);
+    $template->param(OTHER_VERSION=>$newFilenameBase.".jpg");
+
+    # Uploading image and description to the FTP
+    uploadFileToFTP($filename, $newFilenameBase.".tif");
+    writeFile($jpegDescriptionFile, $template->output());
+    uploadFileToFTP($jpegDescriptionFile, $newFilenameBase.".tif.desc");
+
+    # Connect to Wikimedia Commons
+    my $commons = connectToCommons();
+    printLog("Successfuly connected to Wikimedia Commons.");
+
+    # Check if already done
+    my $pictureName = $newFilenameBase.".jpg";
+    my $exists = $commons->exists("File:$pictureName");
+    if ($exists) {
+	printLog("'$pictureName' already uploaded...");
+    } else {
+	# Stop if error in imagemagick, except for: Incompatible type for "RichTIFFIPTC"
+	printLog("Checking $filename...");
+	$error = $image->Read($filename);
+	if ($error && !$error =~ /Exception 350/) { 
+	    die "Error by reading ".$filename.": ".$error.".";
+	}
+
+	# JPEG compression
+	printLog("Compressing in JPEG...");
+	$image->Write(filename=>$jpegFile, compression=>'JPEG', quality => "85");
+
+	# Upload JPEG version to Wikimedia commons
+	$template->param(OTHER_VERSION=>$newFilenameBase.".tif");
+	my $content = readFile($jpegFile);
+	printLog("Uploading $pictureName to Wikimedia Commons...");
+	my $status = $commons->uploadImage($pictureName, $content, $template->output(), "GLAM Zurich central library picture $uid (WMCH)", 0);
+	
+	if ($status) {
+	    printLog("'$pictureName' was successfuly uploaded to Wikimedia Commons.");
+	} else {
+	    die "'$pictureName' failed to be uploaded to Wikimedia Commons.\n";
+	}
     }
 
-    # Uploading to the FTP
-    uploadFileToFTP($filename, $newFilenameBase.".tif");
-
-    # JPEG compression
-    printLog("Compressing in JPEG...");
-    $image->Write(filename=>$jpegFile, compression=>'JPEG', quality => "85");
+    # Wait a few seconds
+    if ($delay) {
+      printLog("Waiting $delay s...");
+      sleep($delay);
+    }
 }
 
 # Upload file to tmp FTP
@@ -186,8 +250,6 @@ sub uploadFileToFTP {
 	$ftp->quit();
 	return;
     }
-    exit;
-
     if ($remoteSize && $localSize != $remoteSize) {
 	printLog("Deleting incomplete previously uploaded $newFilename");
 	$ftp->delete($fileBasename);
@@ -204,9 +266,9 @@ sub uploadFileToFTP {
 # Connect to FTP {
 sub connectToFtp {
     my $ftp = Net::FTP->new($ftpHost, Debug => 0)
-	or die "Cannot connect to $ftpHost: $@";
+	or die "Cannot connect to ftp://$ftpHost: $@";
     $ftp->login($ftpUsername, $ftpPassword)
-	or die "Cannot login ", $ftp->message;
+	or die "Cannot login to ftp://$ftpHost: ", $ftp->message;
     $ftp->binary();
     return $ftp;
 }
@@ -215,7 +277,7 @@ sub connectToFtp {
 sub writeFile {
     my $file = shift;
     my $data = shift;
-    open (FILE, ">:utf8", "$file") or die "Couldn't open file: $file";
+    open (FILE, ">", "$file") or die "Couldn't open file: $file";
     print FILE $data;
     close (FILE);
 }
@@ -233,24 +295,16 @@ sub readFile {
 }
 
 # Setup the connection to Mediawiki
-sub connectToMediawiki {
-    my $host = shift;
-    my $path = shift || "";
-    my $noAuthentication = shift;
+sub connectToCommons {
     my $site = Mediawiki::Mediawiki->new();
-    $site->hostname($host);
-    $site->path($path);
-    unless ($noAuthentication) {
-	$site->user($username);
-	$site->password($password);
-    }
+    $site->hostname($commonsHost);
+    $site->path("w");
+    $site->user($username);
+    $site->password($password);
+
     my $connected = $site->setup();
-    if ($connected) {
-	if ($verbose) {
-	    printLog("Successfuly connected to $host");
-	}
-    } else {
-	die "Unable to connect with this username/password to commons.wikimedia.org";
+    unless ($connected) {
+	die "Unable to connect with this username/password to $commonsHost.";
     }
 
     return $site;
