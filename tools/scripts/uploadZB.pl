@@ -5,14 +5,18 @@ use lib '../../dumping_tools/classes/';
 use strict;
 use warnings;
 use Getopt::Long;
-use Getopt::Long;
 use Data::Dumper;
-use Encode;
-use Kiwix::PathExplorer;
 use Mediawiki::Mediawiki;
 use HTML::Template;
 use MARC::File::XML;
+use Image::Magick;
+use Net::FTP;
+use File::Basename;
 
+my $jpegFile = "/tmp/uploadZB.tmp.jpg";
+my $ftpHost = "zb.kiwix.org";
+my $ftpPassword;
+my $ftpUsername;
 my $username;
 my $password;
 my $pictureDirectory;
@@ -26,7 +30,7 @@ my %metadatas;
 
 sub usage() {
     print "uploadZB.pl is a script to upload files from the Zurich central library.\n";
-    print "\tuploadZB --username=<COMMONS_USERNAME> --password=<COMMONS_PASSWORD> --directory=<PICTURE_DIRECTORY> --metadata=<XML_FILE>\n\n";
+    print "\tuploadZB --username=<COMMONS_USERNAME> --password=<COMMONS_PASSWORD> --directory=<PICTURE_DIRECTORY> --metadata=<XML_FILE> --ftpUsername=<FTP_USERNAME> --ftpPassword=<FTP_PASSWORD>\n\n";
     print "In addition, you can specify a few additional arguments:\n";
     print "--filter=<ID>                    Upload only this/these image(s)\n";
     print "--delay=<NUMBER_OF_SECONDS>      Wait between two uploads\n";
@@ -36,6 +40,8 @@ sub usage() {
 
 GetOptions('username=s' => \$username, 
 	   'password=s' => \$password,
+	   'ftpUsername=s' => \$ftpUsername,
+	   'ftpPassword=s' => \$ftpPassword,
 	   'directory=s' => \$pictureDirectory,
 	   'metadataFile=s' => \$metadataFile,
 	   'delay=s' => \$delay,
@@ -50,25 +56,22 @@ if ($help) {
 }
 
 # Make a few security checks
-if (!$username || !$password || !$pictureDirectory || !$metadataFile) {
+if (!$username || !$password || !$pictureDirectory || !$metadataFile || !$ftpHost || !$ftpUsername || !$ftpPassword) {
     print "You have to give the following parameters (more information with --help):\n";
-    print "\t--username=<COMMONS_USERNAME>\n\t--password=<COMMONS_PASSWORD>\n\t--directory=<PICTURE_DIRECTORY>\n\t--metadata=<XML_FILE>\n";
+    print "\t--username=<COMMONS_USERNAME>\n\t--password=<COMMONS_PASSWORD>\n\t--directory=<PICTURE_DIRECTORY>\n\t--metadata=<XML_FILE>\n\t--ftpUsername=<FTP_USERNAME>\n\t--ftpPassword=<FTP_PASSWORD>\n";
     exit;
 };
 
 unless (-d $pictureDirectory) {
-    print STDERR "'$pictureDirectory' seems not to be a valid directory.\n";
-    exit 1;
+    die "'$pictureDirectory' seems not to be a valid directory.";
 }
 
 unless (-f $metadataFile) {
-    print STDERR "'$metadataFile' seems not to be a valid file.\n";
-    exit 1;
+    die "'$metadataFile' seems not to be a valid file.";
 }
 
 unless ($delay =~ /^[0-9]+$/) {
-    print STDERR "The delay '$delay' seems not valid. This should be a number.\n";
-    exit 1;
+    die "The delay '$delay' seems not valid. This should be a number.";
 }
 
 # Read the metadata file
@@ -92,29 +95,30 @@ while (my $record = $metadataFileHandler->next()) {
 
     # Make a few checks
     unless ($uid) {
-	print STDERR "Unable to get the UID for a record.\n";
-	exit 1;
+	die "Unable to get the UID for a record.";
     }
     unless ($title) {
-	print STDERR "Unable to get the title for the record with UID $uid.\n";
-	exit 1;
+	die "Unable to get the title for the record with UID $uid.";
     }
     unless ($date) {
-	print STDERR "Unable to get the creation date for the record with UID $uid.\n";
-#	exit 1;
+#	die "Unable to get the creation date for the record with UID $uid.";
     }
     unless ($author) {
-	print STDERR "Unable to get the author for the record with UID $uid.\n";
-#	exit 1;
+#	die "Unable to get the author for the record with UID $uid.";
     }
     unless ($description) {
-	print STDERR "Unable to get the description for the record with UID $uid.\n";
-	exit 1;
+	die "Unable to get the description for the record with UID $uid.";
     }
     if (exists($metadatas{$uid})) {
-	print STDERR "We have a duplicate entry for the entry with UID $uid.\n";
-	exit 1
+	die "We have a duplicate entry for the entry with UID $uid.";
     }
+
+    # Compute new filename
+    my $modifiedTitle = $title;
+    $modifiedTitle =~ s/ /_/g;
+    $modifiedTitle =~ s/[^\w]//g;
+    my $newFilenameBase = "Zentralbibliothek_Zürich_-_".$modifiedTitle."_-_".$uid;
+    $newFilenameBase =~ s/[_]+/_/g;
 
     # Add to the metadata hash table
     $metadatas{$uid} = { 
@@ -122,10 +126,90 @@ while (my $record = $metadataFileHandler->next()) {
 	'date' => $date,
 	'author' => $author,
 	'description' => $description,
+	'newFilenameBase' => $newFilenameBase,
     };
 }
-printLog(scalar(keys(%metadatas))." metadata entry(ies) read and $skippedCount skipeed.");
+printLog(scalar(keys(%metadatas))." metadata entry(ies) read and $skippedCount skipped.");
 
+# Try to find corresponding file for each metadata
+foreach my $uid (keys(%metadatas)) {
+    my $filename = $uid.".tif";
+    $filename =~ s/^0+//g;
+    while ((! -f $pictureDirectory.$fsSeparator.$filename) && !($filename eq "00000".$uid.".tif")) {
+	$filename = "0".$filename;
+    }
+    if ($filename eq "00000".$uid.".tif") {
+	die "Unable to find on the filesystem the TIF file corresponding to UID $uid.";
+    } else {
+	if (-r $pictureDirectory.$fsSeparator.$filename) {
+	    $metadatas{$uid}->{'filename'} = $pictureDirectory.$fsSeparator.$filename;
+	} else {
+	    die "File $pictureDirectory.$fsSeparator.$filename is not readable.";
+	}
+    }
+}
+
+# Conversion and upload processes
+my $image = Image::Magick->new();
+my $error;
+foreach my $uid (keys(%metadatas)) {
+    my $filename = $metadatas{$uid}->{'filename'};
+    my $newFilenameBase = $metadatas{$uid}->{'newFilenameBase'};
+    printLog("Reading $filename...");
+    $error = $image->Read($filename);
+    
+    # Stop if error in imagemagick, except for: Incompatible type for "RichTIFFIPTC"
+    if ($error && !$error =~ /Exception 350/) { 
+	die "Error by reading ".$filename.": ".$error.".";
+    }
+
+    # Uploading to the FTP
+    uploadFileToFTP($filename, $newFilenameBase.".tif");
+
+    # JPEG compression
+    printLog("Compressing in JPEG...");
+    $image->Write(filename=>$jpegFile, compression=>'JPEG', quality => "85");
+}
+
+# Upload file to tmp FTP
+sub uploadFileToFTP {
+    my $filename = shift;
+    my $fileBasename = basename($filename);
+    my $newFilename = shift(@_) || $fileBasename;
+    my $ftp = connectToFtp();
+
+    # Check if file is already there
+    my $remoteSize = $ftp->size($newFilename);
+    my $localSize =  -s $filename;
+    if ($remoteSize && $localSize == $remoteSize) {
+	printLog("$newFilename already uploaded to ftp://".$ftpHost);
+	$ftp->quit();
+	return;
+    }
+    exit;
+
+    if ($remoteSize && $localSize != $remoteSize) {
+	printLog("Deleting incomplete previously uploaded $newFilename");
+	$ftp->delete($fileBasename);
+    }
+
+    printLog("Uploading $filename (as $newFilename) to ftp://".$ftpHost."...");
+    $ftp->put($filename, $newFilename)
+	or die "Unable to upload $filename to $ftpHost:", $ftp->message;
+    printLog("Successful upload of $filename (as $newFilename) to ftp://".$ftpHost."...");
+
+    $ftp->quit();
+}
+
+# Connect to FTP {
+sub connectToFtp {
+    my $ftp = Net::FTP->new($ftpHost, Debug => 0)
+	or die "Cannot connect to $ftpHost: $@";
+    $ftp->login($ftpUsername, $ftpPassword)
+	or die "Cannot login ", $ftp->message;
+    $ftp->binary();
+    return $ftp;
+}
 
 # Read/Write functions
 sub writeFile {
@@ -166,8 +250,7 @@ sub connectToMediawiki {
 	    printLog("Successfuly connected to $host");
 	}
     } else {
-	print STDERR "Unable to connect with this username/password to commons.wikimedia.org\n";
-	exit 1;
+	die "Unable to connect with this username/password to commons.wikimedia.org";
     }
 
     return $site;
