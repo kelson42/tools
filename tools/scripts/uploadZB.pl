@@ -125,10 +125,10 @@ while (my $record = $metadataFileHandler->next()) {
 	die "Unable to get the title for the record with UID $uid.";
     }
     unless ($date) {
-#	die "Unable to get the creation date for the record with UID $uid.";
+	die "Unable to get the creation date for the record with UID $uid.";
     }
     unless ($author) {
-#	die "Unable to get the author for the record with UID $uid.";
+	die "Unable to get the author for the record with UID $uid.";
     }
     unless ($description) {
 	die "Unable to get the description for the record with UID $uid.";
