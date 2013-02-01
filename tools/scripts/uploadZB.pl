@@ -27,13 +27,14 @@ my @filters;
 my $help;
 my $delay = 0;
 my $verbose;
+my $simulate;
 my $fsSeparator = '/';
 my %metadatas;
 my $templateCode = "=={{int:filedesc}}==
 {{Information
-|description={{de|1=<TMPL_VAR NAME=DESCRIPTION>}}
+|description={{de|1=<TMPL_VAR NAME=DESCRIPTION>}}{{Zentralbibliothek_Zürich_backlink|<TMPL_VAR NAME=UID>}}
 |date=<TMPL_VAR NAME=DATE>
-|source={{Zentralbibliothek_Zürich_backlink|<TMPL_VAR NAME=UID>}}
+|source={{institution:Zentralbibliothek Zürich}}
 |author=<TMPL_VAR NAME=AUTHOR>
 |permission=
 |other_versions=[[:File:<TMPL_VAR NAME=OTHER_VERSION>]]
@@ -56,6 +57,7 @@ sub usage() {
     print "--delay=<NUMBER_OF_SECONDS>      Wait between two uploads\n";
     print "--help                           Print the help of the script\n";
     print "--verbose                        Print debug information to the console\n";
+    print "--simulate                       Avoid uploading the data\n";
 }
 
 GetOptions('username=s' => \$username, 
@@ -66,6 +68,7 @@ GetOptions('username=s' => \$username,
 	   'metadataFile=s' => \$metadataFile,
 	   'delay=s' => \$delay,
 	   'verbose' => \$verbose,
+	   'simulate' => \$simulate,
 	   'filter=s' => \@filters,
 	   'help' => \$help,
 );
@@ -163,7 +166,7 @@ foreach my $uid (keys(%metadatas)) {
 	$filename = "0".$filename;
     }
     if ($filename eq "00000".$uid.".tif") {
-	die "Unable to find on the filesystem the TIF file corresponding to UID $uid.";
+	die "Unable to find on the filesystem the TIFF file corresponding to UID $uid.";
     } else {
 	if (-r $pictureDirectory.$fsSeparator.$filename) {
 	    $metadatas{$uid}->{'filename'} = $pictureDirectory.$fsSeparator.$filename;
@@ -202,7 +205,7 @@ foreach my $uid (keys(%metadatas)) {
     my $pictureName = $newFilenameBase.".jpg";
     my $exists = $commons->exists("File:$pictureName");
     if ($exists) {
-	printLog("'$pictureName' already uploaded...");
+	printLog("'$pictureName' already uploaded.");
     } else {
 	# Stop if error in imagemagick, except for: Incompatible type for "RichTIFFIPTC"
 	printLog("Checking $filename...");
@@ -213,13 +216,21 @@ foreach my $uid (keys(%metadatas)) {
 
 	# JPEG compression
 	printLog("Compressing in JPEG...");
-	$image->Write(filename=>$jpegFile, compression=>'JPEG', quality => "85");
+	unless ($simulate) {
+	    $image->Write(filename=>$jpegFile, compression=>'JPEG', quality => "85");
+	}
 
 	# Upload JPEG version to Wikimedia commons
 	$template->param(OTHER_VERSION=>$newFilenameBase.".tif");
 	my $content = readFile($jpegFile);
 	printLog("Uploading $pictureName to Wikimedia Commons...");
-	my $status = $commons->uploadImage($pictureName, $content, $template->output(), "GLAM Zurich central library picture $uid (WMCH)", 0);
+
+	my $status;
+	if ($simulate) {
+	    $status = 1;
+	} else {
+	    $status = $commons->uploadImage($pictureName, $content, $template->output(), "GLAM Zurich central library picture $uid (WMCH)", 0);
+	}
 	
 	if ($status) {
 	    printLog("'$pictureName' was successfuly uploaded to Wikimedia Commons.");
@@ -252,13 +263,17 @@ sub uploadFileToFTP {
     }
     if ($remoteSize && $localSize != $remoteSize) {
 	printLog("Deleting incomplete previously uploaded $newFilename");
-	$ftp->delete($fileBasename);
+	unless ($simulate) {
+	    $ftp->delete($fileBasename);
+	}
     }
 
     printLog("Uploading $filename (as $newFilename) to ftp://".$ftpHost."...");
-    $ftp->put($filename, $newFilename)
-	or die "Unable to upload $filename to $ftpHost:", $ftp->message;
-    printLog("Successful upload of $filename (as $newFilename) to ftp://".$ftpHost."...");
+    unless ($simulate) {
+	$ftp->put($filename, $newFilename)
+	    or die "Unable to upload $filename to $ftpHost:", $ftp->message;
+    }
+    printLog("Successful upload of $filename (as $newFilename) to ftp://".$ftpHost);
 
     $ftp->quit();
 }
