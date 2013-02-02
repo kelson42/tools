@@ -215,6 +215,9 @@ foreach my $uid (keys(%metadatas)) {
 	}
 
 	# JPEG compression
+	if (-f $jpegFile) {
+	    unlink $jpegFile;
+	}
 	printLog("Compressing in JPEG...");
 	unless ($simulate) {
 	    $image->Write(filename=>$jpegFile, compression=>'JPEG', quality => "85");
@@ -240,6 +243,9 @@ foreach my $uid (keys(%metadatas)) {
     }
 
     # Wait a few seconds
+    if (-f $jpegFile) {
+	unlink $jpegFile;
+    }
     if ($delay) {
       printLog("Waiting $delay s...");
       sleep($delay);
