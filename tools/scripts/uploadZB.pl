@@ -156,6 +156,9 @@ while (my $record = $metadataFileHandler->next()) {
     $modifiedTitle =~ s/[^\w]//g;
     my $newFilenameBase = "Zentralbibliothek_Zürich_-_".$modifiedTitle."_-_".$uid;
     $newFilenameBase =~ s/[_]+/_/g;
+    if (length($newFilenameBase) > 245) {
+	die "Title/Filename is too long (>255 bytes) for entry with UID $uid.";
+    }
 
     # Add to the metadata hash table
     $metadatas{$uid} = { 
@@ -247,7 +250,7 @@ foreach my $uid (keys(%metadatas)) {
 
 	# Upload JPEG version to Wikimedia commons
 	$template->param(OTHER_VERSION=>$newFilenameBase.".tif");
-	my $content = readFile($jpegFile);
+	my $content = $simulate ? "" : readFile($jpegFile);
 	printLog("Uploading $pictureName to Wikimedia Commons...");
 
 	my $status;
