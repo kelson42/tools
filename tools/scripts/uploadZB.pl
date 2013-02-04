@@ -31,23 +31,31 @@ my $simulate;
 my $fsSeparator = '/';
 my %metadatas;
 my $templateCode = "=={{int:filedesc}}==
-{{Information
-|description={{de|1=<TMPL_VAR NAME=DESCRIPTION>}}{{Zentralbibliothek_Zürich_backlink|<TMPL_VAR NAME=UID>}}
-|date=<TMPL_VAR NAME=DATE>
-|source={{institution:Zentralbibliothek Zürich}}
-|author=<TMPL_VAR NAME=AUTHOR>
-|permission=
-|other_versions=[[:File:<TMPL_VAR NAME=OTHER_VERSION>]]
-|other_fields=
-}}
+{{Artwork     
+  |artist           = <TMPL_VAR NAME=AUTHOR>
+  |title            = <TMPL_VAR NAME=TITLE>
+  |description      = {{de|1=<TMPL_VAR NAME=DESCRIPTION>}} 
+  |date             = <TMPL_VAR NAME=DATE>
+  |medium           = {{de|1=<TMPL_VAR NAME=MEDIUM>}}
+  |dimensions       = {{de|1=<TMPL_VAR NAME=DIMENSIONS>}}
+  |institution      = {{institution:Zentralbibliothek Zürich}}
+  |location         = <!-- location within the gallery/museum -->     
+  |references       =
+  |object history   =
+  |credit line      =
+  |inscriptions     =
+  |notes            = 
+  |accession number =
+  |source           = {{Zentralbibliothek_Zürich_backlink|<TMPL_VAR NAME=UID>}}
+  |permission       = Public domain
+  |other_versions   = [[:File:<TMPL_VAR NAME=OTHER_VERSION>]]
+    }}
 {{Zentralbibliothek_Zürich}}
 
 =={{int:license-header}}==
 {{PD-old}}
 
-[[Category:Media_contributed_by_Zentralbibliothek_Zürich]]
-";
-
+[[Category:Media_contributed_by_Zentralbibliothek_Zürich]]";
 
 sub usage() {
     print "uploadZB.pl is a script to upload files from the Zurich central library.\n";
@@ -110,9 +118,11 @@ my $skippedCount = 0;
 while (my $record = $metadataFileHandler->next()) {
     my $uid = $record->field('092') ? $record->field('092')->subfield("a") : "";
     my $title = $record->title_proper();
-    my $date = $record->publication_date();
-    my $author = $record->author();
-    my $description = " ";
+    my $date = $record->field('260') ? $record->field('260')->subfield("c") : ""; unless ($date) { $date = $record->field('250') ? $record->field('250')->subfield("a") : "{{Unknown}}" };
+    my $author = ""; foreach my $record ($record->field('700')) { $author .= $record->subfield("a")." ".$record->subfield("c")." ".$record->subfield("d") }; unless ($author) { $author = "{{Anonymous}}" };     
+    my $description = $record->field('245') ? $record->field('245')->subfield("a") : "";
+    my $dimensions = $record->field('300') ? $record->field('300')->subfield("c") : "";
+    my $medium = $record->field('300') ? $record->field('300')->subfield("a") : "";
 
     # Check the filter
     if ($uid && scalar(@filters) && !(grep {$_ eq $uid} @filters)) {
@@ -153,8 +163,20 @@ while (my $record = $metadataFileHandler->next()) {
 	'date' => $date,
 	'author' => $author,
 	'description' => $description,
+	'dimensions' => $dimensions,
+	'medium' => $medium,
 	'newFilenameBase' => $newFilenameBase,
     };
+
+    # Print metadata
+    printLog("Computed Medadatas for UID $uid:");
+    printLog("- Title: ".$title);
+    printLog("- Date: ".$date);
+    printLog("- Author: ".$author);
+    printLog("- Description: ".$description);
+    printLog("- Dimensions: ".$dimensions);
+    printLog("- Medium: ".$medium);
+    printLog("- Filename: ".$newFilenameBase.".tif");
 }
 printLog(scalar(keys(%metadatas))." metadata entry(ies) read and $skippedCount skipped.");
 
