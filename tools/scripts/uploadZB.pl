@@ -117,7 +117,7 @@ my $metadataFileHandler = MARC::File::XML->in( $metadataFile );
 my $skippedCount = 0;
 while (my $record = $metadataFileHandler->next()) {
     my $uid = $record->field('092') ? $record->field('092')->subfield("a") : "";
-    my $title = $record->title_proper();
+    my $title = $record->field('245') ? $record->field('245')->subfield("a") : $record->title_proper();
     my $date = $record->field('260') ? $record->field('260')->subfield("c") : ""; unless ($date) { $date = $record->field('250') ? $record->field('250')->subfield("a") : "{{Unknown}}" };
     my $author = ""; foreach my $record ($record->field('700')) { $author .= $record->subfield("a")." ".$record->subfield("c")." ".$record->subfield("d") }; unless ($author) { $author = "{{Anonymous}}" };     
     my $description = $record->field('245') ? $record->field('245')->subfield("a") : "";
