@@ -167,21 +167,26 @@ foreach my $picture (@pictures) {
     }
 
     # Check if already done
-    my $doneFile = $picture.".done";
-    my $done;
-    if (-f $doneFile && !$doEverything) {
-	$done = 42;
-    } else {
+    if (!$doEverything) {
+      my $doneFile = $picture.".done";
+      my $done;
+      if (-f $doneFile) {
+   	$done = 42;
+      } else {
 	my $exists = $commonsWiki->exists("File:$pictureName");
 	if ($exists) {
 	    $done = 42;
 	    writeFile($doneFile, "");
 	}
-    }
-    if ($done) {
+      }
+      if ($done) {
 	printLog("'$pictureName' already uploaded...");
 	next;
+      }
+    } else {
+      printLog("Do not check of '$pictureName' is already uploaded, force (re)upload.");
     }
+
     printLog("Uploading '$pictureName'...");
 
     # Preparing description
