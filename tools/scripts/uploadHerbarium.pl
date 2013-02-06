@@ -184,7 +184,7 @@ foreach my $picture (@pictures) {
 	next;
       }
     } else {
-      printLog("Do not check of '$pictureName' is already uploaded, force (re)upload.");
+      printLog("Do not check if '$pictureName' is already uploaded.");
     }
 
     printLog("Uploading '$pictureName'...");
