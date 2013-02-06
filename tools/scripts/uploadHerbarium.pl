@@ -20,12 +20,15 @@ my $help;
 my $delay = 0;
 my $verbose;
 my $fsSeparator = '/';
+my $allowOverride;
+
 sub usage() {
     print "uploadHerbarium.pl is a script to upload the Neuchatel herbarium pictures to Wikimedia Commons library.\n";
     print "\tuploadHerbarium --username=<COMMONS_USERNAME> --password=<COMMONS_PASSWORD> --directory=<PICTURE_DIRECTORY>\n\n";
     print "In addition, you can specify a few additional arguments:\n";
     print "--filter=<GENIUS_OR_SPECIE>      Upload only this/these genius/species\n";
     print "--delay=<NUMBER_OF_SECONDS>      Wait between two uploads\n";
+    print "--allowOverride                  Allow to re-upload a picture over an old one with the same name.\n";
     print "--help                           Print the help of the script\n";
     print "--verbose                        Print debug information to the console\n";
 }
@@ -34,10 +37,12 @@ GetOptions('username=s' => \$username,
 	   'password=s' => \$password,
 	   'directory=s' => \$baseDirectory,
 	   'delay=s' => \$delay,
+	   'allowOverride=s' => \$allowOverride,
 	   'verbose' => \$verbose,
 	   'filter=s' => \@filters,
 	   'help' => \$help,
 );
+$allowOverride = $allowOverride ? 1 : 0;
 
 if ($help) {
     usage();
@@ -187,7 +192,7 @@ foreach my $picture (@pictures) {
 
     # Upload
     my $content = readFile($picture);
-    my $status = $commonsWiki->uploadImage($pictureName, $content, $template->output(), "Neuchâtel Herbarium picture $id", 0);
+    my $status = $commonsWiki->uploadImage($pictureName, $content, $template->output(), "Neuchâtel Herbarium picture $id", $allowOverride);
 
     if ($status) {
         printLog("'$pictureName' was successfuly uploaded.");
