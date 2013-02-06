@@ -21,6 +21,7 @@ my $delay = 0;
 my $verbose;
 my $fsSeparator = '/';
 my $allowOverride;
+my $doEverything;
 
 sub usage() {
     print "uploadHerbarium.pl is a script to upload the Neuchatel herbarium pictures to Wikimedia Commons library.\n";
@@ -29,6 +30,7 @@ sub usage() {
     print "--filter=<GENIUS_OR_SPECIE>      Upload only this/these genius/species\n";
     print "--delay=<NUMBER_OF_SECONDS>      Wait between two uploads\n";
     print "--allowOverride                  Allow to re-upload a picture over an old one with the same name.\n";
+    print "--doEverything                   Ignore *.done files and recheck against Wikimedia online.\n";
     print "--help                           Print the help of the script\n";
     print "--verbose                        Print debug information to the console\n";
 }
@@ -37,7 +39,8 @@ GetOptions('username=s' => \$username,
 	   'password=s' => \$password,
 	   'directory=s' => \$baseDirectory,
 	   'delay=s' => \$delay,
-	   'allowOverride=s' => \$allowOverride,
+	   'allowOverride' => \$allowOverride,
+	   'doEverything' => \$doEverything,
 	   'verbose' => \$verbose,
 	   'filter=s' => \@filters,
 	   'help' => \$help,
@@ -166,7 +169,7 @@ foreach my $picture (@pictures) {
     # Check if already done
     my $doneFile = $picture.".done";
     my $done;
-    if (-f $doneFile) {
+    if (-f $doneFile && !$doEverything) {
 	$done = 42;
     } else {
 	my $exists = $commonsWiki->exists("File:$pictureName");
