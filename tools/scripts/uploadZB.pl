@@ -119,7 +119,26 @@ while (my $record = $metadataFileHandler->next()) {
     my $uid = $record->field('092') ? $record->field('092')->subfield("a") : "";
     my $title = $record->field('245') ? $record->field('245')->subfield("a") : $record->title_proper();
     my $date = $record->field('260') ? $record->field('260')->subfield("c") : ""; unless ($date) { $date = $record->field('250') ? $record->field('250')->subfield("a") : "{{Unknown}}" };
-    my $author = ""; foreach my $record ($record->field('700')) { $author .= $record->subfield("a")." ".$record->subfield("c")." ".$record->subfield("d") }; unless ($author) { $author = "{{Anonymous}}" };     
+    my $author = "";
+    foreach my $record ($record->field('700')) {
+	my $authorLine = "";
+
+	$authorLine .= $record->subfield("a") || "";
+	if ($authorLine) {
+	    $authorLine .= ", ";
+	}
+	$authorLine .= $record->subfield("c") || "";
+	if ($authorLine) {
+	    $authorLine .= ", ";
+	}
+	$authorLine .= $record->subfield("d") || "";
+
+	if ($author && $authorLine) {
+	    $author .= "<br/>\n";
+	}
+	$author .= $authorLine;
+    }; 
+    unless ($author) { $author = "{{Anonymous}}" };     
     my $description = $record->field('245') ? $record->field('245')->subfield("a") : "";
     my $dimensions = $record->field('300') ? $record->field('300')->subfield("c") : "";
     my $medium = $record->field('300') ? $record->field('300')->subfield("a") : "";
