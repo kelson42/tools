@@ -330,11 +330,12 @@ sub uploadFileToFTP {
 
 # Connect to FTP {
 sub connectToFtp {
-    my $ftp = Net::FTP->new($ftpHost, Debug => 0)
+    my $ftp = Net::FTP->new($ftpHost, Debug => 0, Passive =>1)
 	or die "Cannot connect to ftp://$ftpHost: $@";
     $ftp->login($ftpUsername, $ftpPassword)
 	or die "Cannot login to ftp://$ftpHost: ", $ftp->message;
     $ftp->binary();
+    $ftp->pasv();
     return $ftp;
 }
 
