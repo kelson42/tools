@@ -265,6 +265,11 @@ foreach my $uid (keys(%metadatas)) {
 	printLog("Compressing in JPEG...");
 	unless ($simulate) {
 	    $image->Write(filename=>$jpegFile, compression=>'JPEG', quality => "85");
+	    if (-f $jpegFile) {
+		printLog("TIFF file compressed in JPEG tmp file '$jpegFile'.");
+	    } else {
+		die ("The JPEG file was not correctly generated at '$jpegFile'.");
+	    }
 	}
 
 	# Upload JPEG version to Wikimedia commons
