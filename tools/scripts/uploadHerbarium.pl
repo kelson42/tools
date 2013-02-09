@@ -103,7 +103,7 @@ foreach my $directory (@directories) {
 
 # Get pictures to upload
 my @pictures;
-my $patternRegex = "(\\w+)\\$fsSeparator(\\w+)\\$fsSeparator(\\w+|)(\\$fsSeparator|)(\\w{12})\\.(tif|tiff)\$";
+my $patternRegex = "([\\w|-]+)\\$fsSeparator([\\w|-]+)\\$fsSeparator([\\w|-]+|)(\\$fsSeparator|)([\\w|-]{12})\\.(tif|tiff)\$";
 foreach my $directory (@directories) {
     my $explorer = new Kiwix::PathExplorer();
     $explorer->filterRegexp('\.(tif|tiff)$');
