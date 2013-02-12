@@ -112,12 +112,12 @@ foreach my $directory (@directories) {
 	if (substr($file, length($baseDirectory)) =~ /$patternRegex/) {
 	    push(@pictures, $file);
 	} else {
-	    print STDERR "'$file' does not match the /GENIUS/SPECIE/ID.tif pattern.\n";
+	    print STDERR "'$file' does not match the /GENIUS/SPECIE/ID.(tif|tiff) pattern.\n";
 	    exit 1;
 	}
     }
 }
-printLog(scalar(@pictures)." file(s) to upload (*.tif) where detected.");
+printLog(scalar(@pictures)." file(s) to upload *.(tif|tiff) where detected.");
 
 # Upload pictures
 my $pictureNameRegex = "^.*\\$fsSeparator";
@@ -159,11 +159,12 @@ foreach my $picture (@pictures) {
     my $specie = $2;
     my $subSpecie = $3;
     my $id = $5;
+    my $extension = $6;
     my $pictureName;
     if ($subSpecie) {
-      $pictureName = "Neuchâtel_Herbarium_-_".$genius."_".$specie."_ssp._".$subSpecie."_-_$id.tif";
+      $pictureName = "Neuchâtel_Herbarium_-_".$genius."_".$specie."_ssp._".$subSpecie."_-_$id.".$extension;
     } else {
-      $pictureName = "Neuchâtel_Herbarium_-_".$genius."_".$specie."_-_$id.tif";
+      $pictureName = "Neuchâtel_Herbarium_-_".$genius."_".$specie."_-_$id.".$extension;
     }
 
     # Check if already done
