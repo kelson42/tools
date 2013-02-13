@@ -96,13 +96,13 @@ sub setup {
 	    } while ($httpResponse->content =~ /NeedToken/i && $connectionRetryCounter++ < 1);
 
 	    if ($httpResponse->content() =~ /wrongpass/i ) {
-		$self->log("info", "Failed to logged in '".$self->hostname()."' as '".$self->user()."' : wrong pass.");
+		$self->log("error", "Failed to logged in '".$self->hostname()."' as '".$self->user()."' : wrong pass.");
 		$ok = 0;
 	    } elsif ($httpResponse->content() =~ /Throttled/i ) {
-		$self->log("info", "Failed to logged in '".$self->hostname()."' as '".$self->user()."' : throttled.");
+		$self->log("error", "Failed to logged in '".$self->hostname()."' as '".$self->user()."' : throttled.");
 		$ok = 0;
 	    } elsif ($httpResponse->content() =~ /NotExists/i ) {
-		$self->log("info", "Failed to logged in '".$self->hostname()."' as '".$self->user()."' : wrong login.");
+		$self->log("error", "Failed to logged in '".$self->hostname()."' as '".$self->user()."' : wrong login.");
 		$ok = 0;
 	    } else {
 		$self->log("info", "Successfuly logged to '".$self->hostname()."' as '".$self->user()."'.");
@@ -124,7 +124,7 @@ sub setup {
 		$self->log("info", "Successfuly logged to '".$self->hostname()."' as '".$self->user()."'.");
 		$ok = 1;
 	    } else {
-		$self->log("info", "Failed to logged in '".$self->hostname()."' as '".$self->user()."'.");
+		$self->log("error", "Failed to logged in '".$self->hostname()."' as '".$self->user()."'.");
 		$ok = 0;
 	    }
 	}
@@ -848,13 +848,13 @@ sub uploadImage {
 		$self->log("info", "Reloading edit token...");
 		$returnValue = 0;
 	    } elsif ($httpResponse->content() =~ /invalidtitle/i) {
-		$self->log("info", "Invalid title '$title', this page '$title' can simply not be uploaded.");
+		$self->log("error", "Invalid title '$title', this page '$title' can simply not be uploaded.");
 		$returnValue = 0;
 		last;
 	    }
 
 	    if (!$returnValue && $retryCounter <= 15) {
-		$self->log("info", "Was unable to upload correctly page '$title' (".$httpResponse->content()."), will retry in ".($retryCounter++)." s.");
+		$self->log("error", "Was unable to upload correctly page '$title' (".$httpResponse->content()."), will retry in ".($retryCounter++)." s.");
 		sleep($retryCounter);
 	    }
 
@@ -1484,9 +1484,15 @@ sub logger {
 sub log {
     my $self = shift;
     lock($loggerMutex);
-    return unless $logger;
     my ($method, $text) = @_;
-    $logger->$method($text);
+    
+    if ($logger) {
+	$logger->$method($text);
+    } else {
+	if ($method eq "error") {
+	    print STDERR $text."\n";
+	}
+    }
 }
 
 1;
