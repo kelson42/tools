@@ -36,8 +36,8 @@ my $templateCode = "=={{int:filedesc}}==
   |title            = <TMPL_VAR NAME=TITLE>
   |description      = {{de|1=<TMPL_VAR NAME=DESCRIPTION>}} 
   |date             = <TMPL_VAR NAME=DATE>
-  |medium           = {{de|1=<TMPL_VAR NAME=MEDIUM>}}
-  |dimensions       = {{de|1=<TMPL_VAR NAME=DIMENSIONS>}}
+  |medium           = <TMPL_IF NAME=MEDIUM>{{de|1=<TMPL_VAR NAME=MEDIUM>}}</TMPL_IF>
+  |dimensions       = <TMPL_IF NAME=DIMENSIONS>{{de|1=<TMPL_VAR NAME=DIMENSIONS>}}</TMPL_IF>
   |institution      = {{institution:Zentralbibliothek Zürich}}
   |location         = <!-- location within the gallery/museum -->     
   |references       =
