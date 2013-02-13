@@ -150,7 +150,7 @@ my $templateCode="=={{int:filedesc}}==
 {{self|cc-by-sa-3.0}}
 
 
-[[Category:<TMPL_VAR NAME=GENIUS> <TMPL_VAR NAME=SPECIE>]]
+[[Category:<TMPL_VAR NAME=GENIUS_UCFIRST> <TMPL_VAR NAME=SPECIE>]]
 ";
 
 foreach my $picture (@pictures) {
@@ -193,6 +193,7 @@ foreach my $picture (@pictures) {
     # Preparing description
     my $template = HTML::Template->new(scalarref => \$templateCode);
     $template->param(GENIUS=>$genius);
+    $template->param(GENIUS_UCFIRST=>ucfirst($genius));
     $template->param(SPECIE=>$specie);
     $template->param(IWEN=>$enWiki->exists("$genius $specie") ? "$genius $specie" : "");
     $template->param(IWDE=>$deWiki->exists("$genius $specie") ? "$genius $specie" : "");
