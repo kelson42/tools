@@ -70,16 +70,23 @@ sub dump {
     $self->log("info", $cmd); `$cmd`;
 
     # mv the 'article' one level deeper
-    $cmd = "mkdir ".$self->htmlPath()."/html/" ; `$cmd`;
-    $cmd = "mv ".$self->htmlPath()."/articles ".$self->htmlPath()."/html/"  ; `$cmd`;
-    $cmd = "mv ".$self->htmlPath()."/index.html ".$self->htmlPath()."/html/"  ; `$cmd`;
-    $cmd = "mv ".$self->htmlPath()."/skins ".$self->htmlPath()."/html/"  ; `$cmd`;
-    $cmd = "cp -r ".$self->htmlPath()."/raw ".$self->htmlPath()."/html/skins/"  ; `$cmd`;
-    $cmd = "mv ".$self->htmlPath()."/raw ".$self->htmlPath()."/html/"  ; `$cmd`;
+    $cmd = "mkdir ".$self->htmlPath()."/html/" ;
+    $self->log("info", $cmd); `$cmd`;
+    $cmd = "mv ".$self->htmlPath()."/articles ".$self->htmlPath()."/html/"  ;
+    $self->log("info", $cmd); `$cmd`;
+    $cmd = "mv ".$self->htmlPath()."/index.html ".$self->htmlPath()."/html/"  ;
+    $self->log("info", $cmd); `$cmd`;
+    $cmd = "mv ".$self->htmlPath()."/skins ".$self->htmlPath()."/html/"  ;
+    $self->log("info", $cmd); `$cmd`;
+    $cmd = "cp -r ".$self->htmlPath()."/raw ".$self->htmlPath()."/html/skins/"  ;
+    $self->log("info", $cmd); `$cmd`;
+    $cmd = "mv ".$self->htmlPath()."/raw ".$self->htmlPath()."/html/"  ;
+    $self->log("info", $cmd); `$cmd`;
 
     my $explorer = new Kiwix::PathExplorer();
     $explorer->path($self->htmlPath());
     $explorer->filterRegexp('^.*html$');
+    $self->log("info", "Exploring now '".$self->htmlPath()."' for HTML file to parse and rewrite (url).");
 
 #    my @localAddresses = (Net::Address::IP::Local->public(), "127.0.0.1");
     while (my $file = $explorer->getNext()) {
