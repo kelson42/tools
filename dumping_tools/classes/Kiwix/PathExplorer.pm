@@ -116,20 +116,9 @@ sub exploreCallback {
     while (fileCount() > bufferSize() ) {
 	sleep(0.1);
     }
-    
-    my $filename;
-    if ($File::Find::fullname) {
-	if ($followSymlinks) {
-	    $filename = $File::Find::fullname;
-	} else {
-	    return;
-	}
-    } else {
-	$filename = $File::Find::name;
-    }
 
     lock($filesMutex);
-    push(@files, $filename);
+    push(@files, ($followSymlinks && $File::Find::fullname) ? $File::Find::fullname : $File::Find::name);
 }
 
 sub reset {
