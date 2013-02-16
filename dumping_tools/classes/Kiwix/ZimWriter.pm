@@ -98,6 +98,7 @@ sub getUrls {
     $self->log("info", "Listing all files in the HTML path ".$self->htmlPath());
     my $explorer = new Kiwix::PathExplorer();
     $explorer->path($self->htmlPath());
+    $explorer->followSymlinks(1);
 
     while (my $file = $explorer->getNext()) {
 	unless ($self->ignoreFile($file)) {
@@ -551,7 +552,7 @@ sub buildZimFile {
     my $dbUser = $self->dbUser();
     my $writerPath = $self->writerPath();
     my $zimFilePath = $self->zimFilePath();
-    my $command = "$writerPath --db \"postgresql:dbname='$dbName' user='$dbUser' password='$dbPassword' port='$dbPort'\" $zimFilePath";
+    my $command = "$writerPath -s 2048 --db \"postgresql:dbname='$dbName' user='$dbUser' password='$dbPassword' port='$dbPort'\" $zimFilePath";
 
     # call the zim writer
     $self->log("info", "Creating the zim file : $command");
