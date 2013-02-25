@@ -562,6 +562,8 @@ sub makeSiteRequest {
 	    die ("Method has to be GET or POST.");
 	}
 
+#	print "[RESPONSE] DUMP : ".Dumper($httpResponse);
+
 	if ($httpResponse->code() != 200) {
 	    $loopCount++;
 	    $self->log("error", "Unable to make the following API request. ".Dumper($values)."\n\n, HTTP error code was '".$httpResponse->code()."', ($loopCount time) on '".$url."'. Response content is ".$httpResponse->content().":\n");
