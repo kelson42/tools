@@ -2,6 +2,7 @@
 use lib '../classes/';
 use lib '../../dumping_tools/classes/';
 
+use utf8;
 use strict;
 use warnings;
 use Getopt::Long;
@@ -14,7 +15,7 @@ use Net::FTP;
 use File::Basename;
 
 my $jpegFile = "/tmp/uploadZB.tmp.jpg";
-my $jpegDescriptionFile = "/tmp/uploadZB.tmp.jpg.desc";
+my $descriptionFile = "/tmp/uploadZB.tmp.desc";
 my $commonsHost = "commons.wikimedia.org";
 my $ftpHost = "zb.kiwix.org";
 my $ftpPassword;
@@ -46,16 +47,14 @@ my $templateCode = "=={{int:filedesc}}==
   |inscriptions     =
   |notes            = 
   |accession number =
-  |source           = {{Zentralbibliothek_Zürich_backlink|<TMPL_VAR NAME=UID>}}
+  |source           = {{Zentralbibliothek_Zürich_backlink|<TMPL_VAR NAME=SYSID>}}
   |permission       = Public domain
   |other_versions   = [[:File:<TMPL_VAR NAME=OTHER_VERSION>]]
     }}
-{{Zentralbibliothek_Zürich}}
+{{Zentralbibliothek_Zürich<TMPL_IF NAME=ISORIGINAL>|category:Media_contributed_by_Zentralbibliothek_Zürich (original picture)</TMPL_IF>}}
 
 =={{int:license-header}}==
-{{PD-old}}
-
-[[Category:Media_contributed_by_Zentralbibliothek_Zürich]]";
+{{PD-old}}";
 
 sub usage() {
     print "uploadZB.pl is a script to upload files from the Zurich central library.\n";
@@ -117,6 +116,13 @@ my $metadataFileHandler = MARC::File::XML->in( $metadataFile );
 my $skippedCount = 0;
 while (my $record = $metadataFileHandler->next()) {
     my $uid = $record->field('092') ? $record->field('092')->subfield("a") : "";
+
+    # Check the filter
+    if ($uid && scalar(@filters) && !(grep {$_ eq $uid} @filters)) {
+	$skippedCount++;
+	next;
+    }
+
     my $title = $record->field('245') ? $record->field('245')->subfield("a") : $record->title_proper();
     my $date = $record->field('260') ? $record->field('260')->subfield("c") : ""; unless ($date) { $date = $record->field('250') ? $record->field('250')->subfield("a") : "{{Unknown}}" };
     my $author = "";
@@ -127,31 +133,32 @@ while (my $record = $metadataFileHandler->next()) {
 	if ($authorLine) {
 	    $authorLine .= ", ";
 	}
+
 	$authorLine .= $record->subfield("c") || "";
 	if ($authorLine) {
 	    $authorLine .= ", ";
 	}
+
 	$authorLine .= $record->subfield("d") || "";
 
 	if ($author && $authorLine) {
 	    $author .= "<br/>\n";
 	}
 	$author .= $authorLine;
-    }; 
+    };
+    
     unless ($author) { $author = "{{Anonymous}}" };     
     my $description = $record->field('245') ? $record->field('245')->subfield("a") : "";
     my $dimensions = $record->field('300') ? $record->field('300')->subfield("c") : "";
     my $medium = $record->field('300') ? $record->field('300')->subfield("a") : "";
-
-    # Check the filter
-    if ($uid && scalar(@filters) && !(grep {$_ eq $uid} @filters)) {
-	$skippedCount++;
-	next;
-    }
+    my $sysid = $record->field('001') ? $record->field('001')->data() : "";
 
     # Make a few checks
     unless ($uid) {
 	die "Unable to get the UID for a record.";
+    }
+    unless ($sysid) {
+	die "Unable to get the system id for a record with UID $uid.";
     }
     unless ($title) {
 	die "Unable to get the title for the record with UID $uid.";
@@ -181,6 +188,7 @@ while (my $record = $metadataFileHandler->next()) {
 
     # Add to the metadata hash table
     $metadatas{$uid} = { 
+	'sysid' => $sysid,
 	'title' => $title,
 	'date' => $date,
 	'author' => $author,
@@ -230,26 +238,37 @@ foreach my $uid (keys(%metadatas)) {
 
     # Preparing description
     my $template = HTML::Template->new(scalarref => \$templateCode);
+    $template->param(ISORIGINAL=>1);
     $template->param(DESCRIPTION=>$metadata->{'description'});
     $template->param(DATE=>$metadata->{'date'});
     $template->param(AUTHOR=>$metadata->{'author'});
-    $template->param(UID=>$uid);
+    $template->param(SYSID=>$metadata->{'sysid'});
     $template->param(OTHER_VERSION=>$newFilenameBase.".jpg");
 
-    # Uploading image and description to the FTP
+    # Upload description to the FTP
+    my $description = $template->output();
+    utf8::encode($description);
+    writeFile($descriptionFile, $description);
+    uploadFileToFTP($descriptionFile, $newFilenameBase.".tif.desc", 1);
+
+    # Uploading image to the FTP
     uploadFileToFTP($filename, $newFilenameBase.".tif");
-    writeFile($jpegDescriptionFile, $template->output());
-    uploadFileToFTP($jpegDescriptionFile, $newFilenameBase.".tif.desc");
 
     # Connect to Wikimedia Commons
     my $commons = connectToCommons();
     printLog("Successfuly connected to Wikimedia Commons.");
 
+    # Compute new description
+    $template->param(ISORIGINAL=>'');
+    $template->param(OTHER_VERSION=>$newFilenameBase.".tif");
+    $description = $template->output();
+
     # Check if already done
     my $pictureName = $newFilenameBase.".jpg";
     my $exists = $commons->exists("File:$pictureName");
     if ($exists) {
-	printLog("'$pictureName' already uploaded.");
+	printLog("'$pictureName' already uploaded. Try to rewrite the description if necessary...");
+	$commons->uploadPage("File:".$newFilenameBase.".jpg", $description, "Description update...");
     } else {
 	# Stop if error in imagemagick, except for: Incompatible type for "RichTIFFIPTC"
 	printLog("Checking $filename...");
@@ -273,7 +292,6 @@ foreach my $uid (keys(%metadatas)) {
 	}
 
 	# Upload JPEG version to Wikimedia commons
-	$template->param(OTHER_VERSION=>$newFilenameBase.".tif");
 	my $content = $simulate ? "" : readFile($jpegFile);
 	printLog("Uploading $pictureName to Wikimedia Commons...");
 
@@ -281,7 +299,7 @@ foreach my $uid (keys(%metadatas)) {
 	if ($simulate) {
 	    $status = 1;
 	} else {
-	    $status = $commons->uploadImage($pictureName, $content, $template->output(), "GLAM Zurich central library picture $uid (WMCH)", 0);
+	    $status = $commons->uploadImage($pictureName, $content, $description, "GLAM Zurich central library picture $uid (WMCH)", 0);
 	}
 	
 	if ($status) {
@@ -306,6 +324,8 @@ sub uploadFileToFTP {
     my $filename = shift;
     my $fileBasename = basename($filename);
     my $newFilename = shift(@_) || $fileBasename;
+    utf8::encode($newFilename);
+    my $override = shift(@_);
     my $ftp = connectToFtp();
 
     # Check if file is already there
@@ -313,13 +333,15 @@ sub uploadFileToFTP {
     my $localSize =  -s $filename;
     if ($remoteSize && $localSize == $remoteSize) {
 	printLog("$newFilename already uploaded to ftp://".$ftpHost);
-	$ftp->quit();
-	return;
+	unless ($override) {
+	    $ftp->quit();
+	    return;
+	}
     }
     if ($remoteSize && $localSize != $remoteSize) {
-	printLog("Deleting incomplete previously uploaded $newFilename");
+	printLog("Deleting (incomplete?) previously uploaded $newFilename");
 	unless ($simulate) {
-	    $ftp->delete($fileBasename);
+	    $ftp->delete($newFilename);
 	}
     }
 
@@ -341,6 +363,7 @@ sub connectToFtp {
 	or die "Cannot login to ftp://$ftpHost: ", $ftp->message;
     $ftp->binary();
     $ftp->pasv();
+    $ftp->cmd("OPTS UTF8 ON");
     return $ftp;
 }
 
