@@ -146,8 +146,9 @@ while (my $record = $metadataFileHandler->next()) {
 	}
 	$author .= $authorLine;
     };
-    
+    utf8::decode($author);
     unless ($author) { $author = "{{Anonymous}}" };     
+
     my $description = $record->field('245') ? $record->field('245')->subfield("a") : "";
     my $dimensions = $record->field('300') ? $record->field('300')->subfield("c") : "";
     my $medium = $record->field('300') ? $record->field('300')->subfield("a") : "";
@@ -262,13 +263,16 @@ foreach my $uid (keys(%metadatas)) {
     $template->param(ISORIGINAL=>'');
     $template->param(OTHER_VERSION=>$newFilenameBase.".tif");
     $description = $template->output();
+    utf8::encode($description);
 
     # Check if already done
     my $pictureName = $newFilenameBase.".jpg";
+    utf8::encode($pictureName);
+
     my $exists = $commons->exists("File:$pictureName");
     if ($exists) {
 	printLog("'$pictureName' already uploaded. Try to rewrite the description if necessary...");
-	$commons->uploadPage("File:".$newFilenameBase.".jpg", $description, "Description update...");
+	$commons->uploadPage("File:".$pictureName, $description, "Description update...");
     } else {
 	# Stop if error in imagemagick, except for: Incompatible type for "RichTIFFIPTC"
 	printLog("Checking $filename...");
