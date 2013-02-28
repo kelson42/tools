@@ -413,6 +413,11 @@ sub uploadPage {
     my ($self, $title, $content, $summary, $createOnly) = @_;
     my $returnValue = 0;
 
+    # Encoding
+    utf8::decode($title);
+    utf8::decode($content);
+    utf8::decode($summary);
+
     if ($self->hasWriteApi()) {
 	unless ($self->editToken()) {
 	    unless ($self->loadEditToken()) {
@@ -815,6 +820,11 @@ sub uploadImageWithoutApi {
 sub uploadImage {
     my ($self, $title, $content, $text, $summary, $ignoreWarning) = @_;
     my $returnValue = 0;
+
+    # Encoding
+    utf8::decode($title);
+    utf8::decode($text);
+    utf8::decode($summary);
 
     if ($self->hasWriteApi()) {
 	unless ($self->editToken()) {
