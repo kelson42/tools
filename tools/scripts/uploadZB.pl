@@ -168,6 +168,12 @@ while (my $record = $metadataFileHandler->next()) {
     my $medium = $record->field('300') ? $record->field('300')->subfield("a") : "";
     my $sysid = $record->field('001') ? $record->field('001')->data() : "";
 
+    # Encoding (seems not always right done)
+    utf8::decode($author);
+    utf8::decode($description);
+    utf8::decode($dimensions);
+    utf8::decode($medium);
+
     # Make a few checks
     unless ($uid) {
 	die "Unable to get the UID for a record.";
