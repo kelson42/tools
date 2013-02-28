@@ -414,9 +414,9 @@ sub uploadPage {
     my $returnValue = 0;
 
     # Encoding
-    utf8::decode($title);
-    utf8::decode($content);
-    utf8::decode($summary);
+    utf8::encode($title);
+    utf8::encode($content);
+    utf8::encode($summary);
 
     if ($self->hasWriteApi()) {
 	unless ($self->editToken()) {
@@ -822,9 +822,9 @@ sub uploadImage {
     my $returnValue = 0;
 
     # Encoding
-    utf8::decode($title);
-    utf8::decode($text);
-    utf8::decode($summary);
+    utf8::encode($title);
+    utf8::encode($text);
+    utf8::encode($summary);
 
     if ($self->hasWriteApi()) {
 	unless ($self->editToken()) {
