@@ -18,12 +18,14 @@ my $jpegFile = "/tmp/uploadZB.tmp.jpg";
 my $descriptionFile = "/tmp/uploadZB.tmp.desc";
 my $commonsHost = "commons.wikimedia.org";
 my $ftpHost = "zb.kiwix.org";
+my $overwrite = 0;
 my $ftpPassword;
 my $ftpUsername;
 my $username;
 my $password;
 my $pictureDirectory;
 my $metadataFile;
+my $category = "";
 my @filters;
 my $help;
 my $delay = 0;
@@ -54,17 +56,21 @@ my $templateCode = "=={{int:filedesc}}==
 {{Zentralbibliothek_Zürich<TMPL_IF NAME=ISORIGINAL>|category:Media_contributed_by_Zentralbibliothek_Zürich (original picture)</TMPL_IF>}}
 
 =={{int:license-header}}==
-{{PD-old}}";
+{{PD-old}}<TMPL_UNLESS NAME=ISORIGINAL><TMPL_IF NAME=CATEGORY>
+
+[[Category:<TMPL_VAR NAME=CATEGORY>]]</TMPL_IF></TMPL_UNLESS NAME=ISORIGINAL>";
 
 sub usage() {
     print "uploadZB.pl is a script to upload files from the Zurich central library.\n";
-    print "\tuploadZB --username=<COMMONS_USERNAME> --password=<COMMONS_PASSWORD> --directory=<PICTURE_DIRECTORY> --metadata=<XML_FILE> --ftpUsername=<FTP_USERNAME> --ftpPassword=<FTP_PASSWORD>\n\n";
+    print "\tuploadZB --username=<COMMONS_USERNAME> --password=<COMMONS_PASSWORD> --directory=<PICTURE_DIRECTORY> --metadata=<XML_FILE> --ftpUsername=<FTP_USERNAME> --ftpPassword=<FTP_PASSWORD> --category=<COLLECTION_CATEGORY>\n\n";
     print "In addition, you can specify a few additional arguments:\n";
     print "--filter=<ID>                    Upload only this/these image(s)\n";
+    print "--category=<MY_CATEGORY>         Add this custom library to the description\n";
     print "--delay=<NUMBER_OF_SECONDS>      Wait between two uploads\n";
     print "--help                           Print the help of the script\n";
     print "--verbose                        Print debug information to the console\n";
     print "--simulate                       Avoid uploading the data\n";
+    print "--overwrite                       Force re-upload of pictures (both for FTP and Wikimedia commons)\n";
 }
 
 GetOptions('username=s' => \$username, 
@@ -74,7 +80,9 @@ GetOptions('username=s' => \$username,
 	   'directory=s' => \$pictureDirectory,
 	   'metadataFile=s' => \$metadataFile,
 	   'delay=s' => \$delay,
+	   'category=s' => \$category,
 	   'verbose' => \$verbose,
+	   'overwrite' => \$overwrite,
 	   'simulate' => \$simulate,
 	   'filter=s' => \@filters,
 	   'help' => \$help,
@@ -84,6 +92,9 @@ if ($help) {
     usage();
     exit 0;
 }
+
+# encoding
+utf8::decode($category);
 
 # Make a few security checks
 if (!$username || !$password || !$pictureDirectory || !$metadataFile || !$ftpHost || !$ftpUsername || !$ftpPassword) {
@@ -103,6 +114,9 @@ unless (-f $metadataFile) {
 unless ($delay =~ /^[0-9]+$/) {
     die "The delay '$delay' seems not valid. This should be a number.";
 }
+
+# Category calls must be ucfirst
+$category=ucfirst($category);
 
 # Check connections to remote services
 connectToCommons();
@@ -125,6 +139,7 @@ while (my $record = $metadataFileHandler->next()) {
 
     my $title = $record->field('245') ? $record->field('245')->subfield("a") : $record->title_proper();
     my $date = $record->field('260') ? $record->field('260')->subfield("c") : ""; unless ($date) { $date = $record->field('250') ? $record->field('250')->subfield("a") : "{{Unknown}}" };
+    $date =~ s/\[|\]//g;
     my $author = "";
     foreach my $record ($record->field('700')) {
 	my $authorLine = "";
@@ -146,7 +161,6 @@ while (my $record = $metadataFileHandler->next()) {
 	}
 	$author .= $authorLine;
     };
-    utf8::decode($author);
     unless ($author) { $author = "{{Anonymous}}" };     
 
     my $description = $record->field('245') ? $record->field('245')->subfield("a") : "";
@@ -240,6 +254,7 @@ foreach my $uid (keys(%metadatas)) {
     # Preparing description
     my $template = HTML::Template->new(scalarref => \$templateCode);
     $template->param(ISORIGINAL=>1);
+    $template->param(CATEGORY=>$category);
     $template->param(DESCRIPTION=>$metadata->{'description'});
     $template->param(DATE=>$metadata->{'date'});
     $template->param(AUTHOR=>$metadata->{'author'});
@@ -248,12 +263,11 @@ foreach my $uid (keys(%metadatas)) {
 
     # Upload description to the FTP
     my $description = $template->output();
-    utf8::encode($description);
     writeFile($descriptionFile, $description);
     uploadFileToFTP($descriptionFile, $newFilenameBase.".tif.desc", 1);
 
     # Uploading image to the FTP
-    uploadFileToFTP($filename, $newFilenameBase.".tif");
+    uploadFileToFTP($filename, $newFilenameBase.".tif", $overwrite);
 
     # Connect to Wikimedia Commons
     my $commons = connectToCommons();
@@ -263,17 +277,20 @@ foreach my $uid (keys(%metadatas)) {
     $template->param(ISORIGINAL=>'');
     $template->param(OTHER_VERSION=>$newFilenameBase.".tif");
     $description = $template->output();
-    utf8::encode($description);
 
     # Check if already done
     my $pictureName = $newFilenameBase.".jpg";
-    utf8::encode($pictureName);
 
     my $exists = $commons->exists("File:$pictureName");
-    if ($exists) {
+    if ($exists && !$overwrite) {
 	printLog("'$pictureName' already uploaded. Try to rewrite the description if necessary...");
 	$commons->uploadPage("File:".$pictureName, $description, "Description update...");
     } else {
+	# More debug message
+	if ($exists) {
+	    printLog("'$pictureName' already uploaded but will be overwritten...");
+	}
+
 	# Stop if error in imagemagick, except for: Incompatible type for "RichTIFFIPTC"
 	printLog("Checking $filename...");
 	$error = $image->Read($filename);
@@ -303,7 +320,7 @@ foreach my $uid (keys(%metadatas)) {
 	if ($simulate) {
 	    $status = 1;
 	} else {
-	    $status = $commons->uploadImage($pictureName, $content, $description, "GLAM Zurich central library picture $uid (WMCH)", 0);
+	    $status = $commons->uploadImage($pictureName, $content, $description, "GLAM Zurich central library picture $uid (WMCH)", $overwrite);
 	}
 	
 	if ($status) {
@@ -328,16 +345,17 @@ sub uploadFileToFTP {
     my $filename = shift;
     my $fileBasename = basename($filename);
     my $newFilename = shift(@_) || $fileBasename;
-    utf8::encode($newFilename);
-    my $override = shift(@_);
+    my $overwrite = shift(@_);
     my $ftp = connectToFtp();
 
     # Check if file is already there
+    utf8::encode($newFilename);
     my $remoteSize = $ftp->size($newFilename);
+    utf8::decode($newFilename);
     my $localSize =  -s $filename;
     if ($remoteSize && $localSize == $remoteSize) {
 	printLog("$newFilename already uploaded to ftp://".$ftpHost);
-	unless ($override) {
+	unless ($overwrite) {
 	    $ftp->quit();
 	    return;
 	}
@@ -345,14 +363,18 @@ sub uploadFileToFTP {
     if ($remoteSize && $localSize != $remoteSize) {
 	printLog("Deleting (incomplete?) previously uploaded $newFilename");
 	unless ($simulate) {
+	    utf8::encode($newFilename);
 	    $ftp->delete($newFilename);
+	    utf8::decode($newFilename);
 	}
     }
 
     printLog("Uploading $filename (as $newFilename) to ftp://".$ftpHost."...");
     unless ($simulate) {
+	utf8::encode($newFilename);
 	$ftp->put($filename, $newFilename)
 	    or die "Unable to upload $filename to $ftpHost:", $ftp->message;
+	utf8::decode($newFilename);
     }
     printLog("Successful upload of $filename (as $newFilename) to ftp://".$ftpHost);
 
@@ -375,6 +397,8 @@ sub connectToFtp {
 sub writeFile {
     my $file = shift;
     my $data = shift;
+    utf8::encode($data);
+    utf8::encode($file);
     open (FILE, ">", "$file") or die "Couldn't open file: $file";
     print FILE $data;
     close (FILE);
@@ -382,6 +406,7 @@ sub writeFile {
 
 sub readFile {
     my $file = shift;
+    utf8::encode($file);
     open FILE, $file or die $!;
     binmode FILE;
     my ($buf, $data, $n);
@@ -389,6 +414,7 @@ sub readFile {
 	$buf .= $data;
     }
     close(FILE);
+    utf8::decode($data);
     return $buf;
 }
 
@@ -412,6 +438,7 @@ sub connectToCommons {
 sub printLog {
     my $message = shift;
     if ($verbose) {
+	utf8::encode($message);
 	print "$message\n";
     }
 }
