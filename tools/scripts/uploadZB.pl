@@ -164,6 +164,10 @@ while (my $record = $metadataFileHandler->next()) {
     unless ($author) { $author = "{{Anonymous}}" };     
 
     my $description = $record->field('245') ? $record->field('245')->subfield("a") : "";
+    $description =~ s/\[|\]//g;
+    $description =~ s/[ ]+/ /g;
+    $description =~ s/^ | $//g;
+    
     my $dimensions = $record->field('300') ? $record->field('300')->subfield("c") : "";
     my $medium = $record->field('300') ? $record->field('300')->subfield("a") : "";
     my $sysid = $record->field('001') ? $record->field('001')->data() : "";
@@ -288,10 +292,7 @@ foreach my $uid (keys(%metadatas)) {
     my $pictureName = $newFilenameBase.".jpg";
 
     my $exists = $commons->exists("File:$pictureName");
-    if ($exists && !$overwrite) {
-	printLog("'$pictureName' already uploaded. Try to rewrite the description if necessary...");
-	$commons->uploadPage("File:".$pictureName, $description, "Description update...");
-    } else {
+    if (!$exists || $overwrite) {
 	# More debug message
 	if ($exists) {
 	    printLog("'$pictureName' already uploaded but will be overwritten...");
