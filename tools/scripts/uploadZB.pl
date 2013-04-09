@@ -143,7 +143,7 @@ while (my $record = $metadataFileHandler->next()) {
     my $dateNotPrecise = ($date =~ /\[/);
     $date =~ s/\[|\]//g;
     if ($dateNotPrecise) {
-	$date = '~ ' + $date;
+	$date = '~ ' . $date;
     }
 
     my $author = "";
