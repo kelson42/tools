@@ -328,6 +328,9 @@ foreach my $uid (keys(%metadatas)) {
 	    $status = 1;
 	} else {
 	    $status = $commons->uploadImage($pictureName, $content, $description, "GLAM Zurich central library picture $uid (WMCH)", $overwrite);
+	    if ($exists) {
+		$commons->uploadPage("File:".$pictureName, $description, "Description update...");
+	    }
 	}
 	
 	if ($status) {
