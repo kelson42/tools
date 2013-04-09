@@ -52,11 +52,11 @@ my $templateCode = "=={{int:filedesc}}==
   |source           = {{Zentralbibliothek_Zürich_backlink|<TMPL_VAR NAME=SYSID>}}
   |permission       = Public domain
   |other_versions   = [[:File:<TMPL_VAR NAME=OTHER_VERSION>]]
-    }}
+}}
 {{Zentralbibliothek_Zürich<TMPL_IF NAME=ISORIGINAL>|category:Media_contributed_by_Zentralbibliothek_Zürich (original picture)</TMPL_IF>}}
 
 =={{int:license-header}}==
-{{PD-old}}<TMPL_UNLESS NAME=ISORIGINAL><TMPL_IF NAME=CATEGORY>
+{{PD-old-100}}<TMPL_UNLESS NAME=ISORIGINAL><TMPL_IF NAME=CATEGORY>
 
 [[Category:<TMPL_VAR NAME=CATEGORY>]]</TMPL_IF></TMPL_UNLESS NAME=ISORIGINAL>";
 
