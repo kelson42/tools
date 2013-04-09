@@ -138,8 +138,14 @@ while (my $record = $metadataFileHandler->next()) {
     }
 
     my $title = $record->field('245') ? $record->field('245')->subfield("a") : $record->title_proper();
+
     my $date = $record->field('260') ? $record->field('260')->subfield("c") : ""; unless ($date) { $date = $record->field('250') ? $record->field('250')->subfield("a") : "{{Unknown}}" };
+    my $dateNotPrecise = ($date =~ /\[/);
     $date =~ s/\[|\]//g;
+    if ($dateNotPrecise) {
+	$date = '~ ' + $date;
+    }
+
     my $author = "";
     foreach my $record ($record->field('700')) {
 	my $authorLine = "";
@@ -167,7 +173,7 @@ while (my $record = $metadataFileHandler->next()) {
     $description =~ s/\[|\]//g;
     $description =~ s/[ ]+/ /g;
     $description =~ s/^ | $//g;
-    
+
     my $dimensions = $record->field('300') ? $record->field('300')->subfield("c") : "";
     my $medium = $record->field('300') ? $record->field('300')->subfield("a") : "";
     my $sysid = $record->field('001') ? $record->field('001')->data() : "";
