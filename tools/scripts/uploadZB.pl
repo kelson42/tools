@@ -42,7 +42,7 @@ my $templateCode = "=={{int:filedesc}}==
   |medium           = <TMPL_IF NAME=MEDIUM>{{de|1=<TMPL_VAR NAME=MEDIUM>}}</TMPL_IF>
   |dimensions       = <TMPL_IF NAME=DIMENSIONS>{{de|1=<TMPL_VAR NAME=DIMENSIONS>}}</TMPL_IF>
   |institution      = {{institution:Zentralbibliothek Zürich}}
-  |location         = <!-- location within the gallery/museum -->     
+  |location         = <TMPL_VAR NAME=LOCATION>>
   |references       =
   |object history   =
   |credit line      =
@@ -165,7 +165,6 @@ while (my $record = $metadataFileHandler->next()) {
 	}
 
 	$authorLine .= $record->subfield("d") || "";
-
 	if ($author && $authorLine) {
 	    $author .= "<br/>\n";
 	}
@@ -173,7 +172,17 @@ while (my $record = $metadataFileHandler->next()) {
     };
     unless ($author) { $author = "{{Anonymous}}" };     
 
-    my $description = $record->field('245') ? $record->field('245')->subfield("a") : "";
+    my $description = "";
+    foreach my $record ($record->field('500')) {
+	my $descLine = "";
+
+	$descLine .= $record->subfield("a") || "";
+	if ($descLine) {
+	    $descLine .= ", ";
+	}
+	$description .= $descLine;
+    }
+    $description .= $record->field('520') ? $record->field('520')->subfield("a") : "";
     $description =~ s/\[|\]//g;
     $description =~ s/[ ]+/ /g;
     $description =~ s/^ | $//g;
@@ -181,12 +190,14 @@ while (my $record = $metadataFileHandler->next()) {
     my $dimensions = $record->field('300') && $record->field('300')->subfield('c') ? $record->field('300')->subfield("c") : "";
     my $medium = $record->field('300') ? $record->field('300')->subfield("a") : "";
     my $sysid = $record->field('001') ? $record->field('001')->data() : "";
+    my $location = $record->field('852') ? $record->field('852')->subfield("5") : "";
 
     # Encoding (seems not always right done)
     utf8::decode($author);
     utf8::decode($description);
     utf8::decode($dimensions);
     utf8::decode($medium);
+    utf8::decode($location);
 
     # Make a few checks
     unless ($uid) {
@@ -230,6 +241,7 @@ while (my $record = $metadataFileHandler->next()) {
 	'description' => $description,
 	'dimensions' => $dimensions,
 	'medium' => $medium,
+	'location' => $location,
 	'newFilenameBase' => $newFilenameBase,
     };
 
@@ -241,6 +253,7 @@ while (my $record = $metadataFileHandler->next()) {
     printLog("- Description: ".$description);
     printLog("- Dimensions: ".$dimensions);
     printLog("- Medium: ".$medium);
+    printLog("- Location: ".$location);
     printLog("- Filename: ".$newFilenameBase.".tif");
 }
 printLog(scalar(keys(%metadatas))." metadata entry(ies) read and $skippedCount skipped.");
@@ -278,6 +291,7 @@ foreach my $uid (keys(%metadatas)) {
     $template->param(DESCRIPTION=>$metadata->{'description'});
     $template->param(DATE=>$metadata->{'date'});
     $template->param(AUTHOR=>$metadata->{'author'});
+    $template->param(LOCATION=>$metadata->{'location'});
     $template->param(SYSID=>$metadata->{'sysid'});
     $template->param(OTHER_VERSION=>$newFilenameBase.".jpg");
 
