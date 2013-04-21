@@ -141,9 +141,13 @@ while (my $record = $metadataFileHandler->next()) {
 
     my $date = $record->field('260') ? $record->field('260')->subfield("c") : ""; unless ($date) { $date = $record->field('250') ? $record->field('250')->subfield("a") : "{{Unknown}}" };
     my $dateNotPrecise = ($date =~ /\[/);
-    $date =~ s/\[|\]//g;
     if ($dateNotPrecise) {
+	$date =~ s/\[|\]//g;
+	$date =~ s/um//g;
+	$date =~ s/ca[\.]*//g;
 	$date = '~ ' . $date;
+	$date =~ s/[ ]+/ /g;
+	$date =~ s/^ | $//g;
     }
 
     my $author = "";
@@ -174,7 +178,7 @@ while (my $record = $metadataFileHandler->next()) {
     $description =~ s/[ ]+/ /g;
     $description =~ s/^ | $//g;
 
-    my $dimensions = $record->field('300') ? $record->field('300')->subfield("c") : "";
+    my $dimensions = $record->field('300') && $record->field('300')->subfield('c') ? $record->field('300')->subfield("c") : "";
     my $medium = $record->field('300') ? $record->field('300')->subfield("a") : "";
     my $sysid = $record->field('001') ? $record->field('001')->data() : "";
 
@@ -260,7 +264,7 @@ foreach my $uid (keys(%metadatas)) {
 }
 
 # Conversion and upload processes
-my $image = Image::Magick->new();
+my $image;
 my $error;
 foreach my $uid (keys(%metadatas)) {
     my $metadata = $metadatas{$uid};
@@ -306,6 +310,7 @@ foreach my $uid (keys(%metadatas)) {
 
 	# Stop if error in imagemagick, except for: Incompatible type for "RichTIFFIPTC"
 	printLog("Checking $filename...");
+	$image = Image::Magick->new();
 	$error = $image->Read($filename);
 	if ($error && !$error =~ /Exception 350/) { 
 	    die "Error by reading ".$filename.": ".$error.".";
