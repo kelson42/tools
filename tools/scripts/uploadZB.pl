@@ -132,7 +132,7 @@ while (my $record = $metadataFileHandler->next()) {
     my $uid = $record->field('092') ? $record->field('092')->subfield("a") : "";
 
     # Check the filter
-    if ($uid && scalar(@filters) && !(grep {$_ eq $uid} @filters)) {
+    if (!$uid || $uid && scalar(@filters) && !(grep {$_ eq $uid} @filters)) {
 	$skippedCount++;
 	next;
     }
