@@ -42,7 +42,7 @@ my $templateCode = "=={{int:filedesc}}==
   |medium           = <TMPL_IF NAME=MEDIUM>{{de|1=<TMPL_VAR NAME=MEDIUM>}}</TMPL_IF>
   |dimensions       = <TMPL_IF NAME=DIMENSIONS>{{de|1=<TMPL_VAR NAME=DIMENSIONS>}}</TMPL_IF>
   |institution      = {{institution:Zentralbibliothek Zürich}}
-  |location         = <TMPL_VAR NAME=LOCATION>>
+  |location         = <TMPL_VAR NAME=LOCATION>
   |references       =
   |object history   =
   |credit line      =
@@ -132,7 +132,8 @@ while (my $record = $metadataFileHandler->next()) {
     my $uid = $record->field('092') ? $record->field('092')->subfield("a") : "";
 
     # Check the filter
-    if (!$uid || $uid && scalar(@filters) && !(grep {$_ eq $uid} @filters)) {
+    if (!$uid && !scalar(@filters) || 
+	$uid && scalar(@filters) && !(grep {$_ eq $uid} @filters)) {
 	$skippedCount++;
 	next;
     }
@@ -183,6 +184,8 @@ while (my $record = $metadataFileHandler->next()) {
 	$description .= $descLine;
     }
     $description .= $record->field('520') ? $record->field('520')->subfield("a") : "";
+    $description .= !$description && $record->field('245') ? $record->field('245')->subfield('a') : "";
+
     $description =~ s/\[|\]//g;
     $description =~ s/[ ]+/ /g;
     $description =~ s/^ | $//g;
@@ -315,10 +318,10 @@ foreach my $uid (keys(%metadatas)) {
     # Check if already done
     my $pictureName = $newFilenameBase.".jpg";
 
-    my $exists = $commons->exists("File:$pictureName");
-    if (!$exists || $overwrite) {
+    my $doesExist = $commons->exists("File:$pictureName");
+    if (!$doesExist || $overwrite) {
 	# More debug message
-	if ($exists) {
+	if ($doesExist) {
 	    printLog("'$pictureName' already uploaded but will be overwritten...");
 	}
 
@@ -353,7 +356,7 @@ foreach my $uid (keys(%metadatas)) {
 	    $status = 1;
 	} else {
 	    $status = $commons->uploadImage($pictureName, $content, $description, "GLAM Zurich central library picture $uid (WMCH)", $overwrite);
-	    if ($exists) {
+	    if ($doesExist) {
 		$commons->uploadPage("File:".$pictureName, $description, "Description update...");
 	    }
 	}
@@ -363,6 +366,8 @@ foreach my $uid (keys(%metadatas)) {
 	} else {
 	    die "'$pictureName' failed to be uploaded to Wikimedia Commons.\n";
 	}
+    } else {
+	printLog("'File:$pictureName' already exists in Wikimedia Commons, it was ignores. Use --overwrite to force the re-upload.");
     }
 
     # Wait a few seconds
