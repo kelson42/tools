@@ -1117,7 +1117,7 @@ sub allPages {
 		}
             }
 	}
-    } while ($continue = $xml->{"query-continue"}->{"allpages"}->{"apfrom"});
+    } while ($continue = $xml->{"query-continue"}->{"allpages"}->{"apcontinue"});
 
     return(@pages);
 }
