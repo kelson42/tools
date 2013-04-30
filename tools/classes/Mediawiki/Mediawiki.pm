@@ -1062,7 +1062,7 @@ sub embeddedIn {
 
 	}
 
-    } while ($continue = $xml->{"query-continue"}->{embeddedin}->{eicontinue});
+    } while ($continue = $xml->{"query-continue"}->{"embeddedin"}->{"eicontinue"});
 
     return @links;
 }
@@ -1120,6 +1120,39 @@ sub allPages {
     } while ($continue = $xml->{"query-continue"}->{"allpages"}->{"apcontinue"});
 
     return(@pages);
+}
+
+sub allUsers {
+    my($self) = @_;
+
+    my $httpPostRequestParams = {
+        'action' => 'query',
+        'list' => 'allusers',
+        'format' => 'xml',
+	'aulimit' => '500',
+    };
+    my @users;
+    my $continue;
+    my $xml;
+
+    do {
+	# set the appropriate offset
+	if ($continue) {
+	    $httpPostRequestParams->{'aufrom'} = $continue;
+	}
+
+	# make the http request and parse response
+	$xml = $self->makeApiRequestAndParseResponse(values=>$httpPostRequestParams);
+
+	if (exists($xml->{query}->{allusers})) {
+	    foreach my $name (keys($xml->{query}->{allusers}->{u})) {
+		$name =~ tr/ /_/;
+		push(@users, $name);
+            }
+	}
+    } while ($continue = $xml->{"query-continue"}->{"allusers"}->{"aufrom"});
+
+    return(@users);
 }
 
 sub allImages {
