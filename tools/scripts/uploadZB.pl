@@ -42,7 +42,7 @@ my $templateCode = "=={{int:filedesc}}==
   |medium           = <TMPL_IF NAME=MEDIUM>{{de|1=<TMPL_VAR NAME=MEDIUM>}}</TMPL_IF>
   |dimensions       = <TMPL_IF NAME=DIMENSIONS>{{de|1=<TMPL_VAR NAME=DIMENSIONS>}}</TMPL_IF>
   |institution      = {{institution:Zentralbibliothek Zürich}}
-  |location         = <!-- location within the gallery/museum -->     
+  |location         = <TMPL_VAR NAME=LOCATION>
   |references       =
   |object history   =
   |credit line      =
@@ -132,7 +132,8 @@ while (my $record = $metadataFileHandler->next()) {
     my $uid = $record->field('092') ? $record->field('092')->subfield("a") : "";
 
     # Check the filter
-    if ($uid && scalar(@filters) && !(grep {$_ eq $uid} @filters)) {
+    if (!$uid && !scalar(@filters) || 
+	$uid && scalar(@filters) && !(grep {$_ eq $uid} @filters)) {
 	$skippedCount++;
 	next;
     }
@@ -141,9 +142,13 @@ while (my $record = $metadataFileHandler->next()) {
 
     my $date = $record->field('260') ? $record->field('260')->subfield("c") : ""; unless ($date) { $date = $record->field('250') ? $record->field('250')->subfield("a") : "{{Unknown}}" };
     my $dateNotPrecise = ($date =~ /\[/);
-    $date =~ s/\[|\]//g;
     if ($dateNotPrecise) {
+	$date =~ s/\[|\]//g;
+	$date =~ s/um//g;
+	$date =~ s/ca[\.]*//g;
 	$date = '~ ' . $date;
+	$date =~ s/[ ]+/ /g;
+	$date =~ s/^ | $//g;
     }
 
     my $author = "";
@@ -161,7 +166,6 @@ while (my $record = $metadataFileHandler->next()) {
 	}
 
 	$authorLine .= $record->subfield("d") || "";
-
 	if ($author && $authorLine) {
 	    $author .= "<br/>\n";
 	}
@@ -169,20 +173,34 @@ while (my $record = $metadataFileHandler->next()) {
     };
     unless ($author) { $author = "{{Anonymous}}" };     
 
-    my $description = $record->field('245') ? $record->field('245')->subfield("a") : "";
+    my $description = "";
+    foreach my $record ($record->field('500')) {
+	my $descLine = "";
+
+	$descLine .= $record->subfield("a") || "";
+	if ($descLine) {
+	    $descLine .= ", ";
+	}
+	$description .= $descLine;
+    }
+    $description .= $record->field('520') ? $record->field('520')->subfield("a") : "";
+    $description .= !$description && $record->field('245') ? $record->field('245')->subfield('a') : "";
+
     $description =~ s/\[|\]//g;
     $description =~ s/[ ]+/ /g;
     $description =~ s/^ | $//g;
 
-    my $dimensions = $record->field('300') ? $record->field('300')->subfield("c") : "";
+    my $dimensions = $record->field('300') && $record->field('300')->subfield('c') ? $record->field('300')->subfield("c") : "";
     my $medium = $record->field('300') ? $record->field('300')->subfield("a") : "";
     my $sysid = $record->field('001') ? $record->field('001')->data() : "";
+    my $location = $record->field('852') ? $record->field('852')->subfield("5") : "";
 
     # Encoding (seems not always right done)
     utf8::decode($author);
     utf8::decode($description);
     utf8::decode($dimensions);
     utf8::decode($medium);
+    utf8::decode($location);
 
     # Make a few checks
     unless ($uid) {
@@ -226,6 +244,7 @@ while (my $record = $metadataFileHandler->next()) {
 	'description' => $description,
 	'dimensions' => $dimensions,
 	'medium' => $medium,
+	'location' => $location,
 	'newFilenameBase' => $newFilenameBase,
     };
 
@@ -237,6 +256,7 @@ while (my $record = $metadataFileHandler->next()) {
     printLog("- Description: ".$description);
     printLog("- Dimensions: ".$dimensions);
     printLog("- Medium: ".$medium);
+    printLog("- Location: ".$location);
     printLog("- Filename: ".$newFilenameBase.".tif");
 }
 printLog(scalar(keys(%metadatas))." metadata entry(ies) read and $skippedCount skipped.");
@@ -260,7 +280,7 @@ foreach my $uid (keys(%metadatas)) {
 }
 
 # Conversion and upload processes
-my $image = Image::Magick->new();
+my $image;
 my $error;
 foreach my $uid (keys(%metadatas)) {
     my $metadata = $metadatas{$uid};
@@ -274,6 +294,7 @@ foreach my $uid (keys(%metadatas)) {
     $template->param(DESCRIPTION=>$metadata->{'description'});
     $template->param(DATE=>$metadata->{'date'});
     $template->param(AUTHOR=>$metadata->{'author'});
+    $template->param(LOCATION=>$metadata->{'location'});
     $template->param(SYSID=>$metadata->{'sysid'});
     $template->param(OTHER_VERSION=>$newFilenameBase.".jpg");
 
@@ -297,15 +318,16 @@ foreach my $uid (keys(%metadatas)) {
     # Check if already done
     my $pictureName = $newFilenameBase.".jpg";
 
-    my $exists = $commons->exists("File:$pictureName");
-    if (!$exists || $overwrite) {
+    my $doesExist = $commons->exists("File:$pictureName");
+    if (!$doesExist || $overwrite) {
 	# More debug message
-	if ($exists) {
+	if ($doesExist) {
 	    printLog("'$pictureName' already uploaded but will be overwritten...");
 	}
 
 	# Stop if error in imagemagick, except for: Incompatible type for "RichTIFFIPTC"
 	printLog("Checking $filename...");
+	$image = Image::Magick->new();
 	$error = $image->Read($filename);
 	if ($error && !$error =~ /Exception 350/) { 
 	    die "Error by reading ".$filename.": ".$error.".";
@@ -334,7 +356,7 @@ foreach my $uid (keys(%metadatas)) {
 	    $status = 1;
 	} else {
 	    $status = $commons->uploadImage($pictureName, $content, $description, "GLAM Zurich central library picture $uid (WMCH)", $overwrite);
-	    if ($exists) {
+	    if ($doesExist) {
 		$commons->uploadPage("File:".$pictureName, $description, "Description update...");
 	    }
 	}
@@ -344,6 +366,8 @@ foreach my $uid (keys(%metadatas)) {
 	} else {
 	    die "'$pictureName' failed to be uploaded to Wikimedia Commons.\n";
 	}
+    } else {
+	printLog("'File:$pictureName' already exists in Wikimedia Commons, it was ignores. Use --overwrite to force the re-upload.");
     }
 
     # Wait a few seconds
