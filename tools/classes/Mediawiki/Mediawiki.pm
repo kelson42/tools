@@ -1155,6 +1155,31 @@ sub allUsers {
     return(@users);
 }
 
+sub isGlobalUser {
+    my($self, $user) = @_;
+    $user = ucfirst($user);
+
+    my $httpPostRequestParams = {
+        'action' => 'query',
+        'meta' => 'globaluserinfo',
+        'format' => 'xml',
+	'guiuser' => "$user",
+    };
+    my @users;
+    my $xml;
+
+    do {
+	# make the http request and parse response
+	$xml = $self->makeApiRequestAndParseResponse(values=>$httpPostRequestParams);
+
+	if (exists($xml->{query}->{globaluserinfo}->{missing})) {
+	    return;
+	}
+    };
+
+    return 1;
+}
+
 sub allImages {
     my $self = shift;
     my $httpPostRequestParams = {
