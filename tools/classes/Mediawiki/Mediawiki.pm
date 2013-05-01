@@ -1130,6 +1130,8 @@ sub allUsers {
         'list' => 'allusers',
         'format' => 'xml',
 	'aulimit' => '500',
+	'usprop' => 'emailable|editcount'
+
     };
     my @users;
     my $continue;
@@ -1178,6 +1180,25 @@ sub isGlobalUser {
     };
 
     return 1;
+}
+
+sub userInfo {
+    my($self, $user) = @_;
+    $user = ucfirst($user);
+
+    my $httpPostRequestParams = {
+        'action' => 'query',
+        'list' => 'users',
+        'usprop' => 'emailable|editcount',
+        'format' => 'xml',
+	'ususers' => "$user",
+    };
+    my @users;
+    my $xml;
+
+    # make the http request and parse response
+    $xml = $self->makeApiRequestAndParseResponse(values=>$httpPostRequestParams);
+    return $xml->{query}->{users}->{user};
 }
 
 sub allImages {
