@@ -594,7 +594,7 @@ sub makeHashFromXml {
     my ($self, $xml, $forceArray) = @_;
 
     # Remove trailing spaces or tabs
-    $xml =~ s/^[\ |\t]+//g;
+    $xml =~ s/^[\ |\t|\n]+//g;
 
     my @params;
     push(@params, $xml);
