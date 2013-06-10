@@ -594,7 +594,7 @@ sub makeHashFromXml {
     my ($self, $xml, $forceArray) = @_;
 
     # Remove trailing spaces or tabs
-    $xml =~ s/^[\ |\t]+//g;
+    $xml =~ s/^[\ |\t|\n]+//g;
 
     my @params;
     push(@params, $xml);
@@ -1062,7 +1062,7 @@ sub embeddedIn {
 
 	}
 
-    } while ($continue = $xml->{"query-continue"}->{embeddedin}->{eicontinue});
+    } while ($continue = $xml->{"query-continue"}->{"embeddedin"}->{"eicontinue"});
 
     return @links;
 }
@@ -1117,9 +1117,88 @@ sub allPages {
 		}
             }
 	}
-    } while ($continue = $xml->{"query-continue"}->{"allpages"}->{"apfrom"});
+    } while ($continue = $xml->{"query-continue"}->{"allpages"}->{"apcontinue"});
 
     return(@pages);
+}
+
+sub allUsers {
+    my($self) = @_;
+
+    my $httpPostRequestParams = {
+        'action' => 'query',
+        'list' => 'allusers',
+        'format' => 'xml',
+	'aulimit' => '500',
+	'usprop' => 'emailable|editcount'
+
+    };
+    my @users;
+    my $continue;
+    my $xml;
+
+    do {
+	# set the appropriate offset
+	if ($continue) {
+	    $httpPostRequestParams->{'aufrom'} = $continue;
+	}
+
+	# make the http request and parse response
+	$xml = $self->makeApiRequestAndParseResponse(values=>$httpPostRequestParams);
+
+	if (exists($xml->{query}->{allusers})) {
+	    foreach my $name (keys($xml->{query}->{allusers}->{u})) {
+		$name =~ tr/ /_/;
+		push(@users, $name);
+            }
+	}
+    } while ($continue = $xml->{"query-continue"}->{"allusers"}->{"aufrom"});
+
+    return(@users);
+}
+
+sub isGlobalUser {
+    my($self, $user) = @_;
+    $user = ucfirst($user);
+
+    my $httpPostRequestParams = {
+        'action' => 'query',
+        'meta' => 'globaluserinfo',
+        'format' => 'xml',
+	'guiuser' => "$user",
+    };
+    my @users;
+    my $xml;
+
+    do {
+	# make the http request and parse response
+	$xml = $self->makeApiRequestAndParseResponse(values=>$httpPostRequestParams);
+
+	if (exists($xml->{query}->{globaluserinfo}->{missing})) {
+	    return;
+	}
+    };
+
+    return 1;
+}
+
+sub userInfo {
+    my($self, $user) = @_;
+    $user = ucfirst($user);
+
+    my $httpPostRequestParams = {
+        'action' => 'query',
+        'list' => 'users',
+        'usprop' => 'emailable|editcount',
+        'format' => 'xml',
+	'ususers' => "$user",
+    };
+    my @users;
+    my $xml;
+
+    # make the http request and parse response
+    $xml = $self->makeApiRequestAndParseResponse(values=>$httpPostRequestParams);
+    return $xml->{query}->{users}->{user};
 }
 
 sub allImages {

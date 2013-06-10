@@ -53,7 +53,7 @@ my $templateCode = "=={{int:filedesc}}==
   |permission       = Public domain
   |other_versions   = [[:File:<TMPL_VAR NAME=OTHER_VERSION>]]
 }}
-{{Zentralbibliothek_Zürich<TMPL_IF NAME=ISORIGINAL>|category:Media_contributed_by_Zentralbibliothek_Zürich (original picture)</TMPL_IF>}}
+{{Zentralbibliothek_Zürich<TMPL_IF NAME=ISORIGINAL>|category=Media_contributed_by_Zentralbibliothek_Zürich (original picture)</TMPL_IF>}}
 
 =={{int:license-header}}==
 {{PD-old-100}}<TMPL_UNLESS NAME=ISORIGINAL><TMPL_IF NAME=CATEGORY>

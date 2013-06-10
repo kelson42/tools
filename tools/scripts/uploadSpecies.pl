@@ -2,6 +2,7 @@
 use lib '../classes/';
 use lib '../../dumping_tools/classes/';
 
+use utf8;
 use strict;
 use warnings;
 use Getopt::Long;
@@ -51,6 +52,9 @@ GetOptions('username=s' => \$username,
 );
 $allowOverride = $allowOverride ? 1 : 0;
 
+# Encoding
+utf8::decode($namePrefix);
+
 if ($help) {
     usage();
     exit 0;
@@ -79,7 +83,7 @@ unless ($delay =~ /^[0-9]+$/) {
 }
 
 # Connect to wikis
-#my $commonsWiki = connectToMediawiki("commons.wikimedia.org.zimfarm.kiwix.org");
+#my $commonsWiki = connectToMediawiki("devwiki", "w");
 my $commonsWiki = connectToMediawiki("commons.wikimedia.org", "w");
 my $enWiki =  connectToMediawiki("en.wikipedia.org", "w", 1);
 my $deWiki =  connectToMediawiki("de.wikipedia.org", "w", 1);
@@ -131,6 +135,7 @@ printLog(scalar(@pictures)." file(s) to upload *.(tif|tiff) where detected.");
 # Upload pictures
 my $pictureNameRegex = "^.*\\$fsSeparator";
 my $templateCode = readFile($templatePath);
+utf8::decode($templateCode);
 
 foreach my $picture (@pictures) {
     substr($picture, length($baseDirectory)) =~ /$patternRegex/;
@@ -147,6 +152,7 @@ foreach my $picture (@pictures) {
     }
 
     # Check if already done
+    printLog("Check if picture '$pictureName' already uploaded...");
     if (!$doEverything) {
       my $doneFile = $picture.".done";
       my $done;
@@ -167,9 +173,8 @@ foreach my $picture (@pictures) {
       printLog("Do not check if '$pictureName' is already uploaded.");
     }
 
-    printLog("Uploading '$pictureName'...");
-
     # Preparing description
+    printLog("Preparing description page for '$pictureName'...");
     my $template = HTML::Template->new(scalarref => \$templateCode);
     $template->param(GENIUS=>$genius);
     $template->param(GENIUS_UCFIRST=>ucfirst($genius));
@@ -179,8 +184,13 @@ foreach my $picture (@pictures) {
     $template->param(IWFR=>$frWiki->exists("$genius $specie") ? "$genius $specie" : "");
     $template->param(IWIT=>$itWiki->exists("$genius $specie") ? "$genius $specie" : "");
 
-    # Upload
+
+    # Load picture
+    printLog("Reading file '$pictureName'...");
     my $content = readFile($picture);
+
+    # Upload
+    printLog("Uploading '$pictureName'...");
     my $status = $commonsWiki->uploadImage($pictureName, $content, $template->output(), "Neuchâtel Herbarium picture $id", $allowOverride);
 
     if ($status) {
@@ -248,6 +258,7 @@ sub connectToMediawiki {
 sub printLog {
     my $message = shift;
     if ($verbose) {
+	utf8::encode($message);
 	print "$message\n";
     }
 }

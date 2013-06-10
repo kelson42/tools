@@ -80,6 +80,7 @@ $site->setup();
 
 # do action for each entry
 foreach my $entry (@entries) {
+    utf8::decode($entry);
     my $status;
     if ($action eq "touch") {
 	$status = $site->touchPage($entry);
@@ -99,7 +100,7 @@ foreach my $entry (@entries) {
 	}
 	my ($content, $revision) = $site->downloadPage($entry);
 	$content =~ s/$regex/$replacement/mg;
-	$status = $site->uploadPage($entry, $content);      
+	$status = $site->uploadPage($entry, $content, "");      
     } elsif ($action eq "stub") {
 	$status = $site->uploadPage($entry, "-");
     } elsif ($action eq "append") {
