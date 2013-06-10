@@ -98,7 +98,7 @@ my $sth;
 $dbh = DBI->connect($dsn, $databaseUsername, $databasePassword) or die ("Unable to connect to the database.");
 
 # Truncate necessary tables
-foreach my $table ("revision", "page", "text", "imagelinks", "templatelinks", "redirect", "externallinks", "image", "langlinks", "math", "logging", "recentchanges", "searchindex", "pagelinks", "l10n_cache", "job", "category", "categorylinks", "archive", "filearchive" ) {
+foreach my $table ("revision", "page", "text", "imagelinks", "templatelinks", "redirect", "externallinks", "image", "langlinks", "logging", "recentchanges", "searchindex", "pagelinks", "l10n_cache", "job", "category", "categorylinks", "archive", "filearchive" ) {
     $req = "TRUNCATE $table";
     $sth = $dbh->prepare($req)  or die ("Unable to prepare request.");
     $sth->execute() or die ("Unable to execute request.");
