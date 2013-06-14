@@ -23,8 +23,10 @@ my $databaseName = "";
 my $databaseUsername = "";
 my $databasePassword = "";
 my $projectCode = "";
+my $withHistory;
 my $withoutImages;
 my $withPageLinks;
+my $withExternalLinks;
 my $withTemplateLinks;
 my $withMetaPages;
 my $tmpDir = "/tmp";
@@ -41,13 +43,15 @@ GetOptions('databaseHost=s' => \$databaseHost,
 	   'withoutImages' => \$withoutImages,
 	   'withTemplateLinks' => \$withTemplateLinks,
 	   'withPageLinks' => \$withPageLinks,
+	   'withExternalLinks' => \$withExternalLinks,
 	   'withMetaPages' => \$withMetaPages,
+	   'withHistory' => \$withHistory,
 	   'version=s' => \$version,
 	   'tmpDir=s' => \$tmpDir,
 	   );
 
 if (!$databaseName || !$projectCode) {
-    print "usage: ./mirrorWmfDumps.pl --projectCode=enwiki --databaseName=MYDB [--tmpDir=/tmp] [--databaseHost=localhost] [--databasePort=3306] [--databaseUsername=tom] [--databasePassword=fff] [--withoutImages] [--withTemplateLinks] [--withPageLinks] [--version=latest] [--withMetaPages]\n";
+    print "usage: ./mirrorWmfDumps.pl --projectCode=enwiki --databaseName=MYDB [--tmpDir=/tmp] [--databaseHost=localhost] [--databasePort=3306] [--databaseUsername=tom] [--databasePassword=fff] [--withoutImages] [--withTemplateLinks] [--withPageLinks] [--version=latest] [--withMetaPages] [--withExternalLinks] [--withHistory]\n";
     exit;
 }
 
@@ -60,7 +64,9 @@ $tmpDir = $tmpDir."/wmfDumps";
 `mkdir $tmpDir`;
 
 # Download the XML & SQL files
-if ($withMetaPages) {
+if ($withHistory) {
+    $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-pages-meta-history.xml.bz2";
+} elsif ($withMetaPages) {
     $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-pages-meta-current.xml.bz2";
 } else {
     $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-pages-articles.xml.bz2";
@@ -78,6 +84,10 @@ if ($withPageLinks) {
 
 if ($withTemplateLinks) {
     $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-templatelinks.sql.gz"; `$cmd`;
+}
+
+if ($withExternalLinks) {
+    $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-externallinks.sql.gz"; `$cmd`;
 }
 
 unless ($withoutImages) {
@@ -107,7 +117,9 @@ foreach my $table ("revision", "page", "text", "imagelinks", "templatelinks", "r
 # Upload the XML
 my $mysqlCmd = "mysql --user=$databaseUsername --password=$databasePassword $databaseName";
 
-if ($withMetaPages) {
+if ($withHistory) {
+    $cmd = "cd $mwDumperDir; java -classpath ./src org.mediawiki.dumper.Dumper --format=sql:1.5 ../$projectCode-$version-pages-meta-history.xml.bz2 | bzip2 > $projectCode-sql.bz2";
+} elsif ($withMetaPages) {
     $cmd = "cd $mwDumperDir; java -classpath ./src org.mediawiki.dumper.Dumper --format=sql:1.5 ../$projectCode-$version-pages-meta-current.xml.bz2 | bzip2 > $projectCode-sql.bz2";
 } else {
     $cmd = "cd $mwDumperDir; java -classpath ./src org.mediawiki.dumper.Dumper --format=sql:1.5 ../$projectCode-$version-pages-articles.xml.bz2 | bzip2 > $projectCode-sql.bz2";
@@ -129,6 +141,10 @@ if ($withPageLinks) {
 
 if ($withTemplateLinks) {
     $cmd = "gzip -d -c $tmpDir/$projectCode-$version-templatelinks.sql.gz | $mysqlCmd"; `$cmd`;
+}
+
+if ($withExternalLinks) {
+    $cmd = "gzip -d -c $tmpDir/$projectCode-$version-externallinks.sql.gz | $mysqlCmd"; `$cmd`;
 }
 
 unless ($withoutImages) {
