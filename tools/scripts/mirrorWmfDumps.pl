@@ -61,11 +61,16 @@ if ($databaseUsername && !$databasePassword) {
 
 # Create temporary directory
 $tmpDir = $tmpDir."/wmfDumps";
-`mkdir $tmpDir`;
+unless ( -d "$tmpDir" ) {
+    `mkdir $tmpDir`;
+}
 
 # Download the XML & SQL files
 if ($withHistory) {
     $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-pages-meta-history.xml.bz2";
+    unless ($withoutImages) {
+	$cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-oldimage.sql.gz"; `$cmd`;
+    }
 } elsif ($withMetaPages) {
     $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-pages-meta-current.xml.bz2";
 } else {
@@ -108,7 +113,7 @@ my $sth;
 $dbh = DBI->connect($dsn, $databaseUsername, $databasePassword) or die ("Unable to connect to the database.");
 
 # Truncate necessary tables
-foreach my $table ("revision", "page", "text", "imagelinks", "templatelinks", "redirect", "externallinks", "image", "langlinks", "logging", "recentchanges", "searchindex", "pagelinks", "l10n_cache", "job", "category", "categorylinks", "archive", "filearchive" ) {
+foreach my $table ("revision", "page", "text", "imagelinks", "templatelinks", "redirect", "externallinks", "image", "oldimage", "langlinks", "logging", "recentchanges", "searchindex", "pagelinks", "l10n_cache", "job", "category", "categorylinks", "archive", "filearchive" ) {
     $req = "TRUNCATE $table";
     $sth = $dbh->prepare($req)  or die ("Unable to prepare request.");
     $sth->execute() or die ("Unable to execute request.");
@@ -119,6 +124,11 @@ my $mysqlCmd = "mysql --user=$databaseUsername --password=$databasePassword $dat
 
 if ($withHistory) {
     $cmd = "cd $mwDumperDir; java -classpath ./src org.mediawiki.dumper.Dumper --format=sql:1.5 ../$projectCode-$version-pages-meta-history.xml.bz2 | bzip2 > $projectCode-sql.bz2";
+    
+    unless ($withoutImages) {
+	$cmd = "gzip -d -c $tmpDir/$projectCode-$version-oldimage.sql.gz | $mysqlCmd"; `$cmd`;
+    }
+
 } elsif ($withMetaPages) {
     $cmd = "cd $mwDumperDir; java -classpath ./src org.mediawiki.dumper.Dumper --format=sql:1.5 ../$projectCode-$version-pages-meta-current.xml.bz2 | bzip2 > $projectCode-sql.bz2";
 } else {
