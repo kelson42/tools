@@ -54,12 +54,14 @@ foreach my $title (@titles) {
     foreach my $imageInfo ($site->imageInfos($title)) {
 	my $url = $imageInfo->{'url'};
 	my $target = uri_unescape($url);
-	$target =~ s/^(.+\/)([^\/]{1}\/[^\/]{2}\/[^\/]+$)/$2/;
+	$target =~ s/^(.+?\/)(archive\/|)([^\/]{1}\/[^\/]{2}\/[^\/]+$)/$2$3/;
 	$target = $directory."/images/".$target;
 	my $targetDir = dirname($target);
 	print "$url -> $target\n";
-	make_path($targetDir);
-	$cmd = "wget '$url' -O '$target'"; `$cmd`;
+	unless ( -e $target ) {
+	    make_path($targetDir);
+	    $cmd = "wget '$url' -O '$target'"; `$cmd`;
+	}
     }
 }
 
