@@ -29,6 +29,7 @@ my $withPageLinks;
 my $withExternalLinks;
 my $withTemplateLinks;
 my $withMetaPages;
+my $withSiteStats;
 my $tmpDir = "/tmp";
 my $version = "latest";
 my $cmd;
@@ -46,12 +47,13 @@ GetOptions('databaseHost=s' => \$databaseHost,
 	   'withExternalLinks' => \$withExternalLinks,
 	   'withMetaPages' => \$withMetaPages,
 	   'withHistory' => \$withHistory,
+	   'withSiteStats' => \$withSiteStats,
 	   'version=s' => \$version,
 	   'tmpDir=s' => \$tmpDir,
 	   );
 
 if (!$databaseName || !$projectCode) {
-    print "usage: ./mirrorWmfDumps.pl --projectCode=enwiki --databaseName=MYDB [--tmpDir=/tmp] [--databaseHost=localhost] [--databasePort=3306] [--databaseUsername=tom] [--databasePassword=fff] [--withoutImages] [--withTemplateLinks] [--withPageLinks] [--version=latest] [--withMetaPages] [--withExternalLinks] [--withHistory]\n";
+    print "usage: ./mirrorWmfDumps.pl --projectCode=enwiki --databaseName=MYDB [--tmpDir=/tmp] [--databaseHost=localhost] [--databasePort=3306] [--databaseUsername=tom] [--databasePassword=fff] [--withoutImages] [--withTemplateLinks] [--withPageLinks] [--version=latest] [--withMetaPages] [--withExternalLinks] [--withHistory] [--withSiteStats]\n";
     exit;
 }
 
@@ -95,6 +97,10 @@ if ($withExternalLinks) {
     $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-externallinks.sql.gz"; `$cmd`;
 }
 
+if ($withSiteStats) {
+    $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-site_stats.sql.gz"; `$cmd`;
+}
+
 unless ($withoutImages) {
     $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-image.sql.gz"; `$cmd`;
     $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-imagelinks.sql.gz"; `$cmd`;
@@ -113,7 +119,7 @@ my $sth;
 $dbh = DBI->connect($dsn, $databaseUsername, $databasePassword) or die ("Unable to connect to the database.");
 
 # Truncate necessary tables
-foreach my $table ("revision", "page", "text", "imagelinks", "templatelinks", "redirect", "externallinks", "image", "oldimage", "langlinks", "logging", "recentchanges", "searchindex", "pagelinks", "l10n_cache", "job", "category", "categorylinks", "archive", "filearchive" ) {
+foreach my $table ("revision", "page", "text", "imagelinks", "templatelinks", "redirect", "externallinks", "image", "oldimage", "langlinks", "logging", "recentchanges", "searchindex", "pagelinks", "l10n_cache", "job", "category", "categorylinks", "archive", "filearchive", "site_stats" ) {
     $req = "TRUNCATE $table";
     $sth = $dbh->prepare($req)  or die ("Unable to prepare request.");
     $sth->execute() or die ("Unable to execute request.");
@@ -155,6 +161,10 @@ if ($withTemplateLinks) {
 
 if ($withExternalLinks) {
     $cmd = "gzip -d -c $tmpDir/$projectCode-$version-externallinks.sql.gz | $mysqlCmd"; `$cmd`;
+}
+
+if ($withSiteStats) {
+    $cmd = "gzip -d -c $tmpDir/$projectCode-$version-site_stats.sql.gz | $mysqlCmd"; `$cmd`;
 }
 
 unless ($withoutImages) {
