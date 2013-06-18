@@ -23,6 +23,7 @@ my $databaseName = "";
 my $databaseUsername = "";
 my $databasePassword = "";
 my $projectCode = "";
+my $installPath = "";
 my $withHistory;
 my $withoutImages;
 my $withPageLinks;
@@ -30,6 +31,9 @@ my $withExternalLinks;
 my $withTemplateLinks;
 my $withMetaPages;
 my $withSiteStats;
+my $withPageRestrictions;
+my $withUserGroups;
+my $withLogging;
 my $tmpDir = "/tmp";
 my $version = "latest";
 my $cmd;
@@ -47,18 +51,32 @@ GetOptions('databaseHost=s' => \$databaseHost,
 	   'withExternalLinks' => \$withExternalLinks,
 	   'withMetaPages' => \$withMetaPages,
 	   'withHistory' => \$withHistory,
+	   'withLogging' => \$withLogging,
 	   'withSiteStats' => \$withSiteStats,
+	   'withPageRestrictions' => \$withPageRestrictions,
+	   'withUserGroups' => \$withUserGroups,
+	   'installPath=s' => \$installPath,
 	   'version=s' => \$version,
 	   'tmpDir=s' => \$tmpDir,
 	   );
 
 if (!$databaseName || !$projectCode) {
-    print "usage: ./mirrorWmfDumps.pl --projectCode=enwiki --databaseName=MYDB [--tmpDir=/tmp] [--databaseHost=localhost] [--databasePort=3306] [--databaseUsername=tom] [--databasePassword=fff] [--withoutImages] [--withTemplateLinks] [--withPageLinks] [--version=latest] [--withMetaPages] [--withExternalLinks] [--withHistory] [--withSiteStats]\n";
+    print "usage: ./mirrorWmfDumps.pl --projectCode=enwiki --databaseName=MYDB [--tmpDir=/tmp] [--installPath=/var/www/mw/] [--databaseHost=localhost] [--databasePort=3306] [--databaseUsername=tom] [--databasePassword=fff] [--withoutImages] [--withTemplateLinks] [--withPageLinks] [--version=latest] [--withMetaPages] [--withExternalLinks] [--withHistory] [--withSiteStats] [--withLogging] [--withPageRestrictions] [--withUserGroups]\n";
     exit;
 }
 
 if ($databaseUsername && !$databasePassword) {
     $databasePassword = query("Database password:", "");
+}
+
+if ($withLogging && !$installPath) {
+    print "Please specify --installPath";
+    exit 1;
+}
+
+if ( ! -e "$installPath/LocalSettings.php") {
+    print "installPath is not valid, $installPath/LocalSettings.php does not exist.";
+    exit 1;
 }
 
 # Create temporary directory
@@ -101,6 +119,18 @@ if ($withSiteStats) {
     $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-site_stats.sql.gz"; `$cmd`;
 }
 
+if ($withLogging) {
+    $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-pages-logging.xml.gz"; `$cmd`;
+}
+
+if ($withPageRestrictions) {
+    $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-page_restrictions.sql.gz"; `$cmd`;
+}
+
+if ($withUserGroups) {
+    $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-user_groups.sql.gz"; `$cmd`;
+}
+
 unless ($withoutImages) {
     $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-image.sql.gz"; `$cmd`;
     $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-imagelinks.sql.gz"; `$cmd`;
@@ -126,25 +156,26 @@ foreach my $table ("revision", "page", "text", "imagelinks", "templatelinks", "r
 }
 
 # Upload the XML
+print "Parsing content XML file...\n";
 my $mysqlCmd = "mysql --user=$databaseUsername --password=$databasePassword $databaseName";
 
 if ($withHistory) {
-    $cmd = "cd $mwDumperDir; java -classpath ./src org.mediawiki.dumper.Dumper --format=sql:1.5 ../$projectCode-$version-pages-meta-history.xml.bz2 | bzip2 > $projectCode-sql.bz2";
-    
     unless ($withoutImages) {
 	$cmd = "gzip -d -c $tmpDir/$projectCode-$version-oldimage.sql.gz | $mysqlCmd"; `$cmd`;
     }
 
+    $cmd = "cd $mwDumperDir; java -classpath ./src org.mediawiki.dumper.Dumper --format=sql:1.5 ../$projectCode-$version-pages-meta-history.xml.bz2 | bzip2 > $projectCode-sql.bz2";
 } elsif ($withMetaPages) {
     $cmd = "cd $mwDumperDir; java -classpath ./src org.mediawiki.dumper.Dumper --format=sql:1.5 ../$projectCode-$version-pages-meta-current.xml.bz2 | bzip2 > $projectCode-sql.bz2";
 } else {
     $cmd = "cd $mwDumperDir; java -classpath ./src org.mediawiki.dumper.Dumper --format=sql:1.5 ../$projectCode-$version-pages-articles.xml.bz2 | bzip2 > $projectCode-sql.bz2";
 }
 system "$cmd";
+print "Parsing content XML file finished.\n";
 
 $cmd = "cd $mwDumperDir; bzip2 -c -d $projectCode-sql.bz2 | $mysqlCmd";
-print $cmd."\n";
 system "$cmd";
+print "Pages uploaded to the database.\n";
 
 # Upload the SQL
 $cmd = "gzip -d -c $tmpDir/$projectCode-$version-redirect.sql.gz | $mysqlCmd"; `$cmd`;
@@ -167,9 +198,23 @@ if ($withSiteStats) {
     $cmd = "gzip -d -c $tmpDir/$projectCode-$version-site_stats.sql.gz | $mysqlCmd"; `$cmd`;
 }
 
+if ($withLogging) {
+    $cmd = "php \"$installPath/maintenance/importDump.php\" \"$tmpDir/$projectCode-$version-pages-logging.xml.gz\"; php \"$installPath/maintenance/rebuildrecentchanges.php\""; `$cmd`;
+}
+
+if ($withPageRestrictions) {
+    $cmd = "gzip -d -c $tmpDir/$projectCode-$version-page_restrictions.sql.gz | $mysqlCmd"; `$cmd`;
+}
+
+if ($withUserGroups) {
+    $cmd = "gzip -d -c $tmpDir/$projectCode-$version-user_groups.sql.gz | $mysqlCmd"; `$cmd`;
+}
+
 unless ($withoutImages) {
     $cmd = "gzip -d -c $tmpDir/$projectCode-$version-image.sql.gz | $mysqlCmd"; `$cmd`;
     $cmd = "gzip -d -c $tmpDir/$projectCode-$version-imagelinks.sql.gz | $mysqlCmd"; `$cmd`;
 }
+
+print "Everything finished.\n";
 
 exit;
