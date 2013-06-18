@@ -1130,8 +1130,6 @@ sub allUsers {
         'list' => 'allusers',
         'format' => 'xml',
 	'aulimit' => '500',
-	'usprop' => 'emailable|editcount'
-
     };
     my @users;
     my $continue;
@@ -1148,11 +1146,16 @@ sub allUsers {
 
 	if (exists($xml->{query}->{allusers})) {
 	    foreach my $name (keys($xml->{query}->{allusers}->{u})) {
+		my %user;
+		$user{'id'} = $xml->{query}->{allusers}->{u}->{$name}->{'userid'};
 		$name =~ tr/ /_/;
-		push(@users, $name);
+		$user{'name'} = $name; 
+		push(@users, \%user);
             }
 	}
     } while ($continue = $xml->{"query-continue"}->{"allusers"}->{"aufrom"});
+
+    # Get more information about the users
 
     return(@users);
 }
