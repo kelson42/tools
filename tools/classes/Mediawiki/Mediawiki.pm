@@ -1201,6 +1201,32 @@ sub userInfo {
     return $xml->{query}->{users}->{user};
 }
 
+sub imageInfos {
+    my ($self, $title) = @_;
+
+    my $httpPostRequestParams = {
+        'action' => 'query',
+        'titles' => $title,
+        'prop' => 'imageinfo',
+        'format' => 'xml',
+	'iilimit' => '50',
+	'iiprop' => 'url|archivename',
+    };
+    my @versions;
+    my $xml;
+
+    # make the http request and parse response
+    $xml = $self->makeApiRequestAndParseResponse(values=>$httpPostRequestParams, forceArray=>'ii');
+
+    if (exists($xml->{query}->{pages}->{page}->{imageinfo}->{ii})) {
+	foreach my $version (@{$xml->{query}->{pages}->{page}->{imageinfo}->{ii}}) {
+	    push(@versions, { url => $version->{url} });
+	}
+    }
+
+    return @versions;
+}
+
 sub allImages {
     my $self = shift;
     my $httpPostRequestParams = {
