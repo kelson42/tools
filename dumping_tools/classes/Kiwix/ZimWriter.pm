@@ -34,6 +34,7 @@ my %urls;
 my %deadUrls;
 my @files;
 my $file;
+my $CDATAFilterRegexp = "\@import.*?[\"\(\']{1}(.+?)[\"\)\']{1}";
 my $htmlFilterRegexp = "^.*\.(html|htm|xhtml)\$";
 my $jsFilterRegexp = "^.*\.(js)\$";
 my $cssFilterRegexp = "^.*\.(css)\$";
@@ -147,7 +148,7 @@ sub getUrlCounts {
 
 	# CDATA links
 	if ($self->rewriteCDATA) {
-	    while ($data =~ /\@import.*?\"([^\"]+)\"/gm) {
+	    while ($data =~ /$CDATAFilterRegexp/gm) {
 		push(@$links, {"src"=>$1, "tag"=>"CDATA"} );
 	    }
 	}
@@ -808,7 +809,7 @@ sub copyFileToDatabase {
 	    my %links;
 	    
 	    # Get links to rewrite
-	    while ($data =~ /\@import.*?\"([^\"]+)\"/gm) {
+	    while ($data =~ /$CDATAFilterRegexp/gm) {
 		$links{$1} = 1;
 	    }
 	    
