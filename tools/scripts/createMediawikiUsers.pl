@@ -4,39 +4,37 @@ use lib '../classes/';
 use utf8;
 use strict;
 use warnings;
+use DBI;
 use Getopt::Long;
 use Data::Dumper;
 use Mediawiki::Mediawiki;
 
-my $username;
-my $password;
-my $host;
 my $path;
-my $forceUserId;
 my $database;
 my $databaseUsername;
 my $databasePassword;
 my %users;
-
 my $possible = 'abcdefghijkmnpqrstuvwxyz23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
 
 sub usage() {
-    print "createMediawikiUsers.pl --host=testwiki [--path=w] --username=foo --password=bar [--forceUserId] [--database=wiki] [--databaseUsername] [--databasePassword]\n";
+    print "createMediawikiUsers.pl --path=/var/www/wiki/w/ --database=wiki --databaseUsername=foo --databasePassword=bar\n";
 }
 
-GetOptions('username=s' => \$username, 
-	   'password=s' => \$password,
-	   'host=s' => \$host,
-	   'path=s' => \$path,
-	   'forceUserId' => \$forceUserId,
+GetOptions('path=s' => \$path,
 	   'database=s' => \$database,
 	   'databaseUsername=s' => \$databaseUsername,
 	   'databasePassword=s' => \$databasePassword,
 );
 
-if ( !$host || !$username || !$password) {
+if ( !$path || !$database || !$databaseUsername || !$databasePassword) {
     usage();
     exit 0;
+}
+
+# change password path
+my $script = $path."/maintenance/changePassword.php";
+unless (-f $script) {
+    die("The path you have give is wront, $script does not exist.\n");
 }
 
 # readFromStdin
@@ -46,13 +44,30 @@ while (my $entry = <STDIN>) {
     $users{$name} = $id;
 }
 
+# Connect to database
+my $dsn = "DBI:mysql:$database;host=localhost:3306";
+my $dbh = DBI->connect($dsn, $databaseUsername, $databasePassword) or die ("Unable to connect to the database.");
+my $sql;
+
 # Create users
 foreach my $name (keys(%users)) {
-    my $user = $users{$name};
+    my $userId = $users{$name};
+    my $userName = $name;
+    $userName =~ s/_/ /g;
     my $password = "";
     while (length($password) < 10) {
 	$password .= substr($possible, (int(rand(length($possible)))), 1);
     }
+
+    my $insert_handle = $dbh->prepare_cached("INSERT INTO user (user_id, user_name) VALUES (?,?)"); 
+
+    die "Couldn't prepare queries; aborting"
+	unless defined $insert_handle;
+
+    $insert_handle->execute($userId, $userName) or die ("Unable to insert new user");
+    
+    my $cmd = "php $script --userid='$userId' --password='$password'";
+    `$cmd`;
 
     print $name."\t".$password."\n";
 }
