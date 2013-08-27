@@ -87,9 +87,9 @@ unless ( -d "$tmpDir" ) {
 
 # Download the XML & SQL files
 if ($withHistory) {
-    $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-pages-meta-history.xml.bz2";
+    $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-pages-meta-history.xml.bz2;";
     unless ($withoutImages) {
-	$cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-oldimage.sql.gz"; `$cmd`;
+	$cmd .= "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-oldimage.sql.gz"; `$cmd`;
     }
 } elsif ($withMetaPages) {
     $cmd = "cd $tmpDir ; wget -c http://download.wikimedia.org/$projectCode/$version/$projectCode-$version-pages-meta-current.xml.bz2";
