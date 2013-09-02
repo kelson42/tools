@@ -209,6 +209,28 @@ sub rollbackPage {
     return 1;
 }
 
+sub emailUser {
+    my ($self, $user, $subject, $text) = @_;
+
+    my $httpResponse = $self->makeApiRequest(
+	{
+	    "action" => "emailuser",
+	    "target" => $user,
+	    "token" => $self->editToken(),
+	    "subject" => "$subject",
+	    "text" => "$text",
+	    "format" => "xml"
+	},
+	"POST"
+	);
+
+    if ( $httpResponse->content() =~ /\<error\ /) {
+	return 0;
+    }
+
+    return 1;
+}
+
 sub getRedirectionRegex {
     my $self = shift;
 
