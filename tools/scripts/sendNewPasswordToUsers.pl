@@ -90,7 +90,7 @@ We invite you to change it as soon at possible:
 http://wiki.wikimedia.org.uk/w/index.php?title=Special:UserLogin
 
 If you want to know more about this migration:
-https://wiki.wikimedia.org/wiki/WMUK_wiki_migration
+https://wiki.wikimedia.org.uk/wiki/WMUK_wiki_migration
 
 Kind regards
 Wiki migration team";
