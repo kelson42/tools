@@ -209,6 +209,28 @@ sub rollbackPage {
     return 1;
 }
 
+sub emailUser {
+    my ($self, $user, $subject, $text) = @_;
+
+    my $httpResponse = $self->makeApiRequest(
+	{
+	    "action" => "emailuser",
+	    "target" => $user,
+	    "token" => $self->editToken(),
+	    "subject" => "$subject",
+	    "text" => "$text",
+	    "format" => "xml"
+	},
+	"POST"
+	);
+
+    if ( $httpResponse->content() =~ /\<error\ /) {
+	return 0;
+    }
+
+    return 1;
+}
+
 sub getRedirectionRegex {
     my $self = shift;
 
@@ -1130,8 +1152,6 @@ sub allUsers {
         'list' => 'allusers',
         'format' => 'xml',
 	'aulimit' => '500',
-	'usprop' => 'emailable|editcount'
-
     };
     my @users;
     my $continue;
@@ -1148,11 +1168,16 @@ sub allUsers {
 
 	if (exists($xml->{query}->{allusers})) {
 	    foreach my $name (keys($xml->{query}->{allusers}->{u})) {
+		my %user;
+		$user{'id'} = $xml->{query}->{allusers}->{u}->{$name}->{'userid'};
 		$name =~ tr/ /_/;
-		push(@users, $name);
+		$user{'name'} = $name; 
+		push(@users, \%user);
             }
 	}
     } while ($continue = $xml->{"query-continue"}->{"allusers"}->{"aufrom"});
+
+    # Get more information about the users
 
     return(@users);
 }

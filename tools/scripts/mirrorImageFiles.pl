@@ -56,11 +56,12 @@ foreach my $title (@titles) {
 	my $target = uri_unescape($url);
 	$target =~ s/^(.+?\/)(archive\/|)([^\/]{1}\/[^\/]{2}\/[^\/]+$)/$2$3/;
 	$target = $directory."/images/".$target;
+	$target =~ s/"/\\"/;
 	my $targetDir = dirname($target);
 	print "$url -> $target\n";
 	unless ( -e $target ) {
 	    make_path($targetDir);
-	    $cmd = "wget '$url' -O '$target'"; `$cmd`;
+	    $cmd = "wget \"$url\" -O \"$target\""; `$cmd`;
 	}
     }
 }

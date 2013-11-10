@@ -44,8 +44,8 @@ if ($username) {
 }
 $site->setup();
 
-foreach my $name ($site->allUsers()) {
-    print $name."\n";
+foreach my $user ($site->allUsers()) {
+    print $user->{'name'}."\t".$user->{'id'}."\n";
 }
 
 exit;
