@@ -14,6 +14,7 @@ use File::Basename;
 
 my $commonsHost = "commons.wikimedia.org";
 my $overwrite = 0;
+my $overwriteDescriptionOnly = 0;
 my $dbPassword;
 my $dbUsername;
 my $dbh;
@@ -44,7 +45,7 @@ my $templateCode = "=={{int:filedesc}}==
   |notes            = 
   |accession number = Call number <TMPL_VAR NAME=SYSID>
   |source           = Zentralbibliothek Solothurn
-  |permission       = 
+  |permission       = Public domain
   |other_fields_2   = <TMPL_VAR NAME=OTHER_FIELD_2>
   |other_versions   = 
 }}
@@ -53,33 +54,6 @@ my $templateCode = "=={{int:filedesc}}==
 
 [[Category:Historical images of Solothurn]]
 ";
-
-my $templateCodeBack = "=={{int:filedesc}}==
-{{Artwork     
-  |artist           = <TMPL_VAR NAME=AUTHOR>
-  |title            = <TMPL_VAR NAME=TITLE>
-  |description      = {{de|1=<TMPL_VAR NAME=DESCRIPTION>}} 
-  |date             = <TMPL_VAR NAME=DATE>
-  |medium           = <TMPL_IF NAME=MEDIUM>{{de|1=<TMPL_VAR NAME=MEDIUM>}}</TMPL_IF>
-  |dimensions       = <TMPL_IF NAME=DIMENSIONS>{{de|1=<TMPL_VAR NAME=DIMENSIONS>}}</TMPL_IF>
-  |institution      = {{institution:Zentralbibliothek Zürich}}
-  |location         = <TMPL_VAR NAME=LOCATION>
-  |references       =
-  |object history   =
-  |credit line      =
-  |inscriptions     =
-  |notes            = 
-  |accession number =
-  |source           = {{Zentralbibliothek_Zürich_backlink|<TMPL_VAR NAME=SYSID>}}
-  |permission       = Public domain
-  |other_versions   = [[:File:<TMPL_VAR NAME=OTHER_VERSION>]]
-}}
-{{Zentralbibliothek_Zürich<TMPL_IF NAME=ISORIGINAL>|category=Media_contributed_by_Zentralbibliothek_Zürich (original picture)</TMPL_IF>}}
-
-=={{int:license-header}}==
-{{PD-old-100}}<TMPL_UNLESS NAME=ISORIGINAL><TMPL_IF NAME=CATEGORY>
-
-[[Category:<TMPL_VAR NAME=CATEGORY>]]</TMPL_IF></TMPL_UNLESS NAME=ISORIGINAL>";
 
 my %technique = (
 "aquatinta" => "Aquatint",
@@ -142,7 +116,8 @@ sub usage() {
     print "--delay=<NUMBER_OF_SECONDS>      Wait between two uploads\n";
     print "--help                           Print the help of the script\n";
     print "--verbose                        Print debug information to the console\n";
-    print "--overwrite                      Force re-upload of pictures (both for FTP and Wikimedia commons)\n";
+    print "--overwrite                      Force re-upload of picture\n";
+    print "--overwriteDescriptionOnly       Force re-upload of the description\n";
 }
 
 GetOptions('username=s' => \$username, 
@@ -153,6 +128,7 @@ GetOptions('username=s' => \$username,
 	   'delay=s' => \$delay,
 	   'verbose' => \$verbose,
 	   'overwrite' => \$overwrite,
+	   'overwriteDescriptionOnly' => \$overwriteDescriptionOnly,
 	   'filter=s' => \@filters,
 	   'help' => \$help,
 );
@@ -195,6 +171,12 @@ $prep->finish();
 foreach my $imageId (keys(%images)) {
     my $image = $images{$imageId};
 
+    # Check the filter
+    if (!$image->{'we_signatur'} && !scalar(@filters) || 
+	$image->{'we_signatur'} && scalar(@filters) && !(grep {$_ eq $image->{'we_signatur'}} @filters)) {
+	next;
+    }
+
     # Get image path
     my $filename = $image->{'we_signatur'};
     $filename =~ s/^(a+)(\d+)(.*)$/$1_$2/;
@@ -203,7 +185,7 @@ foreach my $imageId (keys(%images)) {
 	print STDERR "Unable to find $imageId corresponding file path.\n";
 	next;
     }
-    
+
     # Compute metadata;
     my %metadata;
     $metadata{'sysid'} = $image->{'we_signatur'};
@@ -222,6 +204,19 @@ foreach my $imageId (keys(%images)) {
     $metadata{'other_field_2'} = ($image->{'we_formalsw'} ? "{{Information field|name=ZBS form heading|value=".$image->{'we_formalsw'}."}}" : "").
 	($image->{'we_formalsw2'} ? ", {{Information field|name=ZBS form heading|value=".$image->{'we_formalsw2'}."}}" : "");
 
+    # Compute new filename
+    my $newFilename = $metadata{'title'};
+    utf8::encode($newFilename);
+    utf8::decode($newFilename);
+    $newFilename =~ s/ /_/g;
+    $newFilename =~ s/[^\w]//g;
+    $newFilename = "Zentralbibliothek_Solothurn_-_".$newFilename."_-_".$metadata{'sysid'}.".tif";
+    $newFilename =~ s/ /_/g;
+    $newFilename =~ s/[_]+/_/g;
+    if (length($newFilename) > 245) {
+	die "Title/Filename is too long (>255 bytes) for entry with UID ".$metadata{'sysid'}.".";
+    }
+    printLog("New filename for ".$metadata{'sysid'}." is ".$newFilename);
 
     # Preparing description
     my $template = HTML::Template->new(scalarref => \$templateCode);
@@ -237,6 +232,42 @@ foreach my $imageId (keys(%images)) {
     my $description = $template->output();
 
     print $description;
+
+    # Connect to Wikimedia Commons
+    my $commons = connectToCommons();
+    printLog("Successfuly connected to Wikimedia Commons.");
+
+    my $doesExist = $commons->exists("File:$newFilename");
+    if (!$doesExist || $overwrite || $overwriteDescriptionOnly) {
+
+	my $status;
+	my $content = readFile($filename);
+
+	if (!$doesExist) {
+	    printLog("'$newFilename' uploading...");
+	    $status = $commons->uploadImage($newFilename, $content, $description, "GLAM Solothurn central library picture' ".$metadata{'sysid'}."' (WMCH)", 1);
+	} elsif ($doesExist && $overwrite) {
+	    printLog("'$newFilename' already uploaded but will be overwritten...");
+	    $status = $commons->uploadImage($newFilename, $content, $description, "GLAM Solothurn central library picture' ".$metadata{'sysid'}."' (WMCH)");
+	} elsif ($doesExist && $overwriteDescriptionOnly) {
+	    printLog("'$newFilename' already uploaded but will description will be overwritten...");
+	    $commons->uploadPage("File:".$newFilename, $description, "Description update...");
+	}
+	
+	if ($status) {
+	    printLog("'$newFilename' was successfuly uploaded to Wikimedia Commons.");
+	} else {
+	    die "'$newFilename' failed to be uploaded to Wikimedia Commons.\n";
+	}
+    } else {
+	printLog("'File:$newFilename' already exists in Wikimedia Commons, it was ignores. Use --overwrite to force the re-upload.");
+    }
+    
+    # Wait a few seconds
+    if ($delay) {
+	printLog("Waiting $delay s...");
+	sleep($delay);
+    }
 }
 
 # Read/Write functions
