@@ -79,6 +79,59 @@ my $templateCodeBack = "=={{int:filedesc}}==
 
 [[Category:<TMPL_VAR NAME=CATEGORY>]]</TMPL_IF></TMPL_UNLESS NAME=ISORIGINAL>";
 
+my %technique = (
+"aquatinta" => "Aquatint",
+"autotypie" => "Autotype",
+"bister" => "Bister",
+"federlithographie" => "Pen lithograph",
+"gouache" => "Gouache",
+"heliographie" => "Heliography",
+"holzschnitt" => "Woodcut",
+"holzstich" => "Wood engraving",
+"kaltnadel" => "Drypoint",
+"kreidelithographie" => "Chalk lithograph",
+"kupferstich" => "Copper engraving",
+"lichtdruck" => "Collotype",
+"lichtpaus-radierung" => "Diazocopy etching",
+"linolschnitt" => "Linocut",
+"mezzotinto" => "Mezzotint engraving",
+"mischtechnik" => "Mixed technique",
+"monotypie" => "Monotype",
+"offset-verfahren" => "Offset",
+"pastell" => "Pastel",
+"photographie" => "Photograph",
+"photokopie" => "Photocopy",
+"punktierradierung" => "Stipple etching",
+"radierung" => "Etching",
+"reproduktion" => "Reproduction",
+"stahlstich" => "Steel engraving",
+"lithographie" => "Lithograph",
+"tonlithographie" => "Toned lithograph",
+"umrissstich" => "Contour engraving",
+"zinkographie" => "Zincography",
+);
+
+my %techniqueAttribute = (
+"aquarelliert" => "watercolor techniques applied",
+"blau" => "blue",
+"braun" => "brown",
+"farbig" => "color",
+"farbig-hellblau" => "color, light blue",
+"farbig-rötlich" => "color, reddish",
+"farbig-zweifarbig" => "bicolor",
+"farbig-dreifarbig" => "tricolor",
+"farbig-vierfarbig" => "four-color",
+"grau" => "grey",
+"grauer Grundton" => "grey basic tint",
+"grün" => "green",
+"hellgrüner Grundton" => "light green basic tint",
+"koloriert" => "colored",
+"mit Kreiden überarbeitet" => "retouched with chalk",
+"sepia" => "sepia",
+"teilkoloriert" => "partly colored",
+"weiss gehöht" => "highlighted with white", 
+);
+
 sub usage() {
     print "uploadZBS.pl is a script to upload files from the Solothurn central library.\n";
     print "\tuploadZBS --username=<COMMONS_USERNAME> --password=<COMMONS_PASSWORD> --directory=<PICTURE_DIRECTORY> --dbUsername=<MYSQL_USERNAME> --dbPassword=<MYSQL_PASSWORD>\n\n";
@@ -152,11 +205,15 @@ foreach my $imageId (keys(%images)) {
     # Compute metadata;
     my %metadata;
     $metadata{'sysid'} = $image->{'we_signatur'};
-    $metadata{'medium'} = $image->{'we_technik'}.($image->{'we_technikattribut'} ? ", ".$image->{'we_technikattribut'} : "");
     $metadata{'author'} = $image->{'we_kuenstler1'};
     $metadata{'title'} = $image->{'we_titel'};
     $metadata{'description'} = $image->{'we_inhalt'};
     $metadata{'date'} = $image->{'we_ez_jahr2'} ? "{{other date|between|".$image->{'we_ez_jahr1'}."|".$image->{'we_ez_jahr2'}."}}" : $image->{'we_ez_jahr1'};
+    if (exists($technique{lc($image->{'we_technik'})}) && exists($techniqueAttribute{lc($image->{'we_technikattribut'})})) {
+	$metadata{'medium'} = "{{Technique|1=".$technique{lc($image->{'we_technik'})}."|2=paper|adj=".$techniqueAttribute{lc($image->{'we_technikattribut'})}."}}";
+    } else {
+	$metadata{'medium'} = $image->{'we_technik'}.($image->{'we_technikattribut'} ? ", ".$image->{'we_technikattribut'} : "");
+    }
 
     # Preparing description
     my $template = HTML::Template->new(scalarref => \$templateCode);
