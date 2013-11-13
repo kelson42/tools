@@ -29,11 +29,12 @@ my %metadatas;
 my $templateCode = "=={{int:filedesc}}==
 {{Artwork     
   |artist           = <TMPL_VAR NAME=AUTHOR>
+  |other_fields_1   = <TMPL_VAR NAME=OTHER_FIELD_1>
   |title            = <TMPL_VAR NAME=TITLE>
   |description      = {{de|<TMPL_VAR NAME=DESCRIPTION>}}
   |date             = <TMPL_VAR NAME=DATE>
   |medium           = <TMPL_VAR NAME=MEDIUM>
-  |dimensions       = 
+  |dimensions       = <TMPL_VAR NAME=DIMENSIONS>
   |institution      = {{institution:Zentralbibliothek Solothurn}}
   |location         = 
   |references       =
@@ -44,6 +45,7 @@ my $templateCode = "=={{int:filedesc}}==
   |accession number = Call number <TMPL_VAR NAME=SYSID>
   |source           = Zentralbibliothek Solothurn
   |permission       = 
+  |other_fields_2   = <TMPL_VAR NAME=OTHER_FIELD_2>
   |other_versions   = 
 }}
 {{Zentralbibliothek Solothurn}}
@@ -205,7 +207,9 @@ foreach my $imageId (keys(%images)) {
     # Compute metadata;
     my %metadata;
     $metadata{'sysid'} = $image->{'we_signatur'};
-    $metadata{'author'} = $image->{'we_kuenstler1'};
+    $metadata{'author'} = $image->{'we_kuenstler1'}.($image->{'we_kuenstler2'} ? ",<br/>".$image->{'we_kuenstler2'} : "");
+    $metadata{'other_field_1'} = ($image->{'we_stecher'} ? "{{Information field|name=Engraver|value=".$image->{'we_stecher'}."}}" : "").
+	($image->{'we_verleger'} ? "{{Information field|name=Publisher|value=".$image->{'we_verleger'}."}}" : "");
     $metadata{'title'} = $image->{'we_titel'};
     $metadata{'description'} = $image->{'we_inhalt'};
     $metadata{'date'} = $image->{'we_ez_jahr2'} ? "{{other date|between|".$image->{'we_ez_jahr1'}."|".$image->{'we_ez_jahr2'}."}}" : $image->{'we_ez_jahr1'};
@@ -214,6 +218,10 @@ foreach my $imageId (keys(%images)) {
     } else {
 	$metadata{'medium'} = $image->{'we_technik'}.($image->{'we_technikattribut'} ? ", ".$image->{'we_technikattribut'} : "");
     }
+    $metadata{'dimensions'} = "{{Size|unit=cm|width=".$image->{'we_bild_breite'}."|height=".$image->{'we_bild_hoehe'}."}}";
+    $metadata{'other_field_2'} = ($image->{'we_formalsw'} ? "{{Information field|name=ZBS form heading|value=".$image->{'we_formalsw'}."}}" : "").
+	($image->{'we_formalsw2'} ? ", {{Information field|name=ZBS form heading|value=".$image->{'we_formalsw2'}."}}" : "");
+
 
     # Preparing description
     my $template = HTML::Template->new(scalarref => \$templateCode);
@@ -223,6 +231,9 @@ foreach my $imageId (keys(%images)) {
     $template->param(DATE=>$metadata{'date'});
     $template->param(SYSID=>$metadata{'sysid'});
     $template->param(MEDIUM=>$metadata{'medium'});
+    $template->param(DIMENSIONS=>$metadata{'dimensions'});
+    $template->param(OTHER_FIELD_1=>$metadata{'other_field_1'});
+    $template->param(OTHER_FIELD_2=>$metadata{'other_field_2'});
     my $description = $template->output();
 
     print $description;
