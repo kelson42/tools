@@ -50,7 +50,7 @@ my $templateCode = "=={{int:filedesc}}==
   |other_versions   = 
 }}
 {{Zentralbibliothek Solothurn}}
-{{PD-old}}
+{{PD-old-70-1923}}
 
 [[Category:Historical images of Solothurn]]
 ";
@@ -179,11 +179,13 @@ foreach my $imageId (keys(%images)) {
 
     # Get image path
     my $filename = $image->{'we_signatur'};
-    $filename =~ s/^(a+)(\d+)(.*)$/$1_$2/;
+    $filename =~ s/^(a+)(\d+)$/$1_$2/;
     $filename = "$pictureDirectory$filename.tif";
     unless ( -e $filename) {
-	print STDERR "Unable to find $imageId corresponding file path.\n";
+	print STDERR "Unable to find '".$image->{'we_signatur'}."' corresponding file path.\n";
 	next;
+    } else {
+	printLog("'".$image->{'we_signatur'}."' matchs file '".$filename."'");
     }
 
     # Compute metadata;
@@ -213,9 +215,13 @@ foreach my $imageId (keys(%images)) {
     $newFilename = "Zentralbibliothek_Solothurn_-_".$newFilename."_-_".$metadata{'sysid'}.".tif";
     $newFilename =~ s/ /_/g;
     $newFilename =~ s/[_]+/_/g;
-    if (length($newFilename) > 245) {
-	die "Title/Filename is too long (>255 bytes) for entry with UID ".$metadata{'sysid'}.".";
-    }
+    $newFilename =~ s/Milizen_Milices_de_Soleure_Unter_Bild_Bezeichnungen_der_Dargestellten_Frei_Corps_Jäger_z_Pferd_Corpsfranc_Chasseurs_à_cheval_Lieutenant_Escadron//g;
+    $newFilename =~ s/Olten_OLTEN_Ville_dans_le_Canton_de_Soleure_du_Côté_du_Midi_A_Dunneren_Riviere_B_Château_de_Wartenfels_//g;
+    $newFilename =~ s/l_NÔTRE_DAME_DE_LA_PIERRE_Dans_le_Canton_de_Soleure_du_Côté_du_Septentrion_A_Chapelle_de_Ste_Anne_B_Masure_de_Rotberg_//g;
+    $newFilename =~ s/CHÂTEAU_DE_THIERSTEIN_Dans_le_Canton_de_Soleure_du_Côté_du_Sptentrion_A_Lisel_Riwiere_B_Erschweil_//g;
+    $newFilename =~ s/_Vorsteherin_des_Convents_der_barmherzigen_Schwestern_im_Brgerspital_zu_Solothurn_geboren_den_25ten_May_1783_trat_in_den_Spital_zum_Krankendienst_den_5ten_Januar_1799//g;
+    $newFilename =~ s/_19_Zeilen_Solothurn_den_26_Merz_1777_Laurenz_Joseph_Wirz_Notarius_dieser_Zeit_Schaffner//s;
+
     printLog("New filename for ".$metadata{'sysid'}." is ".$newFilename);
 
     # Preparing description
@@ -231,7 +237,14 @@ foreach my $imageId (keys(%images)) {
     $template->param(OTHER_FIELD_2=>$metadata{'other_field_2'});
     my $description = $template->output();
 
-    print $description;
+    # local check if already done
+    my $doneFile = $filename.".done";
+    if (-f $doneFile) {
+	if ( !$overwrite && !$overwriteDescriptionOnly ) {
+	    printLog("'File:$newFilename' already exists in Wikimedia Commons, it was ignores. Use --overwrite to force the re-upload.");
+	    next;
+	}
+    }
 
     # Connect to Wikimedia Commons
     my $commons = connectToCommons();
@@ -251,16 +264,18 @@ foreach my $imageId (keys(%images)) {
 	    $status = $commons->uploadImage($newFilename, $content, $description, "GLAM Solothurn central library picture' ".$metadata{'sysid'}."' (WMCH)");
 	} elsif ($doesExist && $overwriteDescriptionOnly) {
 	    printLog("'$newFilename' already uploaded but will description will be overwritten...");
-	    $commons->uploadPage("File:".$newFilename, $description, "Description update...");
+	    $status = $commons->uploadPage("File:".$newFilename, $description, "Description update...");
 	}
 	
 	if ($status) {
 	    printLog("'$newFilename' was successfuly uploaded to Wikimedia Commons.");
+	    writeFile($doneFile, "");
 	} else {
 	    die "'$newFilename' failed to be uploaded to Wikimedia Commons.\n";
 	}
     } else {
 	printLog("'File:$newFilename' already exists in Wikimedia Commons, it was ignores. Use --overwrite to force the re-upload.");
+	writeFile($doneFile, "");
     }
     
     # Wait a few seconds
