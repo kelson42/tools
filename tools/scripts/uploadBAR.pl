@@ -25,7 +25,6 @@ my $help;
 my $delay = 0;
 my $verbose;
 my $templateCode = "=={{int:filedesc}}==
-== {{int:filedesc}} ==
 {{CH-BAR-picture
 |wiki description =
 |short title      =
@@ -41,7 +40,7 @@ my $templateCode = "=={{int:filedesc}}==
 |ID               = <TMPL_VAR NAME=SYSID>
 |inventory        = 
 |other versions   = 
-|source           = 
+|source           = Swiss Federal Archives
 |permission       = CC-BY-SA
 }}
 
