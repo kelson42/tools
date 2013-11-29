@@ -24,16 +24,17 @@ my @filters;
 my $help;
 my $delay = 0;
 my $verbose;
+my $commons;
 my $templateCode = "=={{int:filedesc}}==
 {{CH-BAR-picture
 |wiki description =
-|short title      =
+|short title      = <TMPL_VAR NAME=TITLE>
 |archive title    =
-|original title   = <TMPL_VAR NAME=TITLE>
+|original title   = <TMPL_VAR NAME=ORIGINAL_TITLE>
 |biased           =
 |medium           = <TMPL_VAR NAME=MEDIUM>
-|depicted people  = <TMPL_VAR NAME=PLACE>
-|depicted place   = <TMPL_VAR NAME=PEOPLE>
+|depicted place   = <TMPL_VAR NAME=PLACE>
+|depicted people  = <TMPL_VAR NAME=PEOPLE>
 |photographer     = <TMPL_VAR NAME=AUTHOR>
 |date             = <TMPL_VAR NAME=DATE>
 |year             = 
@@ -41,14 +42,20 @@ my $templateCode = "=={{int:filedesc}}==
 |inventory        = 
 |other versions   = 
 |source           = Swiss Federal Archives
-|permission       = CC-BY-SA
+|permission       = CC-BY-SA 3.0/CH
 }}
 
 =={{int:license}}==
-{{cc-by-sa-3.0-ch|attribution=Schweizerisches Bundesarchiv (BAR), <TMPL_VAR NAME=SIGNATURE> / CC-BY-SA }}
+{{cc-by-sa-3.0-ch|
+attribution=DE: Schweizerisches Bundesarchiv, CH-BAR#<TMPL_VAR NAME=SIGNATURE> / CC-BY-SA 3.0/CH<br/>
+EN: Swiss Federal Archives, CH-SFA#<TMPL_VAR NAME=SIGNATURE> / CC-BY-SA 3.0/CH<br/>
+FR: Archives fédérales suisses, CH-AFS#<TMPL_VAR NAME=SIGNATURE> / CC-BY-SA 3.0/CH<br/>
+IT : Archivio federale svizzero, CH-AFS#<TMPL_VAR NAME=SIGNATURE> / CC-BY-SA 3.0/CH
+}}
 {{Swiss Federal Archive}}
 
 [[Category:CH-BAR Collection First World War Switzerland]]
+[[Category:CH-BAR Collection First World War Switzerland uncategorized]]
 ";
 
 sub usage() {
@@ -125,13 +132,22 @@ foreach my $row (1 .. $sheet->{MaxRow}) {
 	|| $id eq "14095_4256_A1.tif"
 	|| $id eq "14095_4868_A1.tif"
 	|| $id eq "14095_4903_A1.tif"
+	|| $id eq "14095_1151a_A1.tif"
 	) {
 	next;
     }
-    unless (-e $pictureDirectory."/".$id) {
-	print STDERR "Unable to find file $pictureDirectory/$id\n";
+    unless (-e $pictureDirectory."/lr/".$id) {
+	print STDERR "Unable to find file $pictureDirectory/lr/$id\n";
 	exit(1);
     }
+
+    my $hrId = $id;
+    $hrId =~ s/A1/S1/;
+    unless (-e $pictureDirectory."/hr/".$hrId) {
+	print STDERR "Unable to find file $pictureDirectory/hr/$hrId\n";
+	exit(1);
+    }
+    $image{'hrId'} = $hrId;
 
     my $filename = $sheet->{Cells}[$row][2]->{Val};
     unless($filename) {
@@ -141,10 +157,22 @@ foreach my $row (1 .. $sheet->{MaxRow}) {
     $filename =~ s/[ ]+/_/g;
     $image{'filename'} = $filename;
 
+    my $originalTitle = $sheet->{Cells}[$row][3]->{Val} || "";
+    utf8::decode($originalTitle);
+    $originalTitle =~ s/\r\n/<br\/>/gm;
+    $originalTitle =~ s/\n/<br\/>/gm;
+    $image{'originalTitle'} = $originalTitle;
+
+    my $people = $sheet->{Cells}[$row][4]->{Val} || "";
+    utf8::decode($people);
+    $image{'people'} = $people;
+
     my $place = $sheet->{Cells}[$row][5]->{Val} || "";
+    utf8::decode($place);
     $image{'place'} = $place;
 
     my $author = $sheet->{Cells}[$row][6]->{Val} || "";
+    utf8::decode($author);
     $image{'author'} = $author;
 
     my $date = $sheet->{Cells}[$row][7]->{Val} || "";
@@ -155,18 +183,22 @@ foreach my $row (1 .. $sheet->{MaxRow}) {
     $image{'sysid'} = $sysid;
 
     my $signature = $sheet->{Cells}[$row][9]->{Val} || "";
+    $signature =~ s/CH\-BAR//g;
     $image{'signature'} = $signature;
 
     my $title = $sheet->{Cells}[$row][11]->{Val} || "";
+    utf8::decode($title);
     $image{'title'} = $title;
 
     my $medium = "{{de|".($sheet->{Cells}[$row][14]->{Val} || "").", ".($sheet->{Cells}[$row][15]->{Val} || "")."}}";
+    utf8::decode($medium);
     $image{'medium'} = $medium;
 
     $images{$id} = \%image;
 }
 
 # Go through all images
+my $ok = 1;
 foreach my $imageId (keys(%images)) {
     my $image = $images{$imageId};
 
@@ -177,12 +209,21 @@ foreach my $imageId (keys(%images)) {
     }
 
     # Get image path
-    my $filename = "$pictureDirectory/$imageId";
+    my $filename = "$pictureDirectory/lr/$imageId";
+    my $hrFilename = "$pictureDirectory/hr/".$image->{'hrId'};
     my $newFilename = $image->{'filename'};
     utf8::decode($newFilename);
 
+    unless($ok) {
+	if ($newFilename eq "Vorbereitete_Mitrailleureailleurstellung_-_CH-BAR_-_3237556.tif") {
+	    $ok = 1;
+	}
+	next;
+    }
+
     # Preparing description
     my $template = HTML::Template->new(scalarref => \$templateCode);
+    $template->param(ORIGINAL_TITLE=>$image->{'originalTitle'});
     $template->param(TITLE=>$image->{'title'});
     $template->param(AUTHOR=>$image->{'author'});
     $template->param(DATE=>$image->{'date'});
@@ -190,6 +231,7 @@ foreach my $imageId (keys(%images)) {
     $template->param(SIGNATURE=>$image->{'signature'});
     $template->param(MEDIUM=>$image->{'medium'});
     $template->param(PLACE=>$image->{'place'});
+    $template->param(PEOPLE=>$image->{'people'});
     my $description = $template->output();
     utf8::decode($description);
 
@@ -197,49 +239,73 @@ foreach my $imageId (keys(%images)) {
     my $doneFile = $filename.".done";
     if (-f $doneFile) {
 	if ( !$overwrite && !$overwriteDescriptionOnly ) {
-	    printLog("'File:$newFilename' already exists in Wikimedia Commons, it was ignores. Use --overwrite to force the re-upload.");
+	    printLog("'File:$newFilename' already exists in Wikimedia Commons, it was ignores. Use --overwrite to force the re-upload ($doneFile).");
 	    next;
 	}
     }
 
     # Connect to Wikimedia Commons
-    my $commons = connectToCommons();
+    $commons = connectToCommons();
     printLog("Successfuly connected to Wikimedia Commons.");
 
     my $doesExist = $commons->exists("File:$newFilename");
     if (!$doesExist || $overwrite || $overwriteDescriptionOnly) {
 
 	my $status;
-	my $content = readFile($filename);
+	my $content;
 
-	if (!$doesExist) {
-	    printLog("'$newFilename' uploading...");
-	    $status = $commons->uploadImage($newFilename, $content, $description, "GLAM - Swiss Federal Archives picture' ".$image->{'sysid'}."' (WMCH)", 0);
-	} elsif ($doesExist && $overwrite) {
-	    printLog("'$newFilename' already uploaded but will be overwritten...");
-	    $status = $commons->uploadImage($newFilename, $content, $description, "GLAM - Swiss Federal Archives picture' ".$image->{'sysid'}."' (WMCH)");
+	if (!$doesExist || $overwrite) {
+	    $content = readFile($hrFilename);
+	    printLog("Reading $hrFilename");
+	    printLog("'$newFilename' uploading original version...");
+	    uploadImage($newFilename, $content, $description, "GLAM - Swiss Federal Archives picture' ".$image->{'sysid'}."' - Original - (WMCH)");
+
+	    $content = readFile($filename);
+	    printLog("Reading $filename");
+	    printLog("'$newFilename' uploading improved version...");
+	    uploadImage($newFilename, $content, $description, "GLAM - Swiss Federal Archives picture' ".$image->{'sysid'}."' - Improved - (WMCH)");
 	} elsif ($doesExist && $overwriteDescriptionOnly) {
 	    printLog("'$newFilename' already uploaded but will description will be overwritten...");
 	    $status = $commons->uploadPage("File:".$newFilename, $description, "Description update...");
+
+	    if ($status) {
+		printLog("'$newFilename' description successfuly uploaded to Wikimedia Commons.");
+		writeFile($doneFile, "");
+	    } else {
+		die "'$newFilename' description failed to be uploaded to Wikimedia Commons.\n";
+	    }
 	}
 	
-	print $status."\n";
-
-	if ($status) {
-	    printLog("'$newFilename' was successfuly uploaded to Wikimedia Commons.");
-	    writeFile($doneFile, "");
-	} else {
-	    die "'$newFilename' failed to be uploaded to Wikimedia Commons.\n";
-	}
     } else {
 	printLog("'File:$newFilename' already exists in Wikimedia Commons, it was ignores. Use --overwrite to force the re-upload.");
-	writeFile($doneFile, "");
+    }
+    
+    # Write check file
+    writeFile($doneFile, "");
+    
+    if ($newFilename eq "Mitrailleure_beim_Schulschiessen_-_CH-BAR_-_3237730.tif") {
+	exit 1;
     }
     
     # Wait a few seconds
     if ($delay) {
 	printLog("Waiting $delay s...");
 	sleep($delay);
+    }
+}
+
+sub uploadImage {
+    my $newFilename = shift;
+    my $content = shift;
+    my $description = shift;
+    my $comment = shift;
+
+    my$status = $commons->uploadImage($newFilename, $content, $description, $comment, 1);
+
+    if ($status) {
+	printLog("'$newFilename' was successfuly uploaded to Wikimedia Commons.");
+    } else {
+	die "'$newFilename' failed to be uploaded to Wikimedia Commons.\n";
     }
 }
 
