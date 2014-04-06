@@ -58,7 +58,7 @@ $cmd = "rm -rf \`find $distributionDirectory -name \"*.svn\"\`"; `$cmd`;
 
 # Download the source code
 $logger->info("Download Kiwix source code");
-$cmd = "cd $distributionDirectory ; wget --trust-server-names http://download.kiwix.org/src/kiwix-unstable-src.tar.gz"; `$cmd`;
+$cmd = "cd $distributionDirectory ; wget --trust-server-names http://download.kiwix.org/src/kiwix-0.9~rc2-src.tar.gz"; `$cmd`;
 
 # Download and unzip linux binary
 $logger->info("Download and unzip Linux binary");
