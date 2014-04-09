@@ -85,7 +85,7 @@ sub optimizeFiles {
 	my $file = $self->getFileToOptimize();
 	if ($file) {
 	    $self->log("info", "$id : Optimizing $file.");
-	    my $mimeType = $mimeDetector->getMimeType($file);
+	    my $mimeType = $mimeDetector->getMimeType($file) || "";
 	    if ($mimeType eq "text/html" && !$ignoreHtml) {
 		$self->optimizeHtml($file);
 	    } elsif ($mimeType eq "image/png") {
@@ -108,7 +108,9 @@ sub optimizeFiles {
 sub optimizePng {
     my $self = shift;
     my $file = shift;
-    `opt-png "$file"`;
+#    `opt-png "$file"`;
+    print "Optimzing $file\n";
+    `pngquant --nofs --force --ext=".png" "$file" ; /usr/local/bin/advdef -z -4 -i 5 "$file"`;
 }
 
 sub optimizeGif {
@@ -120,7 +122,9 @@ sub optimizeGif {
 sub optimizeJpg {
     my $self = shift;
     my $file = shift;
-    `opt-jpg "$file"`;
+#    `opt-jpg "$file"`;
+    print "Optimzing $file\n";
+    `jpegoptim --strip-all -m50 "$file"`
 }
 
 sub optimizeHtml {
