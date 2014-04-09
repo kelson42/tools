@@ -554,6 +554,7 @@ sub buildZimFile {
     my $writerPath = $self->writerPath();
     my $zimFilePath = $self->zimFilePath();
     my $command = "$writerPath -s 2048 --db \"postgresql:dbname='$dbName' user='$dbUser' password='$dbPassword' port='$dbPort'\" $zimFilePath";
+#    my $command = "$writerPath --db \"postgresql:dbname='$dbName' user='$dbUser' password='$dbPassword' port='$dbPort'\" $zimFilePath";
 
     # call the zim writer
     $self->log("info", "Creating the zim file : $command");
