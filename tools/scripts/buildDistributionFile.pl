@@ -52,9 +52,8 @@ $cmd = "rm -rf $distributionDirectory"; `$cmd`;
 $cmd = "mkdir $distributionDirectory"; `$cmd`; 
 
 # Checkout the default ISO directory tree structure
-$logger->info("Checkout the SVN dvd directory template");
-$cmd = "svn co https://kiwix.svn.sourceforge.net/svnroot/kiwix/moulinkiwix/dvd $distributionDirectory"; `$cmd`;
-$cmd = "rm -rf \`find $distributionDirectory -name \"*.svn\"\`"; `$cmd`;
+$logger->info("Checkout the git 'dvd' directory template");
+$cmd = "cd $distributionDirectory ; git clone --depth=1 git clone git://git.code.sf.net/p/kiwix/other dvd ; cd dvd ; git filter-branch --prune-empty --subdirectory-filter dvd HEAD ; rm -rf .git"; `$cmd`;
 
 # Download the source code
 $logger->info("Download Kiwix source code");
@@ -83,7 +82,7 @@ foreach my $zimPath (@zimPaths) {
 
     # Create the index and library
     $logger->info("Create new library file ro $zimFile.");
-    $cmd = "kiwix-install --verbose --buildIndex --backend=xapian ADDCONTENT $zimPath $distributionDirectory/";
+    $cmd = "kiwix-install --verbose --buildIndex ADDCONTENT $zimPath $distributionDirectory/";
     $logger->info($cmd);
     open(CMD, $cmd."|");
     while (<CMD>) {
