@@ -53,7 +53,7 @@ $cmd = "mkdir $distributionDirectory"; `$cmd`;
 
 # Checkout the default ISO directory tree structure
 $logger->info("Checkout the git 'dvd' directory template");
-$cmd = "cd $distributionDirectory ; git clone --depth=1 git clone git://git.code.sf.net/p/kiwix/other dvd ; cd dvd ; git filter-branch --prune-empty --subdirectory-filter dvd HEAD ; rm -rf .git"; `$cmd`;
+$cmd = "cd $distributionDirectory ; git clone --depth=1 git://git.code.sf.net/p/kiwix/other dvd ; cd dvd ; git filter-branch --prune-empty --subdirectory-filter dvd HEAD ; rm -rf .git"; `$cmd`;
 
 # Download the source code
 $logger->info("Download Kiwix source code");
