@@ -53,24 +53,28 @@ $cmd = "mkdir $distributionDirectory"; `$cmd`;
 
 # Checkout the default ISO directory tree structure
 $logger->info("Checkout the git 'dvd' directory template");
-$cmd = "cd $distributionDirectory ; git clone --depth=1 git://git.code.sf.net/p/kiwix/other dvd ; cd dvd ; git filter-branch --prune-empty --subdirectory-filter dvd HEAD ; rm -rf .git"; `$cmd`;
+$cmd = "cd $distributionDirectory ; git clone --depth=1 https://github.com/kiwix/kiwix_mirror.git dvd ; cd dvd ; git filter-branch --prune-empty --subdirectory-filter dvd HEAD ; rm -rf .git"; `$cmd`;
+$cmd = "cd $distributionDirectory ; mv dvd/autorun.inf ."; `$cmd`;
 
 # Download the source code
 $logger->info("Download Kiwix source code");
-$cmd = "cd $distributionDirectory ; wget --trust-server-names http://download.kiwix.org/src/kiwix-0.9~rc2-src.tar.gz"; `$cmd`;
+$cmd = "cd $distributionDirectory ; wget --trust-server-names http://download.kiwix.org/src/kiwix-0.9-src.tar.xz"; `$cmd`;
 
 # Download and unzip linux binary
 $logger->info("Download and unzip Linux binary");
-$cmd = "wget http://download.kiwix.org/bin/unstable/\` curl --silent http://download.kiwix.org/bin/unstable/ | grep bz2 | grep 686 | sed 's/.*href=\"//' | sed 's/\".*//' \` -O $distributionDirectory/kiwix-linux.tar.bz2"; `$cmd`;
-print STDERR $cmd;
-$cmd = "cd $distributionDirectory/ ; mkdir tmp ; tar --directory=tmp -xvjf kiwix-linux.tar.bz2 ; cd tmp ; mv kiwix ../kiwix-linux ; cd .. ; rm -rf tmp" ; `$cmd`;
-$cmd = "rm $distributionDirectory/kiwix-linux.tar.bz2" ; `$cmd`;
+$cmd = "wget http://download.kiwix.org/bin/0.9/\` curl --silent http://download.kiwix.org/bin/0.9/ | grep bz2 | grep 64 | sed 's/.*href=\"//' | sed 's/\".*//' \` -O $distributionDirectory/kiwix-linux.tar.bz2"; `$cmd`;
 
 # Download and unzip Windows binary
 $logger->info("Download and unzip Windows binary");
-$cmd = "wget http://download.kiwix.org/bin/unstable/\` curl --silent http://download.kiwix.org/bin/unstable/ | grep zip | sed 's/.*href=\"//' | sed 's/\".*//' \` -O $distributionDirectory/kiwix.zip"; `$cmd`;
+$cmd = "wget http://download.kiwix.org/bin/0.9/\` curl --silent http://download.kiwix.org/bin/0.9/ | grep zip | sed 's/.*href=\"//' | sed 's/\".*//' \` -O $distributionDirectory/kiwix.zip"; `$cmd`;
 $cmd = "cd $distributionDirectory/ ; unzip -n kiwix.zip" ; `$cmd`;
 $cmd = "rm $distributionDirectory/kiwix.zip" ; `$cmd`;
+
+# Download and unzip OSX binary
+$logger->info("Download and unzip OSX binary");
+$cmd = "wget http://download.kiwix.org/bin/0.9/\` curl --silent http://download.kiwix.org/bin/0.9/ | grep '.app' | sed 's/.*href=\"//' | sed 's/\".*//' \` -O $distributionDirectory/Kiwix.app.tar.xz"; `$cmd`;
+$cmd = "cd $distributionDirectory/ ; tar -xvf Kiwix.app.tar.xz" ; `$cmd`;
+$cmd = "rm $distributionDirectory/Kiwix.app.tar.xz" ; `$cmd`;
 
 # Compute and compact the indexes
 $logger->info("Compute and compact the indexes");
