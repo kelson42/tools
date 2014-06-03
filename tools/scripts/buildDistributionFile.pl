@@ -63,6 +63,7 @@ $cmd = "cd $distributionDirectory ; wget --trust-server-names http://download.ki
 # Download and unzip linux binary
 $logger->info("Download and unzip Linux binary");
 $cmd = "wget http://download.kiwix.org/bin/0.9/\` curl --silent http://download.kiwix.org/bin/0.9/ | grep bz2 | grep 64 | sed 's/.*href=\"//' | sed 's/\".*//' \` -O $distributionDirectory/kiwix-linux.tar.bz2"; `$cmd`;
+$cmd = "cd $distributionDirectory ; tar -xvf kiwix-linux.tar.bz2 ; rm kiwix-linux.tar.bz2 ; mv kiwix kiwix-linux ; tar -cvjf kiwix-linux.tar.bz2 kiwix-linux; rm -rf kiwix-linux"; `$cmd`;
 
 # Download and unzip Windows binary
 $logger->info("Download and unzip Windows binary");
