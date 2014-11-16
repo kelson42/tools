@@ -34,7 +34,7 @@ GetOptions('zimPath=s' => \@zimPaths,
 
 # Check if we have all the mandatory variable set
 if (!scalar(@zimPaths) || !$filePath || (!($type eq "iso") && !($type eq "portable"))) {
-    print "usage: ./buildDistributionFile.pl --filePath=dvd.iso --zimPath=articles.zim --type=[iso|portable] [--tmpDirectory=/tmp/] [--lang=en|fr] [--liveInstance]\n";
+    print "usage: ./buildDistributionFile.pl --filePath=dvd.iso --zimPath=articles.zim --type=[iso|portable] [--tmpDirectory=/tmp/] [--lang=en|fr] [--liveInstance] [--downloadMirror=themirror]\n";
     exit
 }
 
