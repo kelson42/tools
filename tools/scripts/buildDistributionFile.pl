@@ -27,7 +27,7 @@ GetOptions('zimPath=s' => \@zimPaths,
 	   'tmpDirectory=s' => \$tmpDirectory,
 	   'filePath=s' => \$filePath,
 	   'liveInstance' => \$liveInstance,
-	   'downloadMirror' => \$downloadMirror,
+	   'downloadMirror=s' => \$downloadMirror,
 	   'type=s' => \$type,
 	   'lang=s' => \$lang,
     );
