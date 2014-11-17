@@ -8,6 +8,8 @@ use warnings;
 use Kiwix::PathExplorer;
 use Getopt::Long;
 use Data::Dumper;
+use File::stat;
+use Time::localtime;
 
 my %content;
 
@@ -16,7 +18,6 @@ my $contentDirectory = "/var/www/download.kiwix.org";
 my $zimDirectoryName = "zim";
 my $zimDirectory = $contentDirectory."/".$zimDirectoryName;
 my $portableDirectoryName = "portable";
-my $portablePrefix = "kiwix-0.9-rc2";
 my $portableDirectory = $contentDirectory."/".$portableDirectoryName;
 my $htaccessPath = $contentDirectory."/.htaccess";
  
@@ -55,10 +56,15 @@ while (my $file = $explorer->getNext()) {
 	my $month;
 	my $year;
 
+	# Old/new date format
 	if ($basename =~ /^(.+?)(_|)([\d]{2}|)_([\d]{4})$/i) {
 	    $core = $1;
 	    $month = $3;
 	    $year = $4;
+	} elsif ($basename =~ /^(.+?)(_|)([\d]{4}|)\-([\d]{2})$/i) {
+	    $core = $1;
+	    $year = $3;
+	    $month = $4;
 	}
 	
 	$content{$basename} = {
@@ -77,7 +83,12 @@ while (my $file = $explorer->getNext()) {
     if ($file =~ /^.*?\+([^\/]+)\.zip$/i) {
 	my $basename = $1;
 	if  (exists($content{$basename})) {
-	    $content{$basename}->{portable} = $file;
+	    if ((exists($content{$basename}->{portable}) && 
+		 getFileCreationDate($file) > getFileCreationDate($content{$basename}->{portable})) ||
+		!exists($content{$basename}->{portable})
+		) {
+		$content{$basename}->{portable} = $file;
+	    }
 	} else {
 	    print STDERR "Unable to find corresponding ZIM file to $file\n";
 	}
@@ -131,11 +142,11 @@ $content .= "RewriteEngine On\n\n";
 
 foreach my $key (keys(%recentContent)) {
     my $entry = $recentContent{$key};
-    $content .= "RedirectPermanent /".$zimDirectoryName."/".$entry->{core}.".zim ".substr($entry->{zim}, length($contentDirectory))."\n";
-    $content .= "RedirectPermanent /".$zimDirectoryName."/".$entry->{core}.".zim.torrent ".substr($entry->{zim}, length($contentDirectory)).".torrent\n";
+    $content .= "Redirect /".$zimDirectoryName."/".$entry->{core}.".zim ".substr($entry->{zim}, length($contentDirectory))."\n";
+    $content .= "Redirect /".$zimDirectoryName."/".$entry->{core}.".zim.torrent ".substr($entry->{zim}, length($contentDirectory)).".torrent\n";
     if ($entry->{portable}) {
-	$content .= "RedirectPermanent /".$portableDirectoryName."/".$entry->{core}.".zip ".substr($entry->{portable}, length($contentDirectory))."\n";
-	$content .= "RedirectPermanent /".$portableDirectoryName."/".$entry->{core}.".zip.torrent ".substr($entry->{portable}, length($contentDirectory)).".torrent\n";
+	$content .= "Redirect /".$portableDirectoryName."/".$entry->{core}.".zip ".substr($entry->{portable}, length($contentDirectory))."\n";
+	$content .= "Redirect /".$portableDirectoryName."/".$entry->{core}.".zip.torrent ".substr($entry->{portable}, length($contentDirectory)).".torrent\n";
     }
     $content .= "\n";
 }
@@ -164,6 +175,10 @@ sub readFile {
     close(FILE);
     utf8::decode($data);
     return $buf;
+}
+
+sub getFileCreationDate {
+    return stat(shift)->ctime;
 }
 
 exit 0;
