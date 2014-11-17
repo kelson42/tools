@@ -98,6 +98,7 @@ while (my $file = $explorer->getNext()) {
 # Create Htaccess
 my %recentContent;
 my %deprecatedContent;
+my %stagingContent;
 my %intemporalContent;
 foreach my $key (keys(%content)) {
     my $entry = $content{$key};
@@ -105,7 +106,9 @@ foreach my $key (keys(%content)) {
     my $core = $entry->{core};
 
     if ($year) {
-	if (exists($recentContent{$core})) {
+	if (!exists($entry->{portable})) {
+	    $stagingContent{$core} = $entry;
+	} elsif (exists($recentContent{$core})) {
 	    my $otherEntry = $recentContent{$core};
 	    if ($year == $otherEntry->{year}) {
 		my $month = $entry->{month};
@@ -150,7 +153,8 @@ foreach my $key (keys(%recentContent)) {
     }
     $content .= "\n";
 }
-writeFile($htaccessPath, $content);
+print $content;
+#writeFile($htaccessPath, $content);
 
 # Read/Write functions
 sub writeFile {
