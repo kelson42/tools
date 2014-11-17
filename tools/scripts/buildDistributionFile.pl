@@ -147,7 +147,7 @@ if ($type eq "iso") {
     $cmd = "mkisofs -r -J -o  $filePath $distributionDirectory"; `$cmd`;
 } else { # portable
     $logger->info("Build the portable compacted file");
-    $cmd = "7za a -tzip -mx9 $filePath $distributionDirectory/* -mmt"; `$cmd`;
+    $cmd = "7za a -tzip -mx9 -mmt6 $filePath $distributionDirectory/* -mmt"; `$cmd`;
 }
 
 if ( -d "$distributionDirectory/data/index/wikipedia_sw_all_04_2011.zim.idx") {
