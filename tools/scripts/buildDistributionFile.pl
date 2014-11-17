@@ -10,6 +10,7 @@ use Getopt::Long;
 my @zimPaths;
 my $filePath;
 my $tmpDirectory = "/tmp/";
+my $downloadMirror = "download.kiwix.org";
 my $liveInstance;
 my $lang = "en";
 my $type;
@@ -26,13 +27,14 @@ GetOptions('zimPath=s' => \@zimPaths,
 	   'tmpDirectory=s' => \$tmpDirectory,
 	   'filePath=s' => \$filePath,
 	   'liveInstance' => \$liveInstance,
+	   'downloadMirror' => \$downloadMirror,
 	   'type=s' => \$type,
 	   'lang=s' => \$lang,
     );
 
 # Check if we have all the mandatory variable set
 if (!scalar(@zimPaths) || !$filePath || (!($type eq "iso") && !($type eq "portable"))) {
-    print "usage: ./buildDistributionFile.pl --filePath=dvd.iso --zimPath=articles.zim --type=[iso|portable] [--tmpDirectory=/tmp/] [--lang=en|fr] [--liveInstance]\n";
+    print "usage: ./buildDistributionFile.pl --filePath=dvd.iso --zimPath=articles.zim --type=[iso|portable] [--tmpDirectory=/tmp/] [--lang=en|fr] [--liveInstance] [--downloadMirror=themirror]\n";
     exit
 }
 
@@ -58,22 +60,22 @@ $cmd = "cd $distributionDirectory ; mv dvd/autorun.inf ."; `$cmd`;
 
 # Download the source code
 $logger->info("Download Kiwix source code");
-$cmd = "cd $distributionDirectory ; wget --trust-server-names http://download.kiwix.org/src/kiwix-0.9-src.tar.xz"; `$cmd`;
+$cmd = "cd $distributionDirectory ; wget --trust-server-names http://$downloadMirror/src/kiwix-0.9-src.tar.xz"; `$cmd`;
 
 # Download and unzip linux binary
 $logger->info("Download and unzip Linux binary");
-$cmd = "wget http://download.kiwix.org/bin/0.9/\` curl --silent http://download.kiwix.org/bin/0.9/ | grep bz2 | grep 64 | sed 's/.*href=\"//' | sed 's/\".*//' \` -O $distributionDirectory/kiwix-linux.tar.bz2"; `$cmd`;
+$cmd = "wget http://$downloadMirror/bin/0.9/\` curl --silent http://$downloadMirror/bin/0.9/ | grep bz2 | grep 64 | sed 's/.*href=\"//' | sed 's/\".*//' \` -O $distributionDirectory/kiwix-linux.tar.bz2"; `$cmd`;
 $cmd = "cd $distributionDirectory ; tar -xvf kiwix-linux.tar.bz2 ; rm kiwix-linux.tar.bz2 ; mv kiwix kiwix-linux ; tar -cvjf kiwix-linux.tar.bz2 kiwix-linux; rm -rf kiwix-linux"; `$cmd`;
 
 # Download and unzip Windows binary
 $logger->info("Download and unzip Windows binary");
-$cmd = "wget http://download.kiwix.org/bin/0.9/\` curl --silent http://download.kiwix.org/bin/0.9/ | grep zip | sed 's/.*href=\"//' | sed 's/\".*//' \` -O $distributionDirectory/kiwix.zip"; `$cmd`;
+$cmd = "wget http://$downloadMirror/bin/0.9/\` curl --silent http://$downloadMirror/bin/0.9/ | grep zip | sed 's/.*href=\"//' | sed 's/\".*//' \` -O $distributionDirectory/kiwix.zip"; `$cmd`;
 $cmd = "cd $distributionDirectory/ ; unzip -n kiwix.zip" ; `$cmd`;
 $cmd = "rm $distributionDirectory/kiwix.zip" ; `$cmd`;
 
 # Download and unzip OSX binary
 $logger->info("Download and unzip OSX binary");
-$cmd = "wget http://download.kiwix.org/bin/0.9/\` curl --silent http://download.kiwix.org/bin/0.9/ | grep '.app' | sed 's/.*href=\"//' | sed 's/\".*//' \` -O $distributionDirectory/Kiwix.app.tar.xz"; `$cmd`;
+$cmd = "wget http://$downloadMirror/bin/0.9/\` curl --silent http://$downloadMirror/bin/0.9/ | grep '.app' | sed 's/.*href=\"//' | sed 's/\".*//' \` -O $distributionDirectory/Kiwix.app.tar.xz"; `$cmd`;
 $cmd = "cd $distributionDirectory/ ; tar -xvf Kiwix.app.tar.xz" ; `$cmd`;
 $cmd = "rm $distributionDirectory/Kiwix.app.tar.xz" ; `$cmd`;
 
@@ -133,7 +135,7 @@ if ( -d "$distributionDirectory/data/index/wikipedia_sw_all_04_2011.zim.idx") {
 
 # Download the autorun
 $logger->info("Download autorun");
-$cmd = "cd $distributionDirectory/ ; rm -rf autorun ; wget http://download.kiwix.org/dev/launcher/autorun.zip; unzip autorun.zip ; rm autorun.zip"; `$cmd`;
+$cmd = "cd $distributionDirectory/ ; rm -rf autorun ; wget http://$downloadMirror/dev/launcher/autorun.zip; unzip autorun.zip ; rm autorun.zip"; `$cmd`;
 $cmd = "cd $distributionDirectory/ ; sed -i -e 's/autorun\.exe/autorun\.exe \-\-lang=$lang/' autorun.inf"; `$cmd`;
 
 # live instance
