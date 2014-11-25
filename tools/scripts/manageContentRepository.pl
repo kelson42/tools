@@ -153,8 +153,7 @@ foreach my $key (keys(%recentContent)) {
     }
     $content .= "\n";
 }
-print $content;
-#writeFile($htaccessPath, $content);
+writeFile($htaccessPath, $content);
 
 # Read/Write functions
 sub writeFile {
