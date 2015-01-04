@@ -195,11 +195,11 @@ sub writeHtaccess {
     
     foreach my $key (keys(%recentContent)) {
 	my $entry = $recentContent{$key};
-	$content .= "Redirect /".$zimDirectoryName."/".$entry->{core}.".zim ".substr($entry->{zim}, length($contentDirectory))."\n";
-	$content .= "Redirect /".$zimDirectoryName."/".$entry->{core}.".zim.torrent ".substr($entry->{zim}, length($contentDirectory)).".torrent\n";
+	$content .= "RedirectPermanent /".$zimDirectoryName."/".$entry->{core}.".zim ".substr($entry->{zim}, length($contentDirectory))."\n";
+	$content .= "RedirectPermanent /".$zimDirectoryName."/".$entry->{core}.".zim.torrent ".substr($entry->{zim}, length($contentDirectory)).".torrent\n";
 	if ($entry->{portable}) {
-	    $content .= "Redirect /".$portableDirectoryName."/".$entry->{core}.".zip ".substr($entry->{portable}, length($contentDirectory))."\n";
-	    $content .= "Redirect /".$portableDirectoryName."/".$entry->{core}.".zip.torrent ".substr($entry->{portable}, length($contentDirectory)).".torrent\n";
+	    $content .= "RedirectPermanent /".$portableDirectoryName."/".$entry->{core}.".zip ".substr($entry->{portable}, length($contentDirectory))."\n";
+	    $content .= "RedirectPermanent /".$portableDirectoryName."/".$entry->{core}.".zip.torrent ".substr($entry->{portable}, length($contentDirectory)).".torrent\n";
 	}
 	$content .= "\n";
     }
