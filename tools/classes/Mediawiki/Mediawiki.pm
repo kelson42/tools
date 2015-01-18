@@ -46,7 +46,7 @@ sub new {
     bless($self, $class);
 
     # create third parth tools
-    $self->userAgent(LWP::UserAgent->new());
+    $self->userAgent(LWP::UserAgent->new( agent => "MW bot"));
     $self->userAgent()->cookie_jar( {} );
 
     return $self;
@@ -86,7 +86,6 @@ sub setup {
 		if ($lgtoken) {
 		    $postValues->{'lgtoken'} = $lgtoken;
 		}
-
 		$httpResponse = $self->makeApiRequest($postValues, "POST");
 
 		if ($httpResponse->content() =~ /token=\"(.*?)\"/ ) {

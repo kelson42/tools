@@ -11,6 +11,7 @@ use Data::Dumper;
 use File::stat;
 use Time::localtime;
 use Number::Bytes::Human qw(format_bytes);
+use Mediawiki::Mediawiki;
 
 my %content;
 
@@ -26,12 +27,14 @@ my $htaccessPath = $contentDirectory."/.htaccess";
 my $writeHtaccess = 0;
 my $writeWiki = 1;
 my $showHelp = 0;
+my $wikiPassword = "";
 
 sub usage() {
     print "manageContentRepository\n";
     print "\t--help\n";
     print "\t--writeHtaccess\n";
     print "\t--writeWiki\n";
+    print "\t--wikiPassword=foobar\n";
 }
 
 # Parse command line
@@ -44,11 +47,17 @@ GetOptions(
     'writeHtaccess' => \$writeHtaccess,
     'writeWiki' => \$writeWiki,
     'help' => \$showHelp,
+    'wikiPassword=s' => \$wikiPassword,
 );
 
 if ($showHelp) {
     usage();
     exit 0;
+}
+
+if ($writeWiki && !$wikiPassword) {
+    print STDERR "If you want to update the library on www.kiwix.org, you need to put a wiki password.\n";
+    exit 1;
 }
 
 # Parse the "zim" directories
@@ -167,24 +176,30 @@ if ($writeWiki) {
 
 # Read/Write functions
 sub writeWiki {
-
     my @lines;
     foreach my $key (keys(%recentContent)) {
 	my $entry = $recentContent{$key};
 	my $line = "{{ZIMdumps/row|{{{2|}}}|".
 	    $entry->{project}."|".
 	    $entry->{lang}."|".$entry->{size}."|".
-	    $entry->{year}."-".$entry->{month}."|".$entry->{option}."|7={{DownloadLink|".
-	    $entry->{basename}."|{{{1}}}|zim/".$entry->{project}."/|portable/".$entry->{project}."/}} }}\n";
-	push(@lines, $line)
+	    $entry->{year}."-".$entry->{month}."|".($entry->{option} || "all")."|7={{DownloadLink|".
+	    $entry->{core}."|{{{1}}}|".$zimDirectoryName."/|".($entry->{portable} ? $portableDirectoryName : "")."/}} }}\n";
+	push(@lines, $line);
     }
 
-    my $content = "";
+    my $content = "<!-- THIS PAGE IS AUTOMATICALLY, PLEASE DON'T MODIFY IT MANUALLY -->";
     foreach my $line (sort @lines) {
 	$content .= $line;
     }
 
-    print $content;
+    # Get the connection to kiwix.org
+    my $site = Mediawiki::Mediawiki->new();
+    $site->hostname("www.kiwix.org");
+    $site->path("w");
+    $site->user("LibraryBot");
+    $site->password($wikiPassword);
+    $site->setup();
+    $site->uploadPage("Template:ZIMdumpsContent", $content, "Automatic update of the ZIM library");
 }
 
 sub writeHtaccess {
@@ -203,7 +218,7 @@ sub writeHtaccess {
 	}
 	$content .= "\n";
     }
-    writeFile($htaccessPath, $content);
+#    writeFile($htaccessPath, $content);
 }
 
 sub writeFile {
