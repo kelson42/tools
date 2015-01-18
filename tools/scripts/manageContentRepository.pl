@@ -25,7 +25,7 @@ my $htaccessPath = $contentDirectory."/.htaccess";
  
 # Task
 my $writeHtaccess = 0;
-my $writeWiki = 1;
+my $writeWiki = 0;
 my $showHelp = 0;
 my $wikiPassword = "";
 
@@ -212,13 +212,15 @@ sub writeHtaccess {
 	my $entry = $recentContent{$key};
 	$content .= "RedirectPermanent /".$zimDirectoryName."/".$entry->{core}.".zim ".substr($entry->{zim}, length($contentDirectory))."\n";
 	$content .= "RedirectPermanent /".$zimDirectoryName."/".$entry->{core}.".zim.torrent ".substr($entry->{zim}, length($contentDirectory)).".torrent\n";
+	$content .= "RedirectPermanent /".$zimDirectoryName."/".$entry->{core}.".zim.md5 ".substr($entry->{zim}, length($contentDirectory)).".md5\n";
 	if ($entry->{portable}) {
 	    $content .= "RedirectPermanent /".$portableDirectoryName."/".$entry->{core}.".zip ".substr($entry->{portable}, length($contentDirectory))."\n";
 	    $content .= "RedirectPermanent /".$portableDirectoryName."/".$entry->{core}.".zip.torrent ".substr($entry->{portable}, length($contentDirectory)).".torrent\n";
+	    $content .= "RedirectPermanent /".$portableDirectoryName."/".$entry->{core}.".zip.md5 ".substr($entry->{portable}, length($contentDirectory)).".md5\n";
 	}
 	$content .= "\n";
     }
-#    writeFile($htaccessPath, $content);
+    writeFile($htaccessPath, $content);
 }
 
 sub writeFile {
