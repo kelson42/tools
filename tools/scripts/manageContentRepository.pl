@@ -229,11 +229,11 @@ sub writeHtaccess {
     $content .= "AddDescription \"Deprectated stuff kept only for historical purpose\" archive\n";
     $content .= "AddDescription \"All versions of Kiwix, the software (no content is in there)\" bin\n";
     $content .= "AddDescription \"Development stuff (tools & dependencies), only for developers\" dev\n";
-    $content .= "AddDescription \"Binaries and source code tarball compiled auto. one time a day, only for developers\" nightly\n";
+    $content .= "AddDescription \"Binaries and source code tarballs compiled auto. one time a day, only for developers\" nightly\n";
     $content .= "AddDescription \"Random stuff, mostly mirrored for third part projects\" other\n";
-    $content .= "AddDescription \"Portable packages (Kiwix+conent), this is what end-users mostly need\" portable\n";
-    $content .= "AddDescription \"Kiwix source code tarbalss, for developers\" src\n";
-    $content .= "AddDescription \"ZIM files, content dumps for offline usage\" zim\n";
+    $content .= "AddDescription \"Portable packages (Kiwix+content), this is what end-users mostly need\" portable\n";
+    $content .= "AddDescription \"Kiwix source code tarballs, for developers only\" src\n";
+    $content .= "AddDescription \"ZIM files, content dumps for offline usage (to be read with Kiwix)\" zim\n";
 
     # Content redirects
     foreach my $key (keys(%recentContent)) {
