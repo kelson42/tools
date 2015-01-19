@@ -1,6 +1,7 @@
 #!/usr/bin/perl
-use lib '../classes/';
-use lib '../../dumping_tools/classes/';
+use FindBin;
+use lib "$FindBin::Bin/../classes/";
+use lib "$FindBin::Bin/../../dumping_tools/classes/";
 
 use utf8;
 use strict;
