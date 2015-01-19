@@ -33,6 +33,7 @@ sub usage() {
     print "manageContentRepository\n";
     print "\t--help\n";
     print "\t--writeHtaccess\n";
+    print "\t--htaccessPath=/var/www/download.kiwix.org/.htaccess\n";
     print "\t--writeWiki\n";
     print "\t--wikiPassword=foobar\n";
 }
@@ -48,6 +49,7 @@ GetOptions(
     'writeWiki' => \$writeWiki,
     'help' => \$showHelp,
     'wikiPassword=s' => \$wikiPassword,
+    'htaccessPath=s' => \$htaccessPath,
 );
 
 if ($showHelp) {
