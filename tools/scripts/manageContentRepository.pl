@@ -23,6 +23,7 @@ my $zimDirectory = $contentDirectory."/".$zimDirectoryName;
 my $portableDirectoryName = "portable";
 my $portableDirectory = $contentDirectory."/".$portableDirectoryName;
 my $binDirectoryName = "bin";
+my $srcDirectoryName = "src";
 my $htaccessPath = $contentDirectory."/.htaccess";
  
 # Task
@@ -213,7 +214,7 @@ sub writeHtaccess {
     $content .= "RewriteEngine On\n\n";
     
     # Bin redirects
-    $content .= "RedirectPermanent /".$binDirectoryName."/android.apk /".$binDirectoryName."/android/kiwix-1.91.apk\n";
+    $content .= "RedirectPermanent /".$binDirectoryName."/kiwix.apk /".$binDirectoryName."/android/kiwix-1.91.apk\n";
     $content .= "RedirectPermanent /".$binDirectoryName."/kiwix-installer.exe /".$binDirectoryName."/0.9/kiwix-0.9-installer.exe\n";
     $content .= "RedirectPermanent /".$binDirectoryName."/kiwix-linux-i686.tar.bz2 /".$binDirectoryName."/0.9/kiwix-0.9-linux-i686.tar.bz2\n";
     $content .= "RedirectPermanent /".$binDirectoryName."/kiwix-linux-x86_64.tar.bz2 /".$binDirectoryName."/0.9/kiwix-0.9-linux-x86_64.tar.bz2\n";
@@ -221,7 +222,18 @@ sub writeHtaccess {
     $content .= "RedirectPermanent /".$binDirectoryName."/kiwix.dmg /".$binDirectoryName."/0.9/kiwix-0.9.dmg\n";
     $content .= "RedirectPermanent /".$binDirectoryName."/kiwix.xo /".$binDirectoryName."/0.9/kiwix-0.9.xo\n";
     $content .= "RedirectPermanent /".$binDirectoryName."/kiwix-server-arm.tar.bz2 /".$binDirectoryName."/0.9/kiwix-server-0.9-linux-armv5tejl.tar.bz2\n";
-    $content .= "RedirectPermanent /".$binDirectoryName."/kiwix-src.tar.xz /".$binDirectoryName."/src/kiwix-0.9-src.tar.xz\n";
+    $content .= "RedirectPermanent /".$srcDirectoryName."/kiwix-src.tar.xz /".$srcDirectoryName."/kiwix-0.9-src.tar.xz\n";
+    $content .= "\n\n";
+
+    # Folder description
+    $content .= "AddDescription \"Deprectated stuff kept only for historical purpose\" archive\n";
+    $content .= "AddDescription \"All versions of Kiwix, the software (no content is in there)\" bin\n";
+    $content .= "AddDescription \"Development stuff (tools & dependencies), only for developers\" dev\n";
+    $content .= "AddDescription \"Binaries and source code tarball compiled auto. one time a day, only for developers\" nightly\n";
+    $content .= "AddDescription \"Random stuff, mostly mirrored for third part projects\" other\n";
+    $content .= "AddDescription \"Portable packages (Kiwix+conent), this is what end-users mostly need\" portable\n";
+    $content .= "AddDescription \"Kiwix source code tarbalss, for developers\" src\n";
+    $content .= "AddDescription \"ZIM files, content dumps for offline usage\" zim\n";
 
     # Content redirects
     foreach my $key (keys(%recentContent)) {
@@ -237,6 +249,13 @@ sub writeHtaccess {
 	$content .= "\n";
     }
     writeFile($htaccessPath, $content);
+
+    # Write a few .htaccess files in sub-directories
+    $content = "AddDescription \" \" *\n";
+    foreach my $subDirectory ("archive", "bin", "dev", "nightly", "other", "portable", "src", "zim") {
+	my $htaccessPath = $contentDirectory."/".$subDirectory."/.htaccess";
+	writeFile($htaccessPath, $content);
+    }
 }
 
 sub writeFile {
