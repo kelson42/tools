@@ -22,6 +22,7 @@ my $zimDirectoryName = "zim";
 my $zimDirectory = $contentDirectory."/".$zimDirectoryName;
 my $portableDirectoryName = "portable";
 my $portableDirectory = $contentDirectory."/".$portableDirectoryName;
+my $binDirectoryName = "bin";
 my $htaccessPath = $contentDirectory."/.htaccess";
  
 # Task
@@ -211,6 +212,18 @@ sub writeHtaccess {
     $content .= "#\n\n";
     $content .= "RewriteEngine On\n\n";
     
+    # Bin redirects
+    $content .= "RedirectPermanent /".$binDirectoryName."/android.apk /".$binDirectoryName."/android/kiwix-1.91.apk\n";
+    $content .= "RedirectPermanent /".$binDirectoryName."/kiwix-installer.exe /".$binDirectoryName."/0.9/kiwix-0.9-installer.exe\n";
+    $content .= "RedirectPermanent /".$binDirectoryName."/kiwix-linux-i686.tar.bz2 /".$binDirectoryName."/0.9/kiwix-0.9-linux-i686.tar.bz2\n";
+    $content .= "RedirectPermanent /".$binDirectoryName."/kiwix-linux-x86_64.tar.bz2 /".$binDirectoryName."/0.9/kiwix-0.9-linux-x86_64.tar.bz2\n";
+    $content .= "RedirectPermanent /".$binDirectoryName."/kiwix-win.zip /".$binDirectoryName."/0.9/kiwix-0.9-win.zip\n";
+    $content .= "RedirectPermanent /".$binDirectoryName."/kiwix.dmg /".$binDirectoryName."/0.9/kiwix-0.9.dmg\n";
+    $content .= "RedirectPermanent /".$binDirectoryName."/kiwix.xo /".$binDirectoryName."/0.9/kiwix-0.9.xo\n";
+    $content .= "RedirectPermanent /".$binDirectoryName."/kiwix-server-arm.tar.bz2 /".$binDirectoryName."/0.9/kiwix-server-0.9-linux-armv5tejl.tar.bz2\n";
+    $content .= "RedirectPermanent /".$binDirectoryName."/kiwix-src.tar.xz /".$binDirectoryName."/src/kiwix-0.9-src.tar.xz\n";
+
+    # Content redirects
     foreach my $key (keys(%recentContent)) {
 	my $entry = $recentContent{$key};
 	$content .= "RedirectPermanent /".$zimDirectoryName."/".$entry->{core}.".zim ".substr($entry->{zim}, length($contentDirectory))."\n";
