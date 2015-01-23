@@ -204,7 +204,7 @@ sub writeWiki {
     $site->user("LibraryBot");
     $site->password($wikiPassword);
     $site->setup();
-    $site->uploadPage("Template:ZIMdumpsContent", $content, "Automatic update of the ZIM library");
+    $site->uploadPage("Template:ZIMdumps/content", $content, "Automatic update of the ZIM library");
 }
 
 sub writeHtaccess {
