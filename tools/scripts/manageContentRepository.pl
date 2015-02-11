@@ -257,7 +257,6 @@ sub writeHtaccess {
 	$content .= "RedirectPermanent /".$zimDirectoryName."/".$entry->{core}.".zim ".substr($entry->{zim}, length($contentDirectory))."\n";
 	$content .= "RedirectPermanent /".$zimDirectoryName."/".$entry->{core}.".zim.torrent ".substr($entry->{zim}, length($contentDirectory)).".torrent\n";
 	$content .= "RedirectPermanent /".$zimDirectoryName."/".$entry->{core}.".zim.md5 ".substr($entry->{zim}, length($contentDirectory)).".md5\n";
-	$content .= "RedirectPermanent /".$zimDirectoryName."/".$entry->{core}.".zim.meta4 ".substr($entry->{zim}, length($contentDirectory)).".meta4\n";
 	if ($entry->{portable}) {
 	    $content .= "RedirectPermanent /".$portableDirectoryName."/".$entry->{core}.".zip ".substr($entry->{portable}, length($contentDirectory))."\n";
 	    $content .= "RedirectPermanent /".$portableDirectoryName."/".$entry->{core}.".zip.torrent ".substr($entry->{portable}, length($contentDirectory)).".torrent\n";
