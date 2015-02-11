@@ -106,9 +106,6 @@ unless ($delay =~ /^[0-9]+$/) {
     die "The delay '$delay' seems not valid. This should be a number.";
 }
 
-# Check connections to remote services
-connectToCommons();
-
 # Select all images from the XLSX file
 my %images; 
 my $excel = Spreadsheet::XLSX->new($metadataPath);
@@ -155,6 +152,7 @@ foreach my $row (1 .. $sheet->{MaxRow}) {
 	exit(1);
     }
     $filename =~ s/[ ]+/_/g;
+    $filename =~ s/&amp;/-/g;
     $image{'filename'} = $filename;
 
     my $originalTitle = $sheet->{Cells}[$row][3]->{Val} || "";
@@ -253,6 +251,9 @@ foreach my $imageId (keys(%images)) {
 
 	my $status;
 	my $content;
+
+	# Check connections to remote services
+	connectToCommons();
 
 	if (!$doesExist || $overwrite) {
 	    $content = readFile($hrFilename);

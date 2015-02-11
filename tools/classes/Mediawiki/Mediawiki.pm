@@ -393,7 +393,7 @@ sub downloadPage {
 	'action' => 'query',
 	'prop' => 'revisions',
 	'format' => 'xml',
-	'rvprop' => 'content|ids',
+	'rvprop' => 'content|ids|user',
     };
  
     # add revisionid if necessary
@@ -410,13 +410,14 @@ sub downloadPage {
 	return;
     } else {
 	my $content = $xml->{query}->{pages}->{page}->{revisions}->{rev}->{content};
+	my $user = $xml->{query}->{pages}->{page}->{revisions}->{rev}->{user};
 	$revision = $xml->{query}->{pages}->{page}->{revisions}->{rev}->{revid};
 
 	unless (Encode::is_utf8($content)) {
 	    $content = decode_utf8($content);
 	}	
 
-	return (ref($content) eq "HASH" ? "" : $content, $revision);
+	return (ref($content) eq "HASH" ? "" : $content, $revision, $user);
     }
     
     return "";
@@ -587,8 +588,6 @@ sub makeSiteRequest {
 	} else {
 	    die ("Method has to be GET or POST.");
 	}
-
-#	print "[RESPONSE] DUMP : ".Dumper($httpResponse);
 
 	if ($httpResponse->code() != 200) {
 	    $loopCount++;
@@ -869,7 +868,7 @@ sub uploadImage {
 	do {
 	    my $httpResponse = $self->makeHttpPostRequest($self->apiUrl(), $postValues, { Content_Type  => 'multipart/form-data' });
 
-	    if ($httpResponse->content() =~ /success/i || $httpResponse->content() =~ /articleexists/i ) {
+	    if ($httpResponse->content() =~ /success/i || $httpResponse->content() =~ /articleexists/i || $httpResponse->code() == 503) {
 		if ($httpResponse->content() =~ /nochange=\"\"/i) {
 		    $returnValue = 2;
 		} else {
@@ -1312,7 +1311,7 @@ sub redirects {
 
 	# make the http request and parse response
 	$xml = $self->makeApiRequestAndParseResponse(values=>$httpPostRequestParams, forceArray=>'bl');
-	
+
 	if (exists($xml->{query}->{backlinks}->{bl})) {
 	    foreach my $redirect (@{$xml->{query}->{backlinks}->{bl}}) {
 		push(@redirects, $redirect->{title}) if ($redirect->{title});

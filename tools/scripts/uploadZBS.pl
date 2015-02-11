@@ -55,6 +55,55 @@ my $templateCode = "=={{int:filedesc}}==
 [[Category:Historical images of Solothurn]]
 ";
 
+my %imgs = (
+"a0754 (1)" => "a_0754_1.tif",
+"a0754 (2)" => "a_0754_2.tif",
+"a0754 (3)" => "a_0754_3.tif",
+"a0754 (4)" => "a_0754_4.tif",
+"a0754 (5)" => "a_0754_5.tif",
+"a0877 (1-2)" => "a_0877_1.tif",
+"a0877 (3-4)" => "a_0877_3.tif",
+"a0877_2" => "a_0877_2.tif",
+"a0877_4" => "a_0877_4.tif",
+"a0924 (1)" => "a_0924_1.tif",
+"a0924 (2)" => "a_0924_2.tif",
+"a0924 (3)" => "a_0924_3.tif",
+"a0924 (4)" => "a_0924_4.tif",
+"a0995" => "a_0995_1.tif",
+"a1032_2" => "a_1032_2.tif",
+"a1032_3" => "a_1032_3.tif",
+"a1072" => "a_1072_1.tif",
+"a1072_2" => "a_1072_2.tif",
+"a1072_3" => "a_1072_3.tif",
+"a1072_4" => "a_1072_4.tif",
+"a1072_5" => "a_1072_5.tif",
+"a1072_6" => "a_1072_6.tif",
+"a1072_7" => "a_1072_7.tif",
+"a1072_8" => "a_1072_8.tif",
+"a1072_9" => "a_1072_9.tif",
+"a1078_02" => "a_1078_02.tif",
+"a1078_03" => "a_1078_03.tif",
+"a1078_04" => "a_1078_04.tif",
+"a1078_05" => "a_1078_05.tif",
+"a1078_06" => "a_1078_06.tif",
+"a1078_07" => "a_1078_07.tif",
+"a1078_08" => "a_1078_08.tif",
+"a1078_09" => "a_1078_09.tif",
+"a1078_10" => "a_1078_10.tif",
+"a1078_11" => "a_1078_11.tif",
+"a1078_12" => "a_1078_12.tif",
+"aa0284_1" => "aa_0284_1.tif",
+"aa0352" => "aa_0352_1.tif",
+"aa0352_2" => "aa_0352_2.tif",
+"aa0452 /2" => "aa_0452_2.tif",
+"aa0505 1" => "aa_0505_1.tif",
+"aa0505 2" => "aa_0505_2.tif",
+"aa0505 4" => "aa_0505_4.tif",
+"aa0599 /2" => "aa_0599_2.tif",
+"aa0801 /1" => "aa_0801_1.tif",
+"aa0801_2" => "aa_0801_2.tif"
+);
+
 my %technique = (
 "aquatinta" => "Aquatint",
 "autotypie" => "Autotype",
@@ -178,9 +227,14 @@ foreach my $imageId (keys(%images)) {
     }
 
     # Get image path
-    my $filename = $image->{'we_signatur'};
+    unless (exists($imgs{ $image->{'we_signatur'} })) {
+	print STDERR "Unable to match ".$image->{'we_signatur'}."\n";
+	exit 1;
+    }
+
+    my $filename = $imgs{ $image->{'we_signatur'} } ;
     $filename =~ s/^(a+)(\d+)$/$1_$2/;
-    $filename = "$pictureDirectory$filename.tif";
+    $filename = "$pictureDirectory$filename";#.tif";
     unless ( -e $filename) {
 	print STDERR "Unable to find '".$image->{'we_signatur'}."' corresponding file path.\n";
 	next;
@@ -212,6 +266,7 @@ foreach my $imageId (keys(%images)) {
     utf8::decode($newFilename);
     $newFilename =~ s/ /_/g;
     $newFilename =~ s/[^\w]//g;
+    $newFilename = substr($newFilename, 0, 190);
     $newFilename = "Zentralbibliothek_Solothurn_-_".$newFilename."_-_".$metadata{'sysid'}.".tif";
     $newFilename =~ s/ /_/g;
     $newFilename =~ s/[_]+/_/g;
@@ -221,6 +276,8 @@ foreach my $imageId (keys(%images)) {
     $newFilename =~ s/CHÂTEAU_DE_THIERSTEIN_Dans_le_Canton_de_Soleure_du_Côté_du_Sptentrion_A_Lisel_Riwiere_B_Erschweil_//g;
     $newFilename =~ s/_Vorsteherin_des_Convents_der_barmherzigen_Schwestern_im_Brgerspital_zu_Solothurn_geboren_den_25ten_May_1783_trat_in_den_Spital_zum_Krankendienst_den_5ten_Januar_1799//g;
     $newFilename =~ s/_19_Zeilen_Solothurn_den_26_Merz_1777_Laurenz_Joseph_Wirz_Notarius_dieser_Zeit_Schaffner//s;
+    $newFilename =~ s/On_decouvre_dans_le_lointain_le_château_de_Blauenstein_ainsi_que_la_Cluse_et_partie_du_village_de_ce_non_défilé_célèbre_et_très_étroit_au_travers_du_Jura_qui_termine_la_Vallée_de_Ballsthall_et_par_ou_passe_la_grande_route_de_Basle_à_Soleure_Berne_c_//s;
+    $newFilename =~ s/_à_Monsieur_le_Baron_de_Besenval_grand_Croix_de_lordre_Royal_et_militaire_de_S_Louis_Lieutenant_général_des_Armées_du_Roi_et_Lieutenant_Colonel_du_Regiment_des_Gardes_Susses_de_sa_majesté_A_P_D_R//s;
 
     printLog("New filename for ".$metadata{'sysid'}." is ".$newFilename);
 
@@ -258,7 +315,7 @@ foreach my $imageId (keys(%images)) {
 
 	if (!$doesExist) {
 	    printLog("'$newFilename' uploading...");
-	    $status = $commons->uploadImage($newFilename, $content, $description, "GLAM Solothurn central library picture' ".$metadata{'sysid'}."' (WMCH)", 1);
+	    $status = $commons->uploadImage($newFilename, $content, $description, "GLAM Solothurn central library picture' ".$metadata{'sysid'}."' (WMCH)", 0);
 	} elsif ($doesExist && $overwrite) {
 	    printLog("'$newFilename' already uploaded but will be overwritten...");
 	    $status = $commons->uploadImage($newFilename, $content, $description, "GLAM Solothurn central library picture' ".$metadata{'sysid'}."' (WMCH)");
@@ -267,6 +324,8 @@ foreach my $imageId (keys(%images)) {
 	    $status = $commons->uploadPage("File:".$newFilename, $description, "Description update...");
 	}
 	
+	print $status."\n";
+
 	if ($status) {
 	    printLog("'$newFilename' was successfuly uploaded to Wikimedia Commons.");
 	    writeFile($doneFile, "");

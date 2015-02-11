@@ -5,6 +5,7 @@ binmode STDIN, ":utf8";
 use utf8;
 use strict;
 use Getopt::Long;
+use File::Basename;
 
 # Variables 
 my @zimPaths;
@@ -48,10 +49,10 @@ foreach my $zimPath (@zimPaths) {
 }
 
 # Clear and create the directory to build the iso
-my $distributionDirectory = $tmpDirectory."kiwix_iso_tmp_directory/";
+my $distributionDirectory = $tmpDirectory."/kiwix_iso_tmp_directory/";
 $logger->info("Deleting and creating $distributionDirectory");
 $cmd = "rm -rf $distributionDirectory"; `$cmd`; 
-$cmd = "mkdir $distributionDirectory"; `$cmd`; 
+$cmd = "mkdir -p $distributionDirectory"; `$cmd`; 
 
 # Checkout the default ISO directory tree structure
 $logger->info("Checkout the git 'dvd' directory template");
@@ -84,8 +85,7 @@ $logger->info("Compute and compact the indexes");
 foreach my $zimPath (@zimPaths) {
 
     # Extract the zimFile
-    $zimPath =~ /.*\/([^\/]*)$/;
-    my $zimFile = $1;
+    my $zimFile = basename( $zimPath );
 
     # Create the index and library
     $logger->info("Create new library file ro $zimFile.");
@@ -103,17 +103,10 @@ foreach my $zimPath (@zimPaths) {
     $cmd = "kiwix-compact $zimFileIndex"; `$cmd`;
 }
 
-if ( -d "$distributionDirectory/data/index/wikipedia_sw_all_04_2011.zim.idx") {
-    print STDERR "OK1\n";
-}
-
 # Update @zimPaths
-my $output = `find /tmp/kiwix_iso_tmp_directory/data/content/ -name \"*.zim\" 2>&1`;
+$cmd = "find \"$distributionDirectory/data/content/\" -name \"*.zim\" 2>&1";
+my $output = `$cmd`;
 @zimPaths = split (/\n/, $output);
-
-if ( -d "$distributionDirectory/data/index/wikipedia_sw_all_04_2011.zim.idx") {
-    print STDERR "OK2\n";
-}
 
 # Splitting the ZIMs
 $logger->info("Splitting the ZIM files");
@@ -127,10 +120,6 @@ foreach my $zimPath (@zimPaths) {
     if (-e $zimPath."aa") {
 	$cmd = "cd $distributionDirectory/data/content/ ; rm $zimPath"; `$cmd`;
     }
-}
-
-if ( -d "$distributionDirectory/data/index/wikipedia_sw_all_04_2011.zim.idx") {
-    print STDERR "OK3\n";
 }
 
 # Download the autorun
@@ -150,10 +139,6 @@ if ($type eq "iso") {
 } else { # portable
     $logger->info("Build the portable compacted file");
     $cmd = "7za a -tzip -mx9 -mmt6 $filePath $distributionDirectory/* -mmt"; `$cmd`;
-}
-
-if ( -d "$distributionDirectory/data/index/wikipedia_sw_all_04_2011.zim.idx") {
-    print STDERR "OK4\n";
 }
 
 sub writeFile {
