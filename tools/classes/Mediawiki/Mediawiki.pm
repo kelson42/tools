@@ -6,6 +6,7 @@ use warnings;
 use XML::Simple;
 use Data::Dumper;
 use LWP::UserAgent;
+use HTTP::Cookies;
 use URI;
 use URI::Escape;
 use Encode;
@@ -47,7 +48,7 @@ sub new {
 
     # create third parth tools
     $self->userAgent(LWP::UserAgent->new( agent => "MW bot"));
-    $self->userAgent()->cookie_jar( {} );
+    $self->userAgent()->cookie_jar( HTTP::Cookies->new() );
 
     return $self;
 }
@@ -70,7 +71,6 @@ sub setup {
 
     if ($self->user()) {
 	if ($self->apiUrl()) {
-
 	    # make the login http request
 	    my $connectionRetryCounter = 0;
 	    my $httpResponse;
@@ -92,7 +92,7 @@ sub setup {
 		    $lgtoken = $1;
 		}
 
-	    } while ($httpResponse->content =~ /NeedToken/i && $connectionRetryCounter++ < 1);
+	    } while ($httpResponse->content() =~ /NeedToken/i && $connectionRetryCounter++ < 1);
 
 	    if ($httpResponse->content() =~ /wrongpass/i ) {
 		$self->log("error", "Failed to logged in '".$self->hostname()."' as '".$self->user()."' : wrong pass.");
@@ -506,13 +506,13 @@ sub makeHttpRequest {
     my $httpResponse;
 
     if ($method eq "POST") {
-	$httpResponse= $self->userAgent()->post(
+	$httpResponse = $self->userAgent()->post(
 	    $url,
 	    $formValues,
 	    %$httpHeaders,
 	    );
     } elsif ($method eq "GET") {
-	$httpResponse= $self->userAgent()->get(
+	$httpResponse = $self->userAgent()->get(
 	    $url,
 	    %$httpHeaders,
 	    );
@@ -907,10 +907,19 @@ sub DESTROY
 {
 }
 
+sub logout {
+    my $self = shift;
+    
+    my $httpResponse = $self->makeApiRequest( { 'action' => 'logout' } , 'GET');
+    
+    return 0;
+}
+
 sub loadEditToken {
     my $self = shift;
     
     my $httpResponse = $self->makeApiRequest( { 'action' => 'query', 'prop' => 'info', 'intoken' => 'edit', 'format' => 'xml', 'titles' => '42' } , 'GET');
+
     if ($httpResponse->content() =~ /edittoken=\"(.*?)\"/ ) {
 	$self->editToken($1);
 	return 1;

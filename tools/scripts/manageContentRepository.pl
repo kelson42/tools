@@ -217,6 +217,7 @@ sub writeWiki {
     $site->password($wikiPassword);
     $site->setup();
     $site->uploadPage("Template:ZIMdumps/content", $content, "Automatic update of the ZIM library");
+    $site->logout();
 }
 
 # Write http://dwonload.kiwix.org .htaccess for better html page
