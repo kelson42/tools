@@ -192,14 +192,25 @@ if ($writeLibrary) {
 }
 
 # Update www.kiwix.org page listing all the content available
+sub beautifyZimOptions {
+    my $result = "";
+    my @options = split("_", shift || "");
+    my $optionsLength = scalar(@options);
+    for (my$i=0; $i<$optionsLength; $i++) {
+	my $option = $options[$i];
+	$result .= $option.($i+1<$optionsLength ? " " : "");
+    }
+    return $result;
+}
+
 sub writeWiki {
     my @lines;
     foreach my $key (keys(%recentContent)) {
 	my $entry = $recentContent{$key};
-	my $line = "{{ZIMdumps/row|{{{2|}}}|".
+	my $line = "{{ZIMdumps/row|{{{2|}}}|{{{3|}}}|".
 	    $entry->{project}."|".
 	    $entry->{lang}."|".$entry->{size}."|".
-	    $entry->{year}."-".$entry->{month}."|".($entry->{option} || "all")."|7={{DownloadLink|".
+	    $entry->{year}."-".$entry->{month}."|".(beautifyZimOptions($entry->{option} || "all"))."|8={{DownloadLink|".
 	    $entry->{core}."|{{{1}}}|".$zimDirectoryName."/|".($entry->{portable} ? $portableDirectoryName : "")."/}} }}\n";
 	push(@lines, $line);
     }
