@@ -686,7 +686,7 @@ sub getImageUrl {
     return $url;
 }
 
-sub getImageSize {
+sub getImageHistory {
     my($self, $image) = @_;
     my $size;
     my $imageNamespaceName = $self->getFileNamespaceName();
@@ -697,22 +697,22 @@ sub getImageSize {
 
     my $httpPostRequestParams = {
 	'action' => 'query',
+	'prop' => 'imageinfo',
 	'titles' => $image,
 	'format' => 'xml',
-	'iiprop' => 'size',
-	'prop' => 'imageinfo'
+	'iilimit' => '10'
     };
-    
     my $xml;
 
     # make the http request and parse response
-    $xml = $self->makeApiRequestAndParseResponse(values=>$httpPostRequestParams);
+    $xml = $self->makeApiRequestAndParseResponse(values=>$httpPostRequestParams, forceArray=>'ii');
 
-    if (exists($xml->{query}->{pages}->{page}->{imageinfo}->{ii})) {
-	$size = $xml->{query}->{pages}->{page}->{imageinfo}->{ii}->{size}
+    my @results;
+    if (exists($xml->{query}->{pages}->{page}->{imageinfo})) {
+	@results = @{$xml->{query}->{pages}->{page}->{imageinfo}->{ii}};
     }
-    
-    return $size;
+
+    return @results;
 }
 
 sub downloadImage {
