@@ -74,8 +74,12 @@ foreach my $entry ($site->listCategoryEntries($category, 2, 6)) {
     my @images = $site->getImageHistory($entry);
     my $imagesCount = scalar(@images);
 
+    # Get last person who hast edited the description page
+    my $descriptionHistory = $site->history($entry);
+    my $lastContributor = $descriptionHistory->{'revisions'}->{'rev'}[0]->{'user'};
+
     # try to upload new cropped version if only one image
-    if ($imagesCount == 1) {
+    if ($imagesCount == 1 && !($lastContributor eq 'Swiss National Library')) {
 	printLog("Need to upload new version of the image ".$entry);
 	if ($entry =~ /.*(GS-GUGE.*)/) {
 	    my $id = $1;
@@ -85,7 +89,6 @@ foreach my $entry ($site->listCategoryEntries($category, 2, 6)) {
 		printLog("New version found for $entry at $filename");
 		my $content = readFile($filename);
 		$site->uploadImage($entry, $content, "", "cropped version", 1);
-		exit;
 	    } else {
 		printLog("No picture found for $entry");
 	    }
