@@ -216,7 +216,7 @@ sub writeWiki {
     }
 
     my $content = "<!-- THIS PAGE IS AUTOMATICALLY, PLEASE DON'T MODIFY IT MANUALLY -->";
-    foreach my $line (sort @lines) {
+    foreach my $line (@lines) {
 	$content .= $line;
     }
 
