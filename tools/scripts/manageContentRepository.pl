@@ -82,14 +82,14 @@ while (my $file = $explorer->getNext()) {
 	my $option;
 
 	# Old/new date format
-	if ($basename =~ /^(.+?_)(.{2,3}?_|)(.+_|)([\d]{2}|)_([\d]{4})$/i) {
+	if ($basename =~ /^(.+?_)([a-z\-]{2,10}?_|)(.+_|)([\d]{2}|)_([\d]{4})$/i) {
 	    $project = substr($1, 0, length($1)-1);
 	    $option = $3 ? substr($3, 0, length($3)-1) : "";
 	    $core = substr($1.$2.$3, 0, length($1.$2.$3)-1);
 	    $lang = $2 ? substr($2, 0, length($2)-1) : "en";
 	    $month = $4;
 	    $year = $5;
-	} elsif ($basename =~ /^(.+?_)(.{2,3}?_|)(.+_|)([\d]{4}|)\-([\d]{2})$/i) {
+	} elsif ($basename =~ /^(.+?_)([a-z\-]{2,10}?_|)(.+_|)([\d]{4}|)\-([\d]{2})$/i) {
 	    $project = substr($1, 0, length($1)-1);
 	    $option = $3 ? substr($3, 0, length($3)-1) : "";
 	    $core = substr($1.$2.$3, 0, length($1.$2.$3)-1);
