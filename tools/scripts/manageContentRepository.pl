@@ -205,7 +205,7 @@ sub beautifyZimOptions {
 
 sub writeWiki {
     my @lines;
-    foreach my $key (keys(%recentContent)) {
+    foreach my $key (sortKeys(keys(%recentContent))) {
 	my $entry = $recentContent{$key};
 	my $line = "{{ZIMdumps/row|{{{2|}}}|{{{3|}}}|".
 	    $entry->{project}."|".
@@ -286,6 +286,37 @@ sub writeHtaccess {
     }
 }
 
+# Sort the key in user friendly way
+sub sortKeysMethod {
+    my %coefs = (
+	"wikipedia"  => 10,
+	"wiktionary" => 9,
+	"wikivoyage" => 8,
+	"wikiversity" => 7,
+	"wikibooks" => 6,
+	"wikisource" => 5,
+	"wikiquote" => 4,
+	"wikinews" => 3,
+	"wikispecies" => 2,
+	"ted" => 1
+    );
+    my $ac = $coefs{shift([split("_", $a)])} || 0;
+    my $bc = $coefs{shift([split("_", $b)])} || 0;
+
+    if ($ac < $bc) {
+	return 1;
+    } elsif ($ac > $bc) {
+	return -1;
+    }
+
+    # else
+    return $a cmp $b;
+}
+
+sub sortKeys {
+    return sort sortKeysMethod @_;
+}
+
 # Write the library.xml file which is used as content catalog by Kiwix
 # software internal library
 sub writeLibrary {
@@ -309,7 +340,7 @@ sub writeLibrary {
     my $libraryPath = $libraryDirectory."/".$libraryName;
 
     # Create the library.xml file for the most recent files
-    foreach my $key (keys(%recentContent)) {
+    foreach my $key (sortKeys(keys(%recentContent))) {
 	my $entry = $recentContent{$key};
 	my $zimPath = $entry->{zim};
 	my $permalink = "http://download.kiwix.org".substr($entry->{zim}, length($contentDirectory)).".meta4";
