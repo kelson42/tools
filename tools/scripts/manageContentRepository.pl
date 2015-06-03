@@ -29,6 +29,7 @@ my $libraryDirectoryName = "library";
 my $libraryDirectory = $contentDirectory."/".$libraryDirectoryName;
 my $libraryName = "library.xml";
 my $tmpDirectory = "/tmp";
+my $maxOutdatedVersions = 1;
  
 # Task
 my $writeHtaccess = 0;
@@ -36,12 +37,14 @@ my $writeWiki = 0;
 my $writeLibrary = 0;
 my $showHelp = 0;
 my $wikiPassword = "";
+my $deleteOutdatedFiles = 0;
 
 sub usage() {
     print "manageContentRepository\n";
     print "\t--help\n";
     print "\t--writeHtaccess\n";
     print "\t--writeLibrary\n";
+    print "\t--deleteOutdatedFiles\n";
     print "\t--htaccessPath=/var/www/download.kiwix.org/.htaccess\n";
     print "\t--writeWiki\n";
     print "\t--wikiPassword=foobar\n";
@@ -58,6 +61,7 @@ GetOptions(
     'writeHtaccess' => \$writeHtaccess,
     'writeWiki' => \$writeWiki,
     'writeLibrary' => \$writeLibrary,
+    'deleteOutdatedFiles' => \$deleteOutdatedFiles,
     'help' => \$showHelp,
     'wikiPassword=s' => \$wikiPassword,
     'htaccessPath=s' => \$htaccessPath,
@@ -175,6 +179,10 @@ foreach my $key (keys(%content)) {
 }
 
 # Apply to the multiple outputs
+if ($deleteOutdatedFiles) {
+    deleteOutdatedFiles();
+}
+
 if ($writeHtaccess) {
     writeHtaccess();
 }
@@ -189,6 +197,30 @@ if ($writeWiki) {
 
 if ($writeLibrary) {
     writeLibrary();
+}
+
+# Remove old files
+sub deleteOutdatedFiles {
+    my @sortedContent = sort { $content{$b}->{core}."_".$content{$b}->{year}."_".$content{$b}->{month} cmp $content{$a}->{core}."_".$content{$a}->{year}."_".$content{$a}->{month} } keys(%content);
+    my $core = '';
+    my $coreCounter = 0;
+    foreach my $key (@sortedContent) {
+	my $entry = $content{$key};
+	if ($entry->{core} eq $core) {
+	    if ($coreCounter > $maxOutdatedVersions) {
+		print "Deleting ".$entry->{zim}."...\n";
+		my $cmd = "mv ".$entry->{zim}." /var/www/backup/"; `$cmd`;
+		if ($entry->{portable}) {
+		    my $cmd = "mv ".$entry->{portable}." /var/www/backup/"; `$cmd`;
+		}
+	    } else {
+		$coreCounter += 1;
+	    }
+	} else {
+	    $core = $entry->{core};
+	    $coreCounter = 1;
+	}
+    }
 }
 
 # Update www.kiwix.org page listing all the content available
@@ -252,7 +284,8 @@ sub writeHtaccess {
     $content .= "RedirectPermanent /".$srcDirectoryName."/kiwix-src.tar.xz /".$srcDirectoryName."/kiwix-0.9-src.tar.xz\n";
 
     # Backward compatibility redirects
-    $content .= "RedirectPermanent /zim/0.9/wikipedia_en_ray_charles_03_2013.zim /zim/wikipedia/wikipedia_en_ray_charles_2013-03.zim\n";
+    $content .= "RedirectPermanent /zim/0.9/wikipedia_en_ray_charles_03_2013.zim /zim/wikipedia/wikipedia_en_ray_charles_2015-06.zim\n";
+    $content .= "RedirectPermanent /zim/wikipedia/wikipedia_en_ray_charles_03_2013.zim /zim/wikipedia/wikipedia_en_ray_charles_2015-06.zim\n";
     $content .= "RedirectPermanent /zim/0.9/ /zim/wikipedia/\n";
     $content .= "\n\n";
 
