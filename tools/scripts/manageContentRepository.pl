@@ -29,6 +29,7 @@ my $libraryDirectoryName = "library";
 my $libraryDirectory = $contentDirectory."/".$libraryDirectoryName;
 my $libraryName = "library.xml";
 my $tmpDirectory = "/tmp";
+my $maxOutdatedVersions = 1;
  
 # Task
 my $writeHtaccess = 0;
@@ -36,12 +37,14 @@ my $writeWiki = 0;
 my $writeLibrary = 0;
 my $showHelp = 0;
 my $wikiPassword = "";
+my $deleteOutdatedFiles = 0;
 
 sub usage() {
     print "manageContentRepository\n";
     print "\t--help\n";
     print "\t--writeHtaccess\n";
     print "\t--writeLibrary\n";
+    print "\t--deleteOutdatedFiles\n";
     print "\t--htaccessPath=/var/www/download.kiwix.org/.htaccess\n";
     print "\t--writeWiki\n";
     print "\t--wikiPassword=foobar\n";
@@ -58,6 +61,7 @@ GetOptions(
     'writeHtaccess' => \$writeHtaccess,
     'writeWiki' => \$writeWiki,
     'writeLibrary' => \$writeLibrary,
+    'deleteOutdatedFiles' => \$deleteOutdatedFiles,
     'help' => \$showHelp,
     'wikiPassword=s' => \$wikiPassword,
     'htaccessPath=s' => \$htaccessPath,
@@ -82,14 +86,14 @@ while (my $file = $explorer->getNext()) {
 	my $option;
 
 	# Old/new date format
-	if ($basename =~ /^(.+?_)(.{2,3}?_|)(.+_|)([\d]{2}|)_([\d]{4})$/i) {
+	if ($basename =~ /^(.+?_)([a-z\-]{2,10}?_|)(.+_|)([\d]{2}|)_([\d]{4})$/i) {
 	    $project = substr($1, 0, length($1)-1);
 	    $option = $3 ? substr($3, 0, length($3)-1) : "";
 	    $core = substr($1.$2.$3, 0, length($1.$2.$3)-1);
 	    $lang = $2 ? substr($2, 0, length($2)-1) : "en";
 	    $month = $4;
 	    $year = $5;
-	} elsif ($basename =~ /^(.+?_)(.{2,3}?_|)(.+_|)([\d]{4}|)\-([\d]{2})$/i) {
+	} elsif ($basename =~ /^(.+?_)([a-z\-]{2,10}?_|)(.+_|)([\d]{4}|)\-([\d]{2})$/i) {
 	    $project = substr($1, 0, length($1)-1);
 	    $option = $3 ? substr($3, 0, length($3)-1) : "";
 	    $core = substr($1.$2.$3, 0, length($1.$2.$3)-1);
@@ -175,6 +179,10 @@ foreach my $key (keys(%content)) {
 }
 
 # Apply to the multiple outputs
+if ($deleteOutdatedFiles) {
+    deleteOutdatedFiles();
+}
+
 if ($writeHtaccess) {
     writeHtaccess();
 }
@@ -191,6 +199,30 @@ if ($writeLibrary) {
     writeLibrary();
 }
 
+# Remove old files
+sub deleteOutdatedFiles {
+    my @sortedContent = sort { $content{$b}->{core}."_".$content{$b}->{year}."_".$content{$b}->{month} cmp $content{$a}->{core}."_".$content{$a}->{year}."_".$content{$a}->{month} } keys(%content);
+    my $core = '';
+    my $coreCounter = 0;
+    foreach my $key (@sortedContent) {
+	my $entry = $content{$key};
+	if ($entry->{core} eq $core) {
+	    if ($coreCounter > $maxOutdatedVersions) {
+		print "Deleting ".$entry->{zim}."...\n";
+		my $cmd = "mv ".$entry->{zim}." /var/www/backup/"; `$cmd`;
+		if ($entry->{portable}) {
+		    my $cmd = "mv ".$entry->{portable}." /var/www/backup/"; `$cmd`;
+		}
+	    } else {
+		$coreCounter += 1;
+	    }
+	} else {
+	    $core = $entry->{core};
+	    $coreCounter = 1;
+	}
+    }
+}
+
 # Update www.kiwix.org page listing all the content available
 sub beautifyZimOptions {
     my $result = "";
@@ -205,7 +237,7 @@ sub beautifyZimOptions {
 
 sub writeWiki {
     my @lines;
-    foreach my $key (keys(%recentContent)) {
+    foreach my $key (sortKeys(keys(%recentContent))) {
 	my $entry = $recentContent{$key};
 	my $line = "{{ZIMdumps/row|{{{2|}}}|{{{3|}}}|".
 	    $entry->{project}."|".
@@ -216,7 +248,7 @@ sub writeWiki {
     }
 
     my $content = "<!-- THIS PAGE IS AUTOMATICALLY, PLEASE DON'T MODIFY IT MANUALLY -->";
-    foreach my $line (sort @lines) {
+    foreach my $line (@lines) {
 	$content .= $line;
     }
 
@@ -250,6 +282,11 @@ sub writeHtaccess {
     $content .= "RedirectPermanent /".$binDirectoryName."/kiwix.xo /".$binDirectoryName."/0.9/kiwix-0.9.xo\n";
     $content .= "RedirectPermanent /".$binDirectoryName."/kiwix-server-arm.tar.bz2 /".$binDirectoryName."/0.9/kiwix-server-0.9-linux-armv5tejl.tar.bz2\n";
     $content .= "RedirectPermanent /".$srcDirectoryName."/kiwix-src.tar.xz /".$srcDirectoryName."/kiwix-0.9-src.tar.xz\n";
+
+    # Backward compatibility redirects
+    $content .= "RedirectPermanent /zim/0.9/wikipedia_en_ray_charles_03_2013.zim /zim/wikipedia/wikipedia_en_ray_charles_2015-06.zim\n";
+    $content .= "RedirectPermanent /zim/wikipedia/wikipedia_en_ray_charles_03_2013.zim /zim/wikipedia/wikipedia_en_ray_charles_2015-06.zim\n";
+    $content .= "RedirectPermanent /zim/0.9/ /zim/wikipedia/\n";
     $content .= "\n\n";
 
     # Folder description
@@ -286,6 +323,37 @@ sub writeHtaccess {
     }
 }
 
+# Sort the key in user friendly way
+sub sortKeysMethod {
+    my %coefs = (
+	"wikipedia"  => 10,
+	"wiktionary" => 9,
+	"wikivoyage" => 8,
+	"wikiversity" => 7,
+	"wikibooks" => 6,
+	"wikisource" => 5,
+	"wikiquote" => 4,
+	"wikinews" => 3,
+	"wikispecies" => 2,
+	"ted" => 1
+    );
+    my $ac = $coefs{shift([split("_", $a)])} || 0;
+    my $bc = $coefs{shift([split("_", $b)])} || 0;
+
+    if ($ac < $bc) {
+	return 1;
+    } elsif ($ac > $bc) {
+	return -1;
+    }
+
+    # else
+    return $a cmp $b;
+}
+
+sub sortKeys {
+    return sort sortKeysMethod @_;
+}
+
 # Write the library.xml file which is used as content catalog by Kiwix
 # software internal library
 sub writeLibrary {
@@ -309,7 +377,7 @@ sub writeLibrary {
     my $libraryPath = $libraryDirectory."/".$libraryName;
 
     # Create the library.xml file for the most recent files
-    foreach my $key (keys(%recentContent)) {
+    foreach my $key (sortKeys(keys(%recentContent))) {
 	my $entry = $recentContent{$key};
 	my $zimPath = $entry->{zim};
 	my $permalink = "http://download.kiwix.org".substr($entry->{zim}, length($contentDirectory)).".meta4";
