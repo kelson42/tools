@@ -1,11 +1,9 @@
 #!/usr/bin/perl
-binmode STDOUT, ":utf8";
-binmode STDIN, ":utf8";
+use FindBin;
+use lib "$FindBin::Bin/../classes/";
+use lib "$FindBin::Bin/../../dumping_tools/classes/";
 
 use utf8;
-use lib "../";
-use lib "../classes/";
-
 use Encode;
 use Config;
 use strict;
@@ -16,7 +14,7 @@ use Mediawiki::Mediawiki;
 
 # log
 use Log::Log4perl;
-Log::Log4perl->init("../conf/log4perl");
+Log::Log4perl->init("$FindBin::Bin/../conf/log4perl");
 my $logger = Log::Log4perl->get_logger("listCategoryEntries.pl");
 
 # get the params
