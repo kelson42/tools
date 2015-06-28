@@ -1,4 +1,7 @@
 #!/usr/bin/perl
+binmode STDOUT, ":utf8";
+binmode STDIN, ":utf8";
+
 use FindBin;
 use lib "$FindBin::Bin/../classes/";
 use lib "$FindBin::Bin/../../dumping_tools/classes/";
@@ -11,11 +14,6 @@ use warnings;
 use Getopt::Long;
 use Data::Dumper;
 use Mediawiki::Mediawiki;
-
-# log
-use Log::Log4perl;
-Log::Log4perl->init("$FindBin::Bin/../conf/log4perl");
-my $logger = Log::Log4perl->get_logger("listCategoryEntries.pl");
 
 # get the params
 my $host = "";
@@ -41,7 +39,6 @@ if (!$host || ( !scalar(@categories) && !$readFromStdin) ) {
 
 # readFromStdin
 if ($readFromStdin) {
-    $logger->info("Read categories from stdin.");
     while (my $category = <STDIN>) {
         $category =~ s/\n//;
         push(@categories, $category);
@@ -52,7 +49,6 @@ if ($readFromStdin) {
 my $site = Mediawiki::Mediawiki->new();
 $site->hostname($host);
 $site->path($path);
-$site->logger($logger);
 
 # Go over the category list
 my %entries;
