@@ -273,7 +273,7 @@ sub writeHtaccess {
     $content .= "RewriteEngine On\n\n";
     
     # Bin redirects
-    $content .= "RedirectPermanent /".$binDirectoryName."/kiwix.apk /".$binDirectoryName."/android/kiwix-1.94.apk\n";
+    $content .= "RedirectPermanent /".$binDirectoryName."/kiwix.apk /".$binDirectoryName."/android/kiwix-1.95.apk\n";
     $content .= "RedirectPermanent /".$binDirectoryName."/kiwix-installer.exe /".$binDirectoryName."/0.9/kiwix-0.9-installer.exe\n";
     $content .= "RedirectPermanent /".$binDirectoryName."/kiwix-linux-i686.tar.bz2 /".$binDirectoryName."/0.9/kiwix-0.9-linux-i686.tar.bz2\n";
     $content .= "RedirectPermanent /".$binDirectoryName."/kiwix-linux-x86_64.tar.bz2 /".$binDirectoryName."/0.9/kiwix-0.9-linux-x86_64.tar.bz2\n";
