@@ -1515,7 +1515,7 @@ sub listCategoryEntries {
 		
 		$doneCategories{$category} = 1;
 		
-	    } while ($continue = $xml->{"query-continue"}->{"categorymembers"}->{"cmcontinue"});
+	    } while ($continue = $xml->{"continue"}->{"cmcontinue"});
 	}
     }
 
