@@ -29,8 +29,8 @@ my $libraryDirectoryName = "library";
 my $libraryDirectory = $contentDirectory."/".$libraryDirectoryName;
 my $libraryName = "library.xml";
 my $tmpDirectory = "/tmp";
-my $maxOutdatedVersions = 1;
- 
+my $maxOutdatedVersions = 2;
+
 # Task
 my $writeHtaccess = 0;
 my $writeWiki = 0;
@@ -209,9 +209,9 @@ sub deleteOutdatedFiles {
 	if ($entry->{core} eq $core) {
 	    if ($coreCounter > $maxOutdatedVersions) {
 		print "Deleting ".$entry->{zim}."...\n";
-		my $cmd = "mv ".$entry->{zim}." /var/www/backup/"; `$cmd`;
+		my $cmd = "mv ".$entry->{zim}." /var/www/download.kiwix.org.trash/"; `$cmd`;
 		if ($entry->{portable}) {
-		    my $cmd = "mv ".$entry->{portable}." /var/www/backup/"; `$cmd`;
+		    my $cmd = "mv ".$entry->{portable}." /var/www/download.kiwix.org.trash/"; `$cmd`;
 		}
 	    } else {
 		$coreCounter += 1;
