@@ -24,6 +24,7 @@ my $portableDirectoryName = "portable";
 my $portableDirectory = $contentDirectory."/".$portableDirectoryName;
 my $binDirectoryName = "bin";
 my $srcDirectoryName = "src";
+my $devDirectoryName = "dev";
 my $htaccessPath = $contentDirectory."/.htaccess";
 my $libraryDirectoryName = "library";
 my $libraryDirectory = $contentDirectory."/".$libraryDirectoryName;
@@ -282,6 +283,9 @@ sub writeHtaccess {
     $content .= "RedirectPermanent /".$binDirectoryName."/kiwix.xo /".$binDirectoryName."/0.9/kiwix-0.9.xo\n";
     $content .= "RedirectPermanent /".$binDirectoryName."/kiwix-server-arm.tar.bz2 /".$binDirectoryName."/0.9/kiwix-server-0.9-linux-armv5tejl.tar.bz2\n";
     $content .= "RedirectPermanent /".$srcDirectoryName."/kiwix-src.tar.xz /".$srcDirectoryName."/kiwix-0.9-src.tar.xz\n";
+
+    # Dev redirects
+    $content .= "RedirectPermanent /".$devDirectoryName."/ZIMmaker.ova /".$devDirectoryName."/ZIMmakerVMv5.ova\n";
 
     # Backward compatibility redirects
     # To get the list of failing requests: cat /var/log/nginx/download.kiwix.org.access.log | grep " 404 " | cut -d ' ' -f 7 | grep -v nightly | grep -v favicon | grep -v robots | sort | uniq -c | sort -b -n -r
