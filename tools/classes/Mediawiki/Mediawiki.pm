@@ -1368,6 +1368,7 @@ sub exist {
 	if (exists($xml->{query}->{pages}->{page})) {
 	    foreach my $page (@{$xml->{query}->{pages}->{page}}) {
 		$pages{$page->{title}} = !(exists($page->{missing})) if ($page->{title});
+		exists($page->{missing}) && print STDERR $page->{title}."\n";
 	    }
 	}
     } while (scalar(@pages));
