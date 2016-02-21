@@ -19,8 +19,9 @@ my $contentPath;
 my $removeTitleTag;
 my $followSymlinks;
 my $ignoreHtml;
+my $lossLess;
 my $threadCount=2;
-my $tmpDir="/tmp";
+my $tmpDir="/dev/shm";
 
 # Get console line arguments
 GetOptions(
@@ -28,12 +29,13 @@ GetOptions(
     'removeTitleTag' => \$removeTitleTag,
     'followSymlinks' => \$followSymlinks,
     'ignoreHtml' => \$ignoreHtml,
+    'lossLess' => \$lossLess,
     'threadCount=s' => \$threadCount,
     'tmpDir=s' => \$tmpDir,
     );
 
 if (!$contentPath) {
-    print "usage: ./optimizeContents.pl --contentPath=./html [--removeTitleTag] [--followSymlinks] [--ignoreHtml] [--threadCount=2] [--tmpDir=/media/tmpfs]\n";
+    print "usage: ./optimizeContents.pl --contentPath=./html [--removeTitleTag] [--followSymlinks] [--ignoreHtml] [--threadCount=2] [--tmpDir=/dev/shm] [--lossLess]\n";
     exit;
 }
 
@@ -53,4 +55,5 @@ $optimizer->threadCount($threadCount);
 $optimizer->removeTitleTag($removeTitleTag);
 $optimizer->followSymlinks($followSymlinks);
 $optimizer->ignoreHtml($ignoreHtml);
+$optimizer->lossLess($lossLess);
 $optimizer->optimize();

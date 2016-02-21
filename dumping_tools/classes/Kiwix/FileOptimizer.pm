@@ -16,6 +16,7 @@ my $contentPath : shared;
 my $removeTitleTag : shared;
 my $followSymlinks : shared;
 my $ignoreHtml : shared;
+my $lossLess : shared;
 
 my %queue : shared;
 my $threadCount = 2;
@@ -108,9 +109,12 @@ sub optimizeFiles {
 sub optimizePng {
     my $self = shift;
     my $file = shift;
-#    `opt-png "$file"`;
     print "Optimzing $file\n";
-    `pngquant --nofs --force --ext=".png" "$file" ; /usr/local/bin/advdef -z -4 -i 5 "$file"`;
+    if ($self->lossLess()) {
+	`opt-png "$file"`;
+    } else {
+	`pngquant --nofs --force --ext=".png" "$file" ; /usr/local/bin/advdef -z -4 -i 5 "$file"`;
+    }
 }
 
 sub optimizeGif {
@@ -122,9 +126,12 @@ sub optimizeGif {
 sub optimizeJpg {
     my $self = shift;
     my $file = shift;
-#    `opt-jpg "$file"`;
     print "Optimzing $file\n";
-    `jpegoptim --strip-all -m50 "$file"`
+    if ($self->lossLess()) {
+	`jpegoptim --strip-all -m50 "$file"`;
+    } else {
+	`opt-jpg "$file"`;
+    }
 }
 
 sub optimizeHtml {
@@ -205,6 +212,13 @@ sub followSymlinks {
     lock($followSymlinks);
     if (@_) { $followSymlinks = shift }
     return $followSymlinks;
+}
+
+sub lossLess {
+    my $self = shift;
+    lock($lossLess);
+    if (@_) { $lossLess = shift }
+    return $lossLess;
 }
 
 sub isRunnable {
