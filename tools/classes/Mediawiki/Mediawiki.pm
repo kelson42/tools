@@ -1504,7 +1504,7 @@ sub listCategoryEntries {
 		    'cmtitle' => $category,
 		    'format' => 'xml',
 		    'list' => 'categorymembers',
-		    'cmlimit' => '500',
+		    'cmlimit' => '400',
 		    'cmnamespace' => join("|", "14", $namespace), 
 		};
 		
