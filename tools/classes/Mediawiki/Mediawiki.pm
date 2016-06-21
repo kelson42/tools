@@ -1096,6 +1096,22 @@ sub embeddedIn {
     return @links;
 }
 
+sub langLinks {
+    my ($self, $title) = @_;
+    my $xml;
+    my $httpPostRequestParams = {
+	'action' => 'query',
+	'titles' => $title,
+	'prop' => 'langlinks',
+	'lllimit'=> '500',
+	'format' => 'xml'
+    };
+
+    # make the http request and parse response
+    $xml = $self->makeApiRequestAndParseResponse(values=>$httpPostRequestParams, , forceArray=>'ll');
+    return $xml->{query}->{pages}->{page}->{langlinks}->{ll} || [];
+}
+
 sub allPages {
     my($self, $namespace, $filter, $prefix) = @_;
 
@@ -1488,7 +1504,7 @@ sub listCategoryEntries {
 		    'cmtitle' => $category,
 		    'format' => 'xml',
 		    'list' => 'categorymembers',
-		    'cmlimit' => '500',
+		    'cmlimit' => '400',
 		    'cmnamespace' => join("|", "14", $namespace), 
 		};
 		
