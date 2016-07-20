@@ -11,11 +11,14 @@ cat en.featured | ./listDependences.pl --host=en.wikipedia.org --path=w --readFr
 
 # Get all dependencies (image included)
 cat en.featured.template.deps | ./listDependences.pl --host=en.wikipedia.org --path=w --readFromStdin --type=all | sort -u > en.featured.all.deps &&
+cat en.featured.template.deps en.featured.all.deps | sort -u > en.tmp
+mv en.tmp > en.featured.all.deps
 
 # Add a few other articles
 echo "MediaWiki:Common.js" >> en.featured.all.deps &&
 echo "MediaWiki:Common.css" >> en.featured.all.deps &&
 echo "MediaWiki:Vector.js" >> en.featured.all.deps &&
-echo "MediaWiki:Vector.css" >> en.featured.all.deps
+echo "MediaWiki:Vector.css" >> en.featured.all.deps &&
 
-# Remove main
+# Custom content
+echo "Template:WikiFundi credit attribution" >> en.featured.all.deps
