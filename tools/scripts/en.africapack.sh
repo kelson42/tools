@@ -22,3 +22,11 @@ echo "MediaWiki:Vector.css" >> en.featured.all.deps &&
 
 # Custom content
 echo "Template:WikiFundi credit attribution" >> en.featured.all.deps
+echo "Wikipedia:NPOV" >> en.featured.all.deps
+echo "Wikipedia:Core_content_policies" >> en.featured.all.deps
+echo "Wikipedia:No_original_research" >> en.featured.all.deps
+echo "Wikipedia:Verifiability" >> en.featured.all.deps
+echo "Wikipedia:Words_to_watch" >> en.featured.all.deps
+echo "Wikipedia:Five_pillars" >> en.featured.all.deps
+echo "Wikipedia:What_Wikipedia_is_not" >> en.featured.all.deps
+echo "Wikipedia:Manual_of_Style (check last)" >> en.featured.all.deps
