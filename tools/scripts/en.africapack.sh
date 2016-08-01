@@ -1,36 +1,45 @@
 #!/bin/bash
 
-# Get features articles & list
-./listCategoryEntries.pl --host=en.wikipedia.org --path=w --category=Featured_articles --category=Featured_lists --explorationDepth=1  --namespace=0 > en.featured &&
+# Custom pages
+echo "Template:WikiFundi_credit_attribution" > en.mirror &&
+echo "Wikipedia:NPOV" >> en.mirror &&
+echo "Wikipedia:Core_content_policies" >> en.mirror &&
+echo "Wikipedia:No_original_research" >> en.mirror &&
+echo "Wikipedia:Verifiability" >> en.mirror &&
+echo "Wikipedia:Words_to_watch" >> en.mirror &&
+echo "Wikipedia:Five_pillars" >> en.mirror &&
+echo "Wikipedia:What_Wikipedia_is_not" >> en.mirror &&
+echo "Wikipedia:Manual_of_Style_(check_last)" >> en.mirror &&
+
+# School pages
+echo "Sinenjongo_High_School" >> en.mirror &&
+echo "Saint_Fatima_School" >> en.mirror &&
+echo "Boa_Amponsem_Senior_High_School" >> en.mirror &&
+echo "Gayaza_High_School" >> en.mirror &&
+echo "Namwianga_Mission" >> en.mirror &&
+echo "American_Cooperative_School_of_Tunis" >> en.mirror &&
+echo "Kapsabet_High_School" >> en.mirror &&
+
+# Add a few other pages
+echo "MediaWiki:Common.js" >> en.mirror &&
+echo "MediaWiki:Common.css" >> en.mirror &&
+echo "MediaWiki:Vector.js" >> en.mirror &&
+echo "MediaWiki:Vector.css" >> en.mirror &&
+
+# Project pages
+./listCategoryEntries.pl --host=en.wikipedia.org --path=w --category=WikiProject_Wikipack_Africa_Content --explorationDepth=1 --namespace=4 >> en.mirror &&
+
+# Featured articles & featured lists pages
+./listCategoryEntries.pl --host=en.wikipedia.org --path=w --category=Featured_articles --category=Featured_lists --explorationDepth=1 --namespace=0 >> en.mirror &&
 
 # Get text dependencies
-cat en.featured | ./listDependences.pl --host=en.wikipedia.org --path=w --readFromStdin --type=template | sort -u > en.featured+deps &&
-
-# Exclude articles (mirror only the dependencies)
-./compareLists.pl --file1=en.featured+deps --file2=en.featured --mode=only1 | grep ":" | sort -u > en.featured.template.deps &&
-
-# Get all dependencies (image included)
-cat en.featured.template.deps | ./listDependences.pl --host=en.wikipedia.org --path=w --readFromStdin --type=image | sort -u > en.featured.image.deps &&
-cat en.featured.template.deps en.featured.image.deps | grep ":" | sort -u > en.featured.all.deps
-
-# Add a few other articles
-echo "MediaWiki:Common.js" >> en.featured.all.deps &&
-echo "MediaWiki:Common.css" >> en.featured.all.deps &&
-echo "MediaWiki:Vector.js" >> en.featured.all.deps &&
-echo "MediaWiki:Vector.css" >> en.featured.all.deps &&
-
-# Custom content
-echo "Template:WikiFundi_credit_attribution" >> en.featured.all.deps
-echo "Wikipedia:NPOV" >> en.featured.all.deps
-echo "Wikipedia:Core_content_policies" >> en.featured.all.deps
-echo "Wikipedia:No_original_research" >> en.featured.all.deps
-echo "Wikipedia:Verifiability" >> en.featured.all.deps
-echo "Wikipedia:Words_to_watch" >> en.featured.all.deps
-echo "Wikipedia:Five_pillars" >> en.featured.all.deps
-echo "Wikipedia:What_Wikipedia_is_not" >> en.featured.all.deps
-echo "Wikipedia:Manual_of_Style_(check_last)" >> en.featured.all.deps
-
-# Wikifundi pages
+cat en.mirror | ./listDependences.pl --host=en.wikipedia.org --path=w --readFromStdin --type=all | sort -u > en.mirror.deps &&
 
 # Mediawiki help
-https://www.mediawiki.org/wiki/Help:Contents
+./listCategoryEntries.pl --host=mediawiki.org --path=w --category=Help --explorationDepth=1 --namespace=12 > en.help
+
+# Wikifundi pages
+#https://en.wikipedia.org/wiki/Wikipedia:WikiProject_Wikipack_Africa_Content
+#(should be a categorized) Pour le renommage enlever
+#Wikipedia:WikiProject Wikipack Africa Content;
+
