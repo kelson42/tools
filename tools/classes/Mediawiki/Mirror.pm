@@ -9,7 +9,8 @@ use Data::Dumper;
 use Mediawiki::Mediawiki;
 use POSIX qw(strftime);
 use URI::Escape;
-
+use Carp qw( );
+use URI qw( );
 use threads;
 use threads::shared;
 
@@ -44,6 +45,7 @@ my $checkCompletedImages : shared = 0;
 my $checkIncomingRedirects : shared = 0;
 my $noTextMirroring : shared = 0;
 my $checkEmbeddedIn : shared = 1;
+my $ignorePrefix : shared = undef;
 
 my %pageDownloadQueue : shared;
 my @pageUploadQueue : shared;
@@ -66,13 +68,13 @@ my @templateDependenceThreads;
 my @redirectThreads;
 my @embeddedInThreads;
 
-my $pageDownloadThreadCount = 4;
-my $pageUploadThreadCount = 6;
+my $pageDownloadThreadCount = 1;
+my $pageUploadThreadCount = 1;
 my $imageDownloadThreadCount = 1;
-my $imageUploadThreadCount = 2;
-my $imageDependenceThreadCount = 3;
-my $templateDependenceThreadCount = 3;
-my $redirectThreadCount = 3;
+my $imageUploadThreadCount = 1;
+my $imageDependenceThreadCount = 1;
+my $templateDependenceThreadCount = 1;
+my $redirectThreadCount = 1;
 my $embeddedInThreadCount = 1;
 
 my $isRunnable : shared = 1;
@@ -1003,6 +1005,7 @@ sub uploadPages {
 
     my $footer;
     my $date;
+    my $ignorePrefix = $self->ignorePrefix();
 
     if ($self->footerPath()) {
 	open(my $fh, '<:utf8', $self->footerPath());
@@ -1034,9 +1037,12 @@ sub uploadPages {
 		$content = $content."<noinclude>".$footer->output()."</noinclude>";
 	    }
 	    
+	    my $destTitle = $title;
+	    $destTitle =~ s/^$ignorePrefix//i if ($ignorePrefix);
+
 	    # upload the page
 	    #	   $status = $site->uploadPage($title, $content, $summary, $redirectTarget );
-	    $status = $site->uploadPage($title, $content, $summary );
+	    $status = $site->uploadPage($destTitle, $content, $summary);
 
 	    # display the correct log message, depending of $status and $redirectTarget
 	    if ($status eq "1") {
@@ -1339,6 +1345,13 @@ sub noTextMirroring {
     lock($noTextMirroring);
     if (@_) { $noTextMirroring = shift }
     return $noTextMirroring;
+}
+
+sub ignorePrefix {
+    my $self = shift;
+    lock($ignorePrefix);
+    if (@_) { $ignorePrefix = shift }
+    return $ignorePrefix;
 }
 
 sub addPagesToMirror {
