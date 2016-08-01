@@ -11,6 +11,8 @@ use URI;
 use URI::Escape;
 use Encode;
 use Getargs::Long;
+use Carp qw( );
+use URI qw( );
 
 use threads;
 use threads::shared;
@@ -612,6 +614,7 @@ sub makeSiteRequest {
 
 sub makeHashFromXml {
     my ($self, $xml, $forceArray) = @_;
+    return unless $xml;
 
     # Remove trailing spaces or tabs
     $xml =~ s/^[\ |\t|\n]+//g;
@@ -1008,17 +1011,18 @@ sub isIncompletePage {
 }
 
 sub templateDependences {
-    my $self = shift;
-    return $self->dependences(@_, "templates");
+    my ($self, $title, $ignoredNamespaces) = @_;
+    return $self->dependences($title, "templates", $ignoredNamespaces);
 }
 
 sub imageDependences {
-    my $self = shift;
-    return $self->dependences(@_, "images");
+    my ($self, $title, $ignoredNamespaces) = @_;
+    return $self->dependences(@_, "images", $ignoredNamespaces);
 }
 
 sub dependences {
-    my($self, $page, $type) = @_;
+    my($self, $page, $type, $ignoredNamespaces) = @_;
+    $ignoredNamespaces ||= [];
     my @deps;
 
     my $continueProperty = $type eq "templates" ? "gtlcontinue" : "gimcontinue";
@@ -1044,8 +1048,7 @@ sub dependences {
 
 	if (exists($xml->{query}->{pages}->{page})) {
 	    foreach my $dep (@{$xml->{query}->{pages}->{page}}) {
-		$dep->{title} = $dep->{title} ;
-		push(@deps, $dep);
+		push(@deps, $dep) unless (grep(/^$dep->{'ns'}$/, @$ignoredNamespaces));
 	    } 
 	}
     } while ($continue = $xml->{"query-continue"}->{$type}->{$continueProperty});
@@ -1495,8 +1498,7 @@ sub listCategoryEntries {
 		next;
 	    }
 	    
-	    sleep(1);
-	    
+	    print STDERR "Reading '$category'...\n";
 	    $self->log("info", "Reading '$category'...");
 	    do {
 		my $httpPostRequestParams = {
