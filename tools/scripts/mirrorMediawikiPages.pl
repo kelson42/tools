@@ -42,6 +42,7 @@ my $useIncompletePagesAsInput;
 my $checkIncomingRedirects;
 my $dontFollowRedirects;
 my $noTextMirroring;
+my $ignorePrefix;
 
 my @pages;
 my $readFromStdin = 0;
@@ -78,7 +79,8 @@ GetOptions(
            'checkIncomingRedirects' => \$checkIncomingRedirects,
            'dontFollowRedirects' => \$dontFollowRedirects,
            'ignoreEmbeddedInPagesCheck' => \$ignoreEmbeddedInPagesCheck,
-           'commonRegexp=s'=> \$commonRegexp
+           'commonRegexp=s'=> \$commonRegexp,
+           'ignorePrefix=s' => \$ignorePrefix
     );
 
 if (!$sourceHost || !$destinationHost ) {
@@ -111,6 +113,7 @@ if (!$sourceHost || !$destinationHost ) {
     print "--commonPath=[path] (example: w)\n\t\tPath in the URL to access to the common Mediawiki root\n\t";
     print "--commonHost=[host] (example: localhost)\n\t\tIP or hostname of the common Mediawiki\n\t";
     print "--commonRegexp=[\/commons\/] (example: localhost)\n\t\tIP or hostname of the common Mediawiki\n";
+    print "--ignorePrefix=Title_prefix (example: 'Wikipedia:WikiProject Wikipack Africa Content/')\n\t\tRemove this part of title if exists\n";
     exit;
 }
 
@@ -175,6 +178,7 @@ $mirror->commonMediawikiPassword($commonPassword);
 $mirror->commonRegexp($commonRegexp);
 
 $mirror->noTextMirroring($noTextMirroring);
+$mirror->ignorePrefix($ignorePrefix);
 
 $mirror->footerPath($footerPath);
 
