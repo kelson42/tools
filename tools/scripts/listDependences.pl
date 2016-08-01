@@ -108,7 +108,6 @@ if ($databaseName) {
 	
 	# images
 	if ($type =~ /(all|image)/i ) {
-	    my $imageNamespaceName = $site->getFileNamespaceName();
 	    $logger->info("Getting image dependences of the page '$page'...");
 	    my @imageDependences = $site->imageDependences($page);
 	    $logger->info(scalar(@imageDependences)." image dependences found.");
@@ -116,7 +115,6 @@ if ($databaseName) {
 		my $image = $dep->{title};
 		unless ($imageDependences{$image}) {
 		    $image =~ tr/ /_/s;
-		    $image =~ s/^$imageNamespaceName:/File:/i;
 		    $imageDependences{$image} = exists($dep->{missing});
 		}
 	    }
@@ -124,17 +122,13 @@ if ($databaseName) {
 	
 	# templates
 	if ($type =~ /(all|template)/i ) {
-	    my $templateNamespaceName = $site->getTemplateNamespaceName();
 	    $logger->info("Get template dependences of the page '$page'.");
-	    my @templateDependences = $site->templateDependences($page);
+	    my @templateDependences = $site->templateDependences($page, [ "0" ]);
 	    $logger->info(scalar(@templateDependences)." template dependences found.");
-	    print $page."\n";
-	    print Dumper(@templateDependences)."\n";
 	    foreach my $dep (@templateDependences) {
 		my $template = $dep->{title};
 		unless ($templateDependences{$template}) {
 		    $template =~ tr/ /_/s;
-		    $template =~ s/^$templateNamespaceName:/Template:/i;
 		    $templateDependences{$template} = exists($dep->{missing});
 		}
 	    }
