@@ -30,16 +30,16 @@ echo "MediaWiki:Vector.css" >> en.mirror &&
 ./listCategoryEntries.pl --host=en.wikipedia.org --path=w --category=WikiProject_Wikipack_Africa_Content --explorationDepth=1 --namespace=4 >> en.mirror &&
 
 # Featured articles & featured lists pages
-./listCategoryEntries.pl --host=en.wikipedia.org --path=w --category=Featured_articles --category=Featured_lists --explorationDepth=1 --namespace=0 >> en.mirror &&
+./listCategoryEntries.pl --host=en.wikipedia.org --path=w --category=Featured_articles --category=Featured_lists --explorationDepth=1 --namespace=0 > en.featured &&
 
-# Get text dependencies
-cat en.mirror | ./listDependences.pl --host=en.wikipedia.org --path=w --readFromStdin --type=all | sort -u > en.mirror.deps &&
+# Get en.featured dependences
+cat en.featured | ./listDependences.pl --host=en.wikipedia.org --path=w --readFromStdin --type=template | sort -u > en.featured.deps &&
+
+# Get en.mirror dependencies
+cat en.mirror en.featured.deps | ./listDependences.pl --host=en.wikipedia.org --path=w --readFromStdin --type=all | sort -u > en.tmp &&
+cat en.tmp en.featured.deps | sort -u >> en.mirror
 
 # Mediawiki help
-./listCategoryEntries.pl --host=mediawiki.org --path=w --category=Help --explorationDepth=1 --namespace=12 > en.help
-
-# Wikifundi pages
-#https://en.wikipedia.org/wiki/Wikipedia:WikiProject_Wikipack_Africa_Content
-#(should be a categorized) Pour le renommage enlever
-#Wikipedia:WikiProject Wikipack Africa Content;
-
+./listCategoryEntries.pl --host=mediawiki.org --path=w --category=Help --explorationDepth=1 --namespace=12 > mw.help &&
+cat mw.help | ./listDependences.pl --host=mediawiki.org --path=w --readFromStdin --type=all | sort -u > mw.tmp &&
+cat mw.tmp >> mw.help
