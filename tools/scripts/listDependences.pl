@@ -32,7 +32,7 @@ my $databaseName = "";
 my $databaseUsername = "";
 my $databasePassword = "";
 
-## Get console line arguments
+# Get console line arguments
 GetOptions('host=s' => \$host, 
 	   'path=s' => \$path,
 	   'filter=s' => \$filter,
