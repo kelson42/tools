@@ -95,11 +95,16 @@ foreach my $entry (@entries) {
     } elsif ($action eq "replace") {
 	my $regex = $variables[0];
 	my $replacement = $variables[1];
+	$replacement =~ s/\\n/\n/g;
 	unless ($regex && $replacement) {
 	    print STDERR "You have to define two varaibles as regex and replacement.\n";
 	}
 	my ($content, $revision) = $site->downloadPage($entry);
-	$content =~ s/$regex/$replacement/mg;
+	if ($replacement =~ /\$[\d]+/) {
+	    $content =~ s/$regex/eval($replacement)/esmg;
+	} else {
+	    $content =~ s/$regex/$replacement/smg;
+	}
 	$status = $site->uploadPage($entry, $content, "");      
     } elsif ($action eq "stub") {
 	$status = $site->uploadPage($entry, "-");
