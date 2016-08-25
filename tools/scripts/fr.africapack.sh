@@ -1,0 +1,74 @@
+#!/bin/bash
+
+# Custom pages
+echo "Wikipédia:Neutralité_de_point_de_vue" > fr.mirror &&
+echo "Wikipédia:Principes_fondateurs" >> fr.mirror &&
+echo "Wikipédia:Travaux_inédits" >> fr.mirror &&
+echo "Wikipédia:Vérifiabilité" >> fr.mirror &&
+echo "Wikipédia:Termes_à_utiliser_avec_précaution" >> fr.mirror &&
+echo "Wikipédia:Ce_que_Wikipédia_n'est_pas" >> fr.mirror &&
+echo "Wikipédia:Style_encyclopédique" >> fr.mirror &&
+
+# Add a few other pages
+echo "MediaWiki:Common.js" >> fr.mirror &&
+echo "MediaWiki:Common.css" >> fr.mirror &&
+echo "MediaWiki:Vector.js" >> fr.mirror &&
+echo "MediaWiki:Vector.css" >> fr.mirror &&
+
+# Project pages
+./listCategoryEntries.pl --host=fr.wikipedia.org --path=w --category=Projet_Wikipack_Africa_Contenu --explorationDepth=1 --namespace=102 >> fr.mirror &&
+
+# Featured articles & featured lists pages
+./listCategoryEntries.pl --host=fr.wikipedia.org --path=w --category="Article_de_qualité" --explorationDepth=1 --namespace=0 > fr.featured &&
+
+# Get fr.featured dependences
+cat fr.featured | ./listDependences.pl --host=fr.wikipedia.org --path=w --readFromStdin --type=template | sort -u > fr.featured.deps &&
+
+# Get fr.mirror dependencies
+cat fr.mirror fr.featured.deps | ./listDependences.pl --host=fr.wikipedia.org --path=w --readFromStdin --type=all | sort -u > fr.tmp &&
+cat fr.tmp fr.featured.deps | sed 's/^Fichier:/File:/g' | sort -u >> fr.mirror
+
+# Mediawiki help
+echo "Help:Contents/fr" > fr.mw.help
+echo "Help:Navigation/fr" >> fr.mw.help
+echo "Help:Searching/fr" >> fr.mw.help
+echo "Help:Tracking_changes/fr" >> fr.mw.help
+echo "Help:Watchlist/fr" >> fr.mw.help
+echo "Help:Editing_pages/fr" >> fr.mw.help
+echo "Help:Starting_a_new_page/fr" >> fr.mw.help
+echo "Help:Formatting/fr" >> fr.mw.help
+echo "Help:Links/fr" >> fr.mw.help
+echo "Help:User_page/fr" >> fr.mw.help
+echo "Help:Talk_pages/fr" >> fr.mw.help
+echo "Help:Signatures/fr" >> fr.mw.help
+echo "Help:VisualEditor/User_guide/fr" >> fr.mw.help
+echo "Help:Images/fr" >> fr.mw.help
+echo "Help:Lists/fr" >> fr.mw.help
+echo "Help:Tables/fr" >> fr.mw.help
+echo "Help:Categories/fr" >> fr.mw.help
+echo "Help:Subpages/fr" >> fr.mw.help
+echo "Help:Managing_files/fr" >> fr.mw.help
+echo "Help:Moving_a_page/fr" >> fr.mw.help
+echo "Help:Redirects/fr" >> fr.mw.help
+echo "Help:Protected_pages/fr" >> fr.mw.help
+echo "Help:Templates/fr" >> fr.mw.help
+echo "Help:Magic_words/fr" >> fr.mw.help
+echo "Help:Namespaces/fr" >> fr.mw.help
+echo "Help:Cite/fr" >> fr.mw.help
+echo "Help:Special_pages/fr" >> fr.mw.help
+echo "Help:External_searches/fr" >> fr.mw.help
+echo "Help:Bots/fr" >> fr.mw.help
+echo "Help:Notifications/fr" >> fr.mw.help
+echo "Help:Flow/fr" >> fr.mw.help
+echo "Help:Preferences/fr" >> fr.mw.help
+echo "Help:Skins/fr" >> fr.mw.help
+echo "Help:Sysops_and_permissions/fr" >> fr.mw.help
+echo "Help:Protecting_and_unprotecting_pages/fr" >> fr.mw.help
+echo "Help:Sysop_deleting_and_undeleting/fr" >> fr.mw.help
+echo "Help:Patrolled_edits/fr" >> fr.mw.help
+echo "Help:Blocking_users/fr" >> fr.mw.help
+echo "Help:Range_blocks/fr" >> fr.mw.help
+echo "Help:Assigning_permissions/fr" >> fr.mw.help
+
+cat fr.mw.help | ./listDependences.pl --host=mediawiki.org --path=w --readFromStdin --type=all | sort -u > fr.mw.tmp &&
+cat fr.mw.tmp | sed 's/^Fichier:/File:/g' >> fr.mw.help
