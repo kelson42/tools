@@ -1017,7 +1017,7 @@ sub templateDependences {
 
 sub imageDependences {
     my ($self, $title, $ignoredNamespaces) = @_;
-    return $self->dependences(@_, "images", $ignoredNamespaces);
+    return $self->dependences($title, "images", $ignoredNamespaces);
 }
 
 sub dependences {
@@ -1032,6 +1032,7 @@ sub dependences {
 	'format' => 'xml',
 	'prop' => 'info',
 	'gtllimit'=> '500',
+	'gimlimit' => '500',
 	'generator' => $type,
     };
     my $continue;
