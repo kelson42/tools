@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Custom pages
+# Meta pages
 echo "Template:WikiFundi_credit_attribution" > en.mirror &&
 echo "Wikipedia:NPOV" >> en.mirror &&
 echo "Wikipedia:Core_content_policies" >> en.mirror &&
@@ -11,7 +11,7 @@ echo "Wikipedia:Five_pillars" >> en.mirror &&
 echo "Wikipedia:What_Wikipedia_is_not" >> en.mirror &&
 echo "Wikipedia:Manual_of_Style" >> en.mirror &&
 
-# School pages
+# Encyclopedic pages
 echo "Sinenjongo_High_School" >> en.mirror &&
 echo "Saint_Fatima_School" >> en.mirror &&
 echo "Boa_Amponsem_Senior_High_School" >> en.mirror &&
@@ -19,6 +19,11 @@ echo "Gayaza_High_School" >> en.mirror &&
 echo "Namwianga_Mission" >> en.mirror &&
 echo "American_Cooperative_School_of_Tunis" >> en.mirror &&
 echo "Kapsabet_High_School" >> en.mirror &&
+echo "Showcase" >> en.mirror &&
+echo "Eusèbe" >> en.mirror &&
+echo "Cameroun" >> en.mirror &&
+echo "Pluto" >> en.mirror &&
+echo "List_World_Heritage" >> en.mirror &&
 
 # Add a few other pages
 echo "MediaWiki:Common.js" >> en.mirror &&
