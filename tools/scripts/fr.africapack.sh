@@ -111,6 +111,15 @@ echo "Help:Patrolled_edits/fr" >> fr.mw.help
 echo "Help:Blocking_users/fr" >> fr.mw.help
 echo "Help:Range_blocks/fr" >> fr.mw.help
 echo "Help:Assigning_permissions/fr" >> fr.mw.help
+echo "Help:Diff/fr" >> fr.mw.help
+echo "Help:Merge_history/fr" >> fr.mw.help
+echo "Help:New_images/fr" >> fr.mw.help
+echo "Help:New_pages/fr" >> fr.mw.help
+echo "Help:Random_page/fr" >> fr.mw.help
+echo "Help:Recent_changes/fr" >> fr.mw.help
+echo "Help:Undelete/fr" >> fr.mw.help
+echo "Help:Copying_a_page/fr" >> fr.mw.help
+echo "Template:MW_version/fr" >> fr.mw.help
 
 cat fr.mw.help | ./listDependences.pl --host=mediawiki.org --path=w --readFromStdin --type=all | sort -u > fr.mw.tmp &&
 cat fr.mw.tmp | sed 's/^Fichier:/File:/g' >> fr.mw.help

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-cat en.mw.help | ./mirrorMediawikiPages.pl --sourceHost=mediawiki.org --sourcePath=w --destinationHost=en.africapack.kiwix.org --destinationPath=w --destinationUsername=admin --destinationPassword=adminadmin --readFromStdin --ignoreEmbeddedInPagesCheck --ignoreImageDependences  --ignoreTemplateDependences
+cat en.mw.help | grep -v -i "^mediawiki:" | ./mirrorMediawikiPages.pl --sourceHost=mediawiki.org --sourcePath=w --destinationHost=en.africapack.kiwix.org --destinationPath=w --destinationUsername=admin --destinationPassword=adminadmin --readFromStdin --ignoreEmbeddedInPagesCheck --ignoreImageDependences  --ignoreTemplateDependences
 
 # Clean Mediawiki entries
 for ENTRY in `cat en.mw.help | grep "^Help:"`
@@ -17,10 +17,16 @@ do
     ./modifyMediawikiEntry.pl --host=en.africapack.kiwix.org --path=w --entry="$ENTRY" --action=replace --variable='\n+' --variable="\n" --username=admin --password=adminadmin
 done
 
-# Re-insert categories in encyclopedic articles
-for ENTRY in `cat en.mirror | grep -v ":"`
+# Modifications on encyclopedic articles
+./listAllPages.pl --host=en.africapack.kiwix.org --path=w --namespace=0 --namespace=0 > en.all
+./listAllPages.pl --host=en.africapack.kiwix.org --path=w --namespace=0 --namespace=4 >> en.all
+./listAllPages.pl --host=en.africapack.kiwix.org --path=w --namespace=0 --namespace=12 >> fr.all
+./listAllPages.pl --host=en.africapack.kiwix.org --path=w --namespace=0 --namespace=3000 >> fr.all
+for ENTRY in `cat en.all`
 do
     ./modifyMediawikiEntry.pl --host=en.africapack.kiwix.org --path=w --entry="$ENTRY" --action=replace --variable='^<!--2BREINSERTED(.*)-->$' --variable='$1' --username=admin --password=adminadmin
+Category:WikiProject_Wikipack_Africa_Content
+    ./modifyMediawikiEntry.pl --host=en.africapack.kiwix.org --path=w --entry="$ENTRY" --action=replace --variable='\[\[Category:WikiProject( |_)Wikipack( |_)Africa( |_)Content\]\]' --variable=' ' --username=admin --password=adminadmin
 done
 
 # Blank pages

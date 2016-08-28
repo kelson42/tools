@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-use utf8;
+use utf8::all;
 use lib "../classes/";
 
 use strict;

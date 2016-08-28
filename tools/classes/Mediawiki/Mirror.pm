@@ -485,13 +485,12 @@ sub uploadImages {
 	    my $status;
 	    if ($self->uploadFilesFromUrl()) {
 		if ($self->isCommonUrl($content)) {
-		    $status = $commonSite->uploadImageFromUrl($image, $content, $summary);
+		    $status = $commonSite->uploadImageFromUrl($image, $content, $summary, 5);
 		} else {
-		    $status = $site->uploadImageFromUrl($image, $content, $summary);
+		    $status = $site->uploadImageFromUrl($image, $content, $summary, 5);
 		}
-
 	    } else {
-		$status = $site->uploadImage($image, $content, $summary);
+		$status = $site->uploadImage($image, $content, $summary, 5);
 	    }
 
 	    if ($status) {

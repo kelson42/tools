@@ -768,8 +768,10 @@ sub _uploadImageFromUrl {
 # Curently not use, seems to be buggy
 # After hours it doe not work anymore
 sub uploadImageFromUrl {
-    my($self, $title, $url, $summary) = @_;
+    my($self, $title, $url, $summary, $maxRetry) = @_;
     my $status = 0;
+    my $retryCount = 0;
+    $maxRetry ||= 1;
 
     my $httpPostRequestParams = {
 	'action' => 'upload',
@@ -780,38 +782,40 @@ sub uploadImageFromUrl {
 #	'asyncdownload' => '1',
 	'ignorewarnings' => '1',
     };
-
-    my $httpResponse = $self->makeApiRequest($httpPostRequestParams, "POST" );
-    my $content = $httpResponse->content;
-
-    $self->log("info", "Upload $title : ".$httpResponse->content);
-
-    if ($content =~ /error\ code\=\"([^\"]+)\"/) {
-	$self->log("error", "Error by uploading image '$title' : $1");
-
-	if ($content =~ /badtoken/i) {
-	    $self->loadEditToken();
-	    $self->log("info", "Reloading edit token...");
+    
+    my $httpResponse;
+    while (!$status && ($retryCount++ < $maxRetry)) {
+	$httpResponse = $self->makeApiRequest($httpPostRequestParams, "POST" );
+	my $content = $httpResponse->content;
+	
+	if ($content =~ /error\ code\=\"([^\"]+)\"/) {
+	    $self->log("error", "Error by uploading image '$title' : $1");
+	    
+	    if ($content =~ /badtoken/i) {
+		$self->loadEditToken();
+		$self->log("info", "Reloading edit token...");
+	    }
+	    
+	    $status = 0;
+	} elsif ($content =~ /upload_session_key\=\"([\d]+)\"/) {
+	    my $sessionKey = $1;
+	    $httpResponse = $self->makeApiRequest( { 'action' => 'upload', 'httpstatus' => '1', 'sessionkey' => "$sessionKey", 'format' => 'xml', 'token' => $self->editToken() } , 'POST');
+	    $self->log("info", "Status upload $title : ".$httpResponse->content);
+	    $status = 1;
+	} elsif ($content =~ /queued\=\"1"/) {
+	    $self->log("info", "Status upload $title : queued");
+	    $status = 1;
+	} elsif ($content =~ /result=\"success\"/i) {
+	    $self->log("info", "File $title successfuly uploaded.");
+	    $status = 1;
+	} else {
+	    $self->log("error", "Error by uploading image '$title' : $content");
+	    $status = 0;
 	}
-
-	$status = 0;
-    } elsif ($content =~ /upload_session_key\=\"([\d]+)\"/) {
-	my $sessionKey = $1;
-	$httpResponse = $self->makeApiRequest( { 'action' => 'upload', 'httpstatus' => '1', 'sessionkey' => "$sessionKey", 'format' => 'xml', 'token' => $self->editToken() } , 'POST');
-
-	$self->log("info", "Status upload $title : ".$httpResponse->content);
-
-	$status = 1;
-    } elsif ($content =~ /queued\=\"1"/) {
-	$self->log("info", "Status upload $title : queued");
-	$status = 1;
-    } elsif ($content =~ /result=\"success\"/i) {
-	$self->log("info", "File $title successfuly uploaded.");
-	$status = 1;
-    } else {
-	$self->log("error", "Error by uploading image '$title' : $content");
-	$status = 0;
     }
+
+    $self->log("info", "Upload reponse for '$title' was : ".$httpResponse->content)
+	unless ($status);
 
     return $status;
 }

@@ -20,10 +20,11 @@ echo "Namwianga_Mission" >> en.mirror &&
 echo "American_Cooperative_School_of_Tunis" >> en.mirror &&
 echo "Kapsabet_High_School" >> en.mirror &&
 echo "Showcase" >> en.mirror &&
-echo "Eusèbe" >> en.mirror &&
-echo "Cameroun" >> en.mirror &&
+echo "Eusèbe_Jaojoby" >> en.mirror &&
+echo "Cameroon" >> en.mirror &&
 echo "Pluto" >> en.mirror &&
 echo "List_World_Heritage" >> en.mirror &&
+echo "Ambohimanga" >> en.mirror &&
 
 # Add a few other pages
 echo "MediaWiki:Common.js" >> en.mirror &&
@@ -85,6 +86,15 @@ echo "Help:Patrolled_edits" >> en.mw.help
 echo "Help:Blocking_users" >> en.mw.help
 echo "Help:Range_blocks" >> en.mw.help
 echo "Help:Assigning_permissions" >> en.mw.help
+echo "Help:Diff" >> en.mw.help
+echo "Help:Merge_history" >> en.mw.help
+echo "Help:New_images" >> en.mw.help
+echo "Help:New_pages" >> en.mw.help
+echo "Help:Random_page" >> en.mw.help
+echo "Help:Recent_changes" >> en.mw.help
+echo "Help:Undelete" >> en.mw.help
+echo "Help:Copying_a_page" >> en.mw.help
+echo "Template:MW_version" >> en.mw.help
 
 cat en.mw.help | ./listDependences.pl --host=mediawiki.org --path=w --readFromStdin --type=all | sort -u > en.mw.tmp &&
 cat en.mw.tmp >> en.mw.help
