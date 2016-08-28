@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Custom pages
+# Add Custom pages
 echo "Wikipédia:Neutralité_de_point_de_vue" > fr.mirror &&
 echo "Wikipédia:Principes_fondateurs" >> fr.mirror &&
 echo "Wikipédia:Travaux_inédits" >> fr.mirror &&
@@ -14,6 +14,48 @@ echo "MediaWiki:Common.js" >> fr.mirror &&
 echo "MediaWiki:Common.css" >> fr.mirror &&
 echo "MediaWiki:Vector.js" >> fr.mirror &&
 echo "MediaWiki:Vector.css" >> fr.mirror &&
+
+# Add custom templates
+Template:Infobox_Subdivision_administrative >> fr.mirror &&
+Template:Infobox_Commune >> fr.mirror &&
+Template:Infobox_Commune_d'Algérie >> fr.mirror &&
+Template:Modèle:Infobox_Daïra_d'Algérie >> fr.mirror &&
+Template:Infobox_Wilaya_d'Algérie >> fr.mirror &&
+Template:Infobox_Province_d'Angola >> fr.mirror &&
+Template:Infobox_Ville_du_Botswana >> fr.mirror &&
+Template:Infobox_District_du_Botswana >> fr.mirror &&
+Template:Infobox_Commune_du_Cameroun >> fr.mirror &&
+Template:Infobox_Région_du_Cameroun >> fr.mirror &&
+Tempalte:Infobox_Commune_de_la_République_du_Congo >> fr.mirror &&
+Template:Infobox_Commune_de_la_République_démocratique_du_Congo >> fr.mirror &&
+Template:Infobox_Collectivité_de_la_République_démocratique_du_Congo >> fr.mirror &&
+Template:Infobox_Territoire_de_la_République_démocratique_du_Congo >> fr.mirror &&
+Template:Infobox_Ville_de_la_République_démocratique_du_Congo >> fr.mirror &&
+Template:Infobox_District_de_la_République_démocratique_du_Congo >> fr.mirror &&
+Template:Infobox_Province_de_la_République_démocratique_du_Congo >> fr.mirror &&
+Template:Infobox_Commune_de_Côte_d'Ivoire >> fr.mirror &&
+Template:Infobox_Ville_d'Éthiopie >> fr.mirror &&
+Template:Infobox_Ville_du_Gabon >> fr.mirror &&
+Template:Infobox_Département_du_Gabon >> fr.mirror &&
+Template:Infobox_Province_du_Gabon >> fr.mirror &&
+Template:Infobox_District_du_Kenya >> fr.mirror &&
+Template:Infobox_Subdivision_du_Kenya >> fr.mirror &&
+Template:Infobox_Commune_du_Mali >> fr.mirror &&
+Template:Infobox_Ville_du_Maroc >> fr.mirror &&
+Template:Infobox_Province_du_Maroc >> fr.mirror &&
+Template:Infobox_Commune_de_Mauritanie >> fr.mirror &&
+Template:Infobox_Commune_du_Nigeria >> fr.mirror &&
+Template:Infobox_État_du_Nigeria >> fr.mirror &&
+Template:Infobox_Commune_d'Ouganda >> fr.mirror &&
+Template:Infobox_Ville_du_Rwanda >> fr.mirror &&
+Template:Infobox_Ville_du_Sénégal >> fr.mirror &&
+Template:Infobox_Département_du_Sénégal >> fr.mirror &&
+Template:Infobox_Région_du_Sénégal >> fr.mirror &&
+Template:Infobox_Commune_de_Somalie >> fr.mirror &&
+Template:Infobox_Ville_du_Togo >> fr.mirror &&
+Template:Infobox_Ville_de_Tunisie >> fr.mirror &&
+Template:Infobox_Gouvernorat_tunisien >> fr.mirror &&
+Template:Infobox_Province_du_Zimbabwe >> fr.mirror &&
 
 # Project pages
 ./listCategoryEntries.pl --host=fr.wikipedia.org --path=w --category=Projet_Wikipack_Africa_Contenu --explorationDepth=1 --namespace=102 >> fr.mirror &&
