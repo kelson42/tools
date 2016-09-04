@@ -1480,8 +1480,7 @@ sub listCategoryEntries {
     my $currentDepth = 0;
     my %doneCategories;
 
-    unless (defined($namespace)) { $namespace = ""};
-    unless (defined($explorationDepth)) { $explorationDepth=1 };
+    $explorationDepth ||= 1;
 
     while ( $currentDepth < $explorationDepth && scalar(@categoryStack) ) {
 
@@ -1512,8 +1511,10 @@ sub listCategoryEntries {
 		    'format' => 'xml',
 		    'list' => 'categorymembers',
 		    'cmlimit' => '400',
-		    'cmnamespace' => join("|", "14", $namespace), 
 		};
+		$httpPostRequestParams->{'cmnamespace'} = join("|", "14", $namespace) 
+		    if (defined($namespace) && $namespace ne "");
+
 		
 		# set the appropriate offset
 		if ($continue) {
@@ -1531,7 +1532,7 @@ sub listCategoryEntries {
 			}
 			
 			# Add a page 
-			if (defined($namespace) && ($namespace eq $entry->{ns})) {
+			if (!defined($namespace) || $namespace eq "" || ($namespace eq $entry->{ns})) {
 			    push(@entries, $entry->{title}) if ($entry->{title});
 			}
 		    }
