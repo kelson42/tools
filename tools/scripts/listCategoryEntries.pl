@@ -21,7 +21,7 @@ my $path = "";
 my @categories;
 my $explorationDepth = 1;
 my $readFromStdin;
-my $namespace=0;
+my $namespace;
 
 ## Get console line arguments
 GetOptions('host=s' => \$host, 
