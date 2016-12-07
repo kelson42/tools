@@ -190,7 +190,7 @@ if ($writeHtaccess) {
 
 if ($writeWiki) {
     if (!$wikiPassword) {
-	print STDERR "If you want to update the library on www.kiwix.org, you need to put a wiki password.\n";
+	print STDERR "If you want to update the library on wiki.kiwix.org, you need to put a wiki password.\n";
 	exit 1;
     }
     writeWiki();
@@ -224,7 +224,7 @@ sub deleteOutdatedFiles {
     }
 }
 
-# Update www.kiwix.org page listing all the content available
+# Update wiki.kiwix.org page listing all the content available
 sub beautifyZimOptions {
     my $result = "";
     my @options = split("_", shift || "");
@@ -255,7 +255,7 @@ sub writeWiki {
 
     # Get the connection to kiwix.org
     my $site = Mediawiki::Mediawiki->new();
-    $site->hostname("www.kiwix.org");
+    $site->hostname("wiki.kiwix.org");
     $site->path("w");
     $site->user("LibraryBot");
     $site->password($wikiPassword);
@@ -274,7 +274,7 @@ sub writeHtaccess {
     $content .= "RewriteEngine On\n\n";
     
     # Bin redirects
-    $content .= "RedirectPermanent /".$binDirectoryName."/kiwix.apk /".$binDirectoryName."/android/kiwix-1.97.apk\n";
+    $content .= "RedirectPermanent /".$binDirectoryName."/kiwix.apk /".$binDirectoryName."/android/kiwix-2.0.apk\n";
     $content .= "RedirectPermanent /".$binDirectoryName."/kiwix-installer.exe /".$binDirectoryName."/0.9/kiwix-0.9-installer.exe\n";
     $content .= "RedirectPermanent /".$binDirectoryName."/kiwix-linux-i686.tar.bz2 /".$binDirectoryName."/0.9/kiwix-0.9-linux-i686.tar.bz2\n";
     $content .= "RedirectPermanent /".$binDirectoryName."/kiwix-linux-x86_64.tar.bz2 /".$binDirectoryName."/0.9/kiwix-0.9-linux-x86_64.tar.bz2\n";
@@ -286,8 +286,9 @@ sub writeHtaccess {
 
     # Dev redirects
     $content .= "RedirectPermanent /".$devDirectoryName."/ZIMmaker.ova /".$devDirectoryName."/ZIMmakerVMv5.ova\n";
-    $content .= "RedirectPermanent /".$devDirectoryName."/KiwixDev.ova /".$devDirectoryName."/KiwixDevVMv3.ova\n";
-    $content .= "RedirectPermanent /".$devDirectoryName."/KiwixDev.ova.torrent /".$devDirectoryName."/KiwixDevVMv3.ova.torrent\n";
+    $content .= "RedirectPermanent /".$devDirectoryName."/ZIMmaker.ova.torrent /".$devDirectoryName."/ZIMmakerVMv5.ova.torrent\n";
+    $content .= "RedirectPermanent /".$devDirectoryName."/KiwixDev.ova /".$devDirectoryName."/KiwixDevVMv4.ova\n";
+    $content .= "RedirectPermanent /".$devDirectoryName."/KiwixDev.ova.torrent /".$devDirectoryName."/KiwixDevVMv4.ova.torrent\n";
 
     # Backward compatibility redirects
     # To get the list of failing requests: cat /var/log/nginx/download.kiwix.org.access.log | grep " 404 " | cut -d ' ' -f 7 | grep -v nightly | grep -v favicon | grep -v robots | sort | uniq -c | sort -b -n -r
