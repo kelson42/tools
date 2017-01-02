@@ -5,10 +5,8 @@ echo "Wikipédia:Neutralité_de_point_de_vue" > fr.mirror &&
 echo "Wikipédia:Principes_fondateurs" >> fr.mirror &&
 echo "Wikipédia:Travaux_inédits" >> fr.mirror &&
 echo "Wikipédia:Vérifiabilité" >> fr.mirror &&
-echo "Wikipédia:Termes_à_utiliser_avec_précaution" >> fr.mirror &&
 echo "Wikipédia:Ce_que_Wikipédia_n'est_pas" >> fr.mirror &&
-echo "Wikipédia:Style_encyclopédique"
-echo "Aide:Syntaxe_(wikicode)" >> fr.mirror &&
+echo "Wikipédia:Style_encyclopédique" >> fr.mirror &&
 
 # Add a few other pages
 echo "MediaWiki:Common.js" >> fr.mirror &&
