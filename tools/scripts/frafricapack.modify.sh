@@ -1,6 +1,6 @@
 #!/bin/sh
 
-cat en.mw.help | grep -v -i "^mediawiki:" | ./mirrorMediawikiPages.pl --sourceHost=mediawiki.org --sourcePath=w --destinationHost=en.africapack.kiwix.org --destinationPath=w --destinationUsername=admin --destinationPassword=adminadmin --readFromStdin --ignoreEmbeddedInPagesCheck --ignoreImageDependences  --ignoreTemplateDependences
+cat en.mw.help | grep -v -i "^mediawiki:" | ./mirrorMediawikiPages.pl --sourceHost=www.mediawiki.org --sourcePath=w --destinationHost=fr.africapack.kiwix.org --destinationPath=w --destinationUsername=admin --destinationPassword=adminadmin --readFromStdin --ignoreEmbeddedInPagesCheck --ignoreImageDependences  --ignoreTemplateDependences
 
 # Clean Mediawiki entries
 for ENTRY in `cat en.mw.help | grep "^Help:"`
@@ -8,7 +8,7 @@ do
     ./modifyMediawikiEntry.pl --host=fr.africapack.kiwix.org --path=w --entry="$ENTRY" --action=replace --variable="<[/]*translate>" --variable=" " --username=admin --password=adminadmin
     ./modifyMediawikiEntry.pl --host=fr.africapack.kiwix.org --path=w --entry="$ENTRY" --action=replace --variable="<languages[ ]*/>" --variable=" " --username=admin --password=adminadmin
     ./modifyMediawikiEntry.pl --host=fr.africapack.kiwix.org --path=w --entry="$ENTRY" --action=replace --variable="<!--T:[\d]+-->" --variable=" " --username=admin --password=adminadmin
-    ./modifyMediawikiEntry.pl --host=fr.africapack.kiwix.org --path=w --entry="$ENTRY" --action=replace --variable='{{ll\|([^}|]+)(|[^}]*)}}' --variable='"[[".$1."/fr|".$1."]]"' --username=admin --password=adminadmin
+    ./modifyMediawikiEntry.pl --host=fr.africapack.kiwix.org --path=w --entry="$ENTRY" --action=replace --variable='{{ll\|([^}|]+)(|[^}]*)}}' --variable='"[[".$1."|".$1."]]"' --username=admin --password=adminadmin
     ./modifyMediawikiEntry.pl --host=fr.africapack.kiwix.org --path=w --entry="$ENTRY" --action=replace --variable='{{TNT\|[^}]+}}' --variable=' ' --username=admin --password=adminadmin
     ./modifyMediawikiEntry.pl --host=fr.africapack.kiwix.org --path=w --entry="$ENTRY" --action=replace --variable='<tvar\|[^>]+>(Special:MyLanguage\/|)([^>]+)</>' --variable='$2' --username=admin --password=adminadmin
     ./modifyMediawikiEntry.pl --host=fr.africapack.kiwix.org --path=w --entry="$ENTRY" --action=replace --variable='\[\[(C|c)ategory:[^]]+\]\]' --variable=' ' --username=admin --password=adminadmin
