@@ -46,9 +46,8 @@ foreach my $zimPath (@zimPaths) {
 }
 
 # Clear and create the directory to build the iso
-my $distributionDirectory = $tmpDirectory."/kiwix_iso_tmp_directory/";
+my $distributionDirectory = $tmpDirectory."/.".random_string(5)."/";
 printLog("Deleting and creating $distributionDirectory");
-$cmd = "rm -rf $distributionDirectory"; `$cmd`; 
 $cmd = "mkdir -p $distributionDirectory"; `$cmd`; 
 
 # Checkout the default ISO directory tree structure
@@ -136,6 +135,17 @@ if ($type eq "iso") {
 } else { # portable
     printLog("Build the portable compacted file");
     $cmd = "7za a -tzip -mx9 -mmt6 $filePath $distributionDirectory/* -mmt"; `$cmd`;
+}
+
+# Delete directory
+$cmd = "rm -rf $distributionDirectory"; `$cmd`; 
+
+sub random_string {
+    my $passwordsize = shift;
+    my @alphanumeric = ('a'..'z', 'A'..'Z', 0..9);
+    my $randpassword = join '', 
+    map $alphanumeric[rand @alphanumeric], 0..$passwordsize;
+    return $randpassword;
 }
 
 sub writeFile {
