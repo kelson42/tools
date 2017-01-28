@@ -39,6 +39,7 @@ my $writeLibrary = 0;
 my $showHelp = 0;
 my $wikiPassword = "";
 my $deleteOutdatedFiles = 0;
+my $onlyCheck = 0;
 
 sub usage() {
     print "manageContentRepository\n";
@@ -64,6 +65,7 @@ GetOptions(
     'writeLibrary' => \$writeLibrary,
     'deleteOutdatedFiles' => \$deleteOutdatedFiles,
     'help' => \$showHelp,
+    'onlyCheck' => \$onlyCheck,
     'wikiPassword=s' => \$wikiPassword,
     'htaccessPath=s' => \$htaccessPath,
 );
@@ -101,10 +103,12 @@ while (my $file = $explorer->getNext()) {
 	    $lang = $2 ? substr($2, 0, length($2)-1) : "en";
 	    $year = $4;
 	    $month = $5;
+	} else {
+	    print STDERR "This ZIM file name is not standard: $file\n";
 	}
 
 	$content{$basename} = {
-	    size => format_bytes(-s "$file"),
+	    size => -s "$file",
 	    lang => $lang,
 	    option => $option,
 	    project => $project,
@@ -123,18 +127,35 @@ $explorer->path($portableDirectory);
 while (my $file = $explorer->getNext()) {
     if ($file =~ /^.*?\+([^\/]+)\.zip$/i) {
 	my $basename = $1;
-	if  (exists($content{$basename})) {
+	if (exists($content{$basename})) {
 	    if ((exists($content{$basename}->{portable}) && 
 		 getFileCreationDate($file) > getFileCreationDate($content{$basename}->{portable})) ||
 		!exists($content{$basename}->{portable})
 		) {
-		$content{$basename}->{portable} = $file;
+
+		my $file_size = -s "$file";
+		if ($file_size > 1024 * 1024 * 1024 && $content{$basename}->{size} > $file_size * 1.3 ||
+		    $file_size <= 1024 * 1024 * 1024 && $content{$basename}->{size} > $file_size) {
+		    print STDERR "Portable file $file (".format_bytes($file_size).") is smaller than ZIM (".format_bytes($content{$basename}->{size}).")\n";
+		} else {
+		    $content{$basename}->{portable} = $file;
+		} 
 	    }
 	} else {
 	    print STDERR "Unable to find corresponding ZIM file to $file\n";
 	}
     }
 }
+
+# List ZIM files without portable ZIP file
+foreach my $basename (keys(%content)) {
+    unless ($content{$basename}->{portable}) {
+	print STDERR substr($content{$basename}->{zim}, length($contentDirectory))." has no portable version\n";
+    }
+}
+
+# Stop here if we only want to make a check
+exit if ($onlyCheck);
 
 # Sort content
 my %recentContent;
@@ -242,7 +263,7 @@ sub writeWiki {
 	my $entry = $recentContent{$key};
 	my $line = "{{ZIMdumps/row|{{{2|}}}|{{{3|}}}|".
 	    $entry->{project}."|".
-	    $entry->{lang}."|".$entry->{size}."|".
+	    $entry->{lang}."|".format_bytes($entry->{size})."|".
 	    $entry->{year}."-".$entry->{month}."|".(beautifyZimOptions($entry->{option} || "all"))."|8={{DownloadLink|".
 	    $entry->{core}."|{{{1}}}|".$zimDirectoryName."/|".($entry->{portable} ? $portableDirectoryName : "")."/}} }}\n";
 	push(@lines, $line);
