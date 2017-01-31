@@ -134,7 +134,7 @@ while (my $file = $explorer->getNext()) {
 		) {
 
 		my $file_size = -s "$file";
-		if ($content{$basename}->{size} > $file_size * (1 + $file_size / 1024 * 1024 * 1024 * 10)) {
+		if ($content{$basename}->{size} > $file_size * (1.1 + $content{$basename}->{size} / (1024 * 1024 * 1024 * 10))) {
 		    print STDERR "Portable file $file (".format_bytes($file_size).") is smaller than ZIM (".format_bytes($content{$basename}->{size}).")\n";
 		} else {
 		    $content{$basename}->{portable} = $file;
