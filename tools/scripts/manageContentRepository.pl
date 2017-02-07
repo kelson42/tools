@@ -11,6 +11,7 @@ use Getopt::Long;
 use Data::Dumper;
 use File::stat;
 use Time::localtime;
+use DateTime;
 use Number::Bytes::Human qw(format_bytes);
 use Mediawiki::Mediawiki;
 
@@ -157,45 +158,26 @@ foreach my $basename (keys(%content)) {
 exit if ($onlyCheck);
 
 # Sort content
-my %recentContent;
-my %deprecatedContent;
-my %stagingContent;
-my %intemporalContent;
-foreach my $key (keys(%content)) {
-    my $entry = $content{$key};
-    my $year = $entry->{year};
+my %sortedContent;
+for (keys(%content)) {
+    my $entry = $content{$_};
     my $core = $entry->{core};
 
-    if ($year) {
-	if (!exists($entry->{portable})) {
-	    $stagingContent{$core} = $entry;
-	} elsif (exists($recentContent{$core})) {
-	    my $otherEntry = $recentContent{$core};
-	    if ($year == $otherEntry->{year}) {
-		my $month = $entry->{month};
-		if ($month > $otherEntry->{month} && $entry->{portable}) {
-		    $deprecatedContent{$core} = $otherEntry;
-		    $recentContent{$core} = $entry;
-		} else {
-		    $deprecatedContent{$core} = $entry;
-		}
-	    } else {
-		if ($year < $otherEntry->{year}) {
-		    $deprecatedContent{$core} = $entry;
-		} else {
-		    if ($entry->{portable}) {
-			$deprecatedContent{$core} = $otherEntry;
-			$recentContent{$core} = $entry;
-		    } else {
-			$deprecatedContent{$core} = $entry;
-		    }
-		}
+    if ($entry->{year} && $entry->{month}) {
+	if (exists($sortedContent{$core})) {
+	    my $entryDate = DateTime->new(year => $entry->{year}, month => $entry->{month});
+	    my $i;
+	    for ($i = 0; $i < scalar(@{$sortedContent{$core}}); $i++) {
+		my $otherEntry = $sortedContent{$core}->[$i];
+		my $otherEntryDate = DateTime->new(year => $otherEntry->{year}, month => $otherEntry->{month});
+		last if (DateTime->compare($entryDate, $otherEntryDate) > 0);
 	    }
+	    splice(@{$sortedContent{$core}}, $i, 0, $entry);
 	} else {
-	    $recentContent{$core} = $entry;
+	    $sortedContent{$core} = [$entry];
 	}
     } else {
-	$intemporalContent{$core} = $entry;
+	print STDERR "Unable to find publication date for ZIM ".$entry->{zim}."\n";
     }
 }
 
@@ -222,25 +204,16 @@ if ($writeLibrary) {
 
 # Remove old files
 sub deleteOutdatedFiles {
-    my @sortedContent = sort { $content{$b}->{core}."_".$content{$b}->{year}."_".$content{$b}->{month} cmp $content{$a}->{core}."_".$content{$a}->{year}."_".$content{$a}->{month} } keys(%content);
-    my $core = '';
-    my $coreCounter = 0;
-    foreach my $key (@sortedContent) {
-	my $entry = $content{$key};
-	if ($entry->{core} eq $core) {
-	    if ($coreCounter > $maxOutdatedVersions) {
-		print "Deleting ".$entry->{zim}."...\n";
-		my $cmd = "mv ".$entry->{zim}." /var/www/download.kiwix.org.trash/"; `$cmd`;
-		if ($entry->{portable}) {
-		    my $cmd = "mv ".$entry->{portable}." /var/www/download.kiwix.org.trash/"; `$cmd`;
-		}
-	    } else {
-		$coreCounter += 1;
+    for (keys(%sortedContent)) {
+	my $contents = $sortedContent{$_};
+	for (my $i = $maxOutdatedVersions+1; $i < scalar(@$contents); $i++) {
+	    my $entry = $contents->[$i];
+	    print "Deleting ".$entry->{zim}."...\n";
+	    my $cmd = "mv ".$entry->{zim}." /var/www/download.kiwix.org.trash/"; `$cmd`;
+	    if ($entry->{portable}) {
+		my $cmd = "mv ".$entry->{portable}." /var/www/download.kiwix.org.trash/"; `$cmd`;
 	    }
-	} else {
-	    $core = $entry->{core};
-	    $coreCounter = 1;
-	}
+	} 
     }
 }
 
@@ -258,19 +231,30 @@ sub beautifyZimOptions {
 
 sub writeWiki {
     my @lines;
-    foreach my $key (sortKeys(keys(%recentContent))) {
-	my $entry = $recentContent{$key};
+    for (sortKeys(keys(%sortedContent))) {
+	my $entries = $sortedContent{$_};
+	my $entry;
+	for (@$entries) {
+	    if (!$entry) {
+		$entry = $_;
+		last if $entry->{portable};
+	    } elsif (!$entry->{portable}) {
+		$entry = $_;
+		last;
+	    }
+	}
+
 	my $line = "{{ZIMdumps/row|{{{2|}}}|{{{3|}}}|".
 	    $entry->{project}."|".
 	    $entry->{lang}."|".format_bytes($entry->{size})."|".
 	    $entry->{year}."-".$entry->{month}."|".(beautifyZimOptions($entry->{option} || "all"))."|8={{DownloadLink|".
-	    $entry->{core}."|{{{1}}}|".$zimDirectoryName."/|".($entry->{portable} ? $portableDirectoryName : "")."/}} }}\n";
+	    $entry->{core}."|{{{1}}}|".$zimDirectoryName."/|".($entry->{portable} ? $portableDirectoryName."/" : "")."}} }}\n";
 	push(@lines, $line);
     }
 
     my $content = "<!-- THIS PAGE IS AUTOMATICALLY, PLEASE DON'T MODIFY IT MANUALLY -->";
-    foreach my $line (@lines) {
-	$content .= $line;
+    for (@lines) {
+	$content .= $_;
     }
 
     # Get the connection to kiwix.org
@@ -337,11 +321,19 @@ sub writeHtaccess {
     $content .= "AddDescription \"ZIM files, content dumps for offline usage (to be read with Kiwix)\" zim\n";
 
     # Content redirects
-    foreach my $key (keys(%recentContent)) {
-	my $entry = $recentContent{$key};
+    for (keys(%sortedContent)) {
+	my $entries = $sortedContent{$_};
+	my $entry = $entries->[0];
 	$content .= "RedirectPermanent /".$zimDirectoryName."/".$entry->{core}.".zim ".substr($entry->{zim}, length($contentDirectory))."\n";
 	$content .= "RedirectPermanent /".$zimDirectoryName."/".$entry->{core}.".zim.torrent ".substr($entry->{zim}, length($contentDirectory)).".torrent\n";
 	$content .= "RedirectPermanent /".$zimDirectoryName."/".$entry->{core}.".zim.md5 ".substr($entry->{zim}, length($contentDirectory)).".md5\n";
+
+	for (@$entries) {
+	    if ($_->{portable}) {
+		$entry = $_;
+		last;
+	    }
+	}
 	if ($entry->{portable}) {
 	    $content .= "RedirectPermanent /".$portableDirectoryName."/".$entry->{core}.".zip ".substr($entry->{portable}, length($contentDirectory))."\n";
 	    $content .= "RedirectPermanent /".$portableDirectoryName."/".$entry->{core}.".zip.torrent ".substr($entry->{portable}, length($contentDirectory)).".torrent\n";
@@ -362,16 +354,17 @@ sub writeHtaccess {
 # Sort the key in user friendly way
 sub sortKeysMethod {
     my %coefs = (
-	"wikipedia"  => 10,
-	"wiktionary" => 9,
-	"wikivoyage" => 8,
-	"wikiversity" => 7,
-	"wikibooks" => 6,
-	"wikisource" => 5,
-	"wikiquote" => 4,
-	"wikinews" => 3,
-	"wikispecies" => 2,
-	"ted" => 1
+	"wikipedia"  => 11,
+	"wiktionary" => 10,
+	"wikivoyage" => 9,
+	"wikiversity" => 8,
+	"wikibooks" => 7,
+	"wikisource" => 6,
+	"wikiquote" => 5,
+	"wikinews" => 4,
+	"wikispecies" => 3,
+	"ted" => 2,
+        "phet" => 1
     );
     my $ac = $coefs{shift([split("_", $a)])} || 0;
     my $bc = $coefs{shift([split("_", $b)])} || 0;
@@ -413,8 +406,8 @@ sub writeLibrary {
     my $libraryPath = $libraryDirectory."/".$libraryName;
 
     # Create the library.xml file for the most recent files
-    foreach my $key (sortKeys(keys(%recentContent))) {
-	my $entry = $recentContent{$key};
+    for (sortKeys(keys(%sortedContent))) {
+	my $entry = $sortedContent{$_}->[0];
 	my $zimPath = $entry->{zim};
 	my $permalink = "http://download.kiwix.org".substr($entry->{zim}, length($contentDirectory)).".meta4";
 	my $cmd = "$kiwixManagePath $tmpDirectory/$libraryName.$randomString add $zimPath --zimPathToSave=\"\" --url=$permalink"; `$cmd`;
