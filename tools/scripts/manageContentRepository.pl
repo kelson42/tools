@@ -278,7 +278,7 @@ sub writeHtaccess {
     $content .= "RewriteEngine On\n\n";
     
     # Bin redirects
-    $content .= "RedirectPermanent /".$binDirectoryName."/kiwix.apk /".$binDirectoryName."/android/kiwix-2.1.apk\n";
+    $content .= "RedirectPermanent /".$binDirectoryName."/kiwix.apk /".$binDirectoryName."/android/kiwix-2.2.apk\n";
     $content .= "RedirectPermanent /".$binDirectoryName."/kiwix-installer.exe /".$binDirectoryName."/0.9/kiwix-0.9-installer.exe\n";
     $content .= "RedirectPermanent /".$binDirectoryName."/kiwix-linux-i686.tar.bz2 /".$binDirectoryName."/0.9/kiwix-0.9-linux-i686.tar.bz2\n";
     $content .= "RedirectPermanent /".$binDirectoryName."/kiwix-linux-x86_64.tar.bz2 /".$binDirectoryName."/0.9/kiwix-0.9-linux-x86_64.tar.bz2\n";
@@ -326,6 +326,7 @@ sub writeHtaccess {
 	my $entry = $entries->[0];
 	$content .= "RedirectPermanent /".$zimDirectoryName."/".$entry->{core}.".zim ".substr($entry->{zim}, length($contentDirectory))."\n";
 	$content .= "RedirectPermanent /".$zimDirectoryName."/".$entry->{core}.".zim.torrent ".substr($entry->{zim}, length($contentDirectory)).".torrent\n";
+	$content .= "RedirectPermanent /".$zimDirectoryName."/".$entry->{core}.".zim.magnet ".substr($entry->{zim}, length($contentDirectory)).".magnet\n";
 	$content .= "RedirectPermanent /".$zimDirectoryName."/".$entry->{core}.".zim.md5 ".substr($entry->{zim}, length($contentDirectory)).".md5\n";
 
 	for (@$entries) {
@@ -337,6 +338,7 @@ sub writeHtaccess {
 	if ($entry->{portable}) {
 	    $content .= "RedirectPermanent /".$portableDirectoryName."/".$entry->{core}.".zip ".substr($entry->{portable}, length($contentDirectory))."\n";
 	    $content .= "RedirectPermanent /".$portableDirectoryName."/".$entry->{core}.".zip.torrent ".substr($entry->{portable}, length($contentDirectory)).".torrent\n";
+	    $content .= "RedirectPermanent /".$portableDirectoryName."/".$entry->{core}.".zip.magnet ".substr($entry->{portable}, length($contentDirectory)).".magnet\n";
 	    $content .= "RedirectPermanent /".$portableDirectoryName."/".$entry->{core}.".zip.md5 ".substr($entry->{portable}, length($contentDirectory)).".md5\n";
 	}
 	$content .= "\n";
