@@ -289,7 +289,7 @@ sub writeHtaccess {
     $content .= "RedirectPermanent /".$srcDirectoryName."/kiwix-src.tar.xz /".$srcDirectoryName."/kiwix-0.9-src.tar.xz\n";
 
     # Dev redirects
-    $content .= "RedirectPermanent /".$devDirectoryName."/ZIMmaker.ova /".$devDirectoryName."/ZIMmakerVMv5.ova\n";
+    $content .= "RedirectPermanent /".$devDirectoryName."/ZIMmaker.ova /".$devDirectoryName."/ZIMmakerVMv6.ova\n";
     $content .= "RedirectPermanent /".$devDirectoryName."/ZIMmaker.ova.torrent /".$devDirectoryName."/ZIMmakerVMv5.ova.torrent\n";
     $content .= "RedirectPermanent /".$devDirectoryName."/KiwixDev.ova /".$devDirectoryName."/KiwixDevVMv4.ova\n";
     $content .= "RedirectPermanent /".$devDirectoryName."/KiwixDev.ova.torrent /".$devDirectoryName."/KiwixDevVMv4.ova.torrent\n";
