@@ -420,6 +420,8 @@ sub writeLibrary {
 	do {
 	    $entry = $sortedContent{$core}->[$i];
 	    if ($entry->{portable}) {
+		$zimPath = $entry->{zim};
+		$permalink = "http://download.kiwix.org".substr($entry->{zim}, length($contentDirectory)).".meta4";
 		$cmd = "$kiwixManagePath $tmpLibraryPath add $zimPath --zimPathToSave=\"\" --url=$permalink"; `$cmd`;
 	    }
 	    $i++;
