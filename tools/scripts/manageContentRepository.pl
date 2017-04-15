@@ -29,7 +29,7 @@ my $devDirectoryName = "dev";
 my $htaccessPath = $contentDirectory."/.htaccess";
 my $libraryDirectoryName = "library";
 my $libraryDirectory = $contentDirectory."/".$libraryDirectoryName;
-my $libraryName = "library.xml";
+my $libraryName = "library";
 my $tmpDirectory = "/tmp";
 my $maxOutdatedVersions = 2;
 
@@ -404,19 +404,31 @@ sub writeLibrary {
     my @chars = ("A".."Z", "a".."z");
     my $randomString;
     $randomString .= $chars[rand @chars] for 1..8;
-    my $tmpLibraryPath = $tmpDirectory."/".$libraryName.".".$randomString;
-    my $libraryPath = $libraryDirectory."/".$libraryName;
+    my $tmpLibraryPath = $tmpDirectory."/".$libraryName.".".$randomString.".xml";
+    my $tmpZimLibraryPath = $tmpDirectory."/".$libraryName."_zim.".$randomString.".xml";
 
     # Create the library.xml file for the most recent files
     for (sortKeys(keys(%sortedContent))) {
-	my $entry = $sortedContent{$_}->[0];
+	my $i = 0;
+	my $core = $_;
+	my $entry = $sortedContent{$core}->[$i];
 	my $zimPath = $entry->{zim};
 	my $permalink = "http://download.kiwix.org".substr($entry->{zim}, length($contentDirectory)).".meta4";
-	my $cmd = "$kiwixManagePath $tmpDirectory/$libraryName.$randomString add $zimPath --zimPathToSave=\"\" --url=$permalink"; `$cmd`;
+	my $cmd = "$kiwixManagePath $tmpZimLibraryPath add $zimPath --zimPathToSave=\"\" --url=$permalink"; `$cmd`;
+
+	# Searching for a recent content with portable version
+	do {
+	    $entry = $sortedContent{$core}->[$i];
+	    if ($entry->{portable}) {
+		$cmd = "$kiwixManagePath $tmpLibraryPath add $zimPath --zimPathToSave=\"\" --url=$permalink"; `$cmd`;
+	    }
+	    $i++;
+	} while ($i<scalar(@{$sortedContent{$core}}) && !($entry->{portable}));
     }
 
-    # Move the library.xml file to its final destination
-    my $cmd = "mv $tmpLibraryPath $libraryPath"; `$cmd`;
+    # Move the XML files to its final destination
+    my $cmd = "mv $tmpLibraryPath $libraryDirectory/$libraryName.xml"; `$cmd`;
+    $cmd = "mv $tmpZimLibraryPath $libraryDirectory/${libraryName}_zim.xml"; `$cmd`;
 }
 
 # fs functions
