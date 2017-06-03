@@ -40,6 +40,7 @@ my $writeLibrary = 0;
 my $showHelp = 0;
 my $wikiPassword = "";
 my $deleteOutdatedFiles = 0;
+my $checkPortableFiles = 0;
 my $onlyCheck = 0;
 
 sub usage() {
@@ -51,6 +52,7 @@ sub usage() {
     print "\t--htaccessPath=/var/www/download.kiwix.org/.htaccess\n";
     print "\t--writeWiki\n";
     print "\t--wikiPassword=foobar\n";
+    print "\t--checkPortableFiles\n";
 }
 
 # Parse command line
@@ -67,6 +69,7 @@ GetOptions(
     'deleteOutdatedFiles' => \$deleteOutdatedFiles,
     'help' => \$showHelp,
     'onlyCheck' => \$onlyCheck,
+    'checkPortableFiles' => \$checkPortableFiles,
     'wikiPassword=s' => \$wikiPassword,
     'htaccessPath=s' => \$htaccessPath,
 );
@@ -154,9 +157,6 @@ foreach my $basename (keys(%content)) {
     }
 }
 
-# Stop here if we only want to make a check
-exit if ($onlyCheck);
-
 # Sort content
 my %sortedContent;
 for (keys(%content)) {
@@ -178,6 +178,32 @@ for (keys(%content)) {
 	}
     } else {
 	print STDERR "Unable to find publication date for ZIM ".$entry->{zim}."\n";
+    }
+}
+
+# Check if portable files have ZIM files
+if ($checkPortableFiles || $onlyCheck) {
+    for (keys(%sortedContent)) {
+	my $entry = $sortedContent{$_}->[0];
+	if ($entry->{portable}) {
+	    my $cmd = "unzip -l '".$entry->{portable}."' | egrep '*.zim(aa|)\$'"; `$cmd`;
+	    if ($?) {
+		print STDERR $entry->{portable}." has not ZIM file.\n";
+		$entry->{portable_without_zim} = 1;
+	    }
+	}
+    }
+}
+
+# Stop here if we only want to make a check
+exit if ($onlyCheck);
+
+# Delete empty portable files (without ZIM files)
+for (keys(%sortedContent)) {
+    my $entry = $sortedContent{$_}->[0];
+    if ($entry->{portable_without_zim}) {
+	my $cmd = "mv ".$entry->{portable}." /var/www/download.kiwix.org.trash/"; `$cmd`;
+	delete($entry->{portable});
     }
 }
 
