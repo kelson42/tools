@@ -31,7 +31,7 @@ my $libraryDirectoryName = "library";
 my $libraryDirectory = $contentDirectory."/".$libraryDirectoryName;
 my $libraryName = "library";
 my $tmpDirectory = "/tmp";
-my $maxOutdatedVersions = 2;
+my $maxOutdatedVersions = 1;
 
 # Task
 my $writeHtaccess = 0;
@@ -235,9 +235,9 @@ sub deleteOutdatedFiles {
 	for (my $i = $maxOutdatedVersions+1; $i < scalar(@$contents); $i++) {
 	    my $entry = $contents->[$i];
 	    print "Deleting ".$entry->{zim}."...\n";
-	    my $cmd = "mv ".$entry->{zim}." /var/www/download.kiwix.org.trash/"; `$cmd`;
+	    my $cmd = "rm '".$entry->{zim}."'"; `$cmd`;
 	    if ($entry->{portable}) {
-		my $cmd = "mv ".$entry->{portable}." /var/www/download.kiwix.org.trash/"; `$cmd`;
+		my $cmd = "rm '".$entry->{portable}."'"; `$cmd`;
 	    }
 	} 
     }
