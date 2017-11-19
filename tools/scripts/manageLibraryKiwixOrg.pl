@@ -37,7 +37,7 @@ if (!$directory || !$source) {
 }
 
 # Create new library
-`cat $source/library/library_zim.xml | sed -e "s/http:\\/\\/download.kiwix.org\\///" | sed -e "s/.meta4//" | sed -e "s/url=/path=/" | sed -e "s/tags=.*description/description/" > $directory/library.kiwix.org.xml`;
+`cat $source/library/library_zim.xml | sed -e "s/http:\\/\\/download.kiwix.org\\///" | sed -e "s/.meta4//" | sed -e "s/url=/path=/" | sed -e "s/tags=.*description/description/" | grep -v nodet | grep -v nopic | egrep -v "wikipedia.*all_2" > $directory/library.kiwix.org.xml`;
 
 exit 0;
 
