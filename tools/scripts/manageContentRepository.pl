@@ -359,12 +359,21 @@ sub writeHtaccess {
 
     # Content redirects
     for (keys(%sortedContent)) {
-	my $entries = $sortedContent{$_};
+	my $key = $_;
+	my $entries = $sortedContent{$key};
 	my $entry = $entries->[0];
-	$content .= "RedirectPermanent /".$zimDirectoryName."/".$entry->{core}.".zim ".substr($entry->{zim}, length($contentDirectory))."\n";
-	$content .= "RedirectPermanent /".$zimDirectoryName."/".$entry->{core}.".zim.torrent ".substr($entry->{zim}, length($contentDirectory)).".torrent\n";
-	$content .= "RedirectPermanent /".$zimDirectoryName."/".$entry->{core}.".zim.magnet ".substr($entry->{zim}, length($contentDirectory)).".magnet\n";
-	$content .= "RedirectPermanent /".$zimDirectoryName."/".$entry->{core}.".zim.md5 ".substr($entry->{zim}, length($contentDirectory)).".md5\n";
+	my $core = $entry->{core};
+
+	# Redirect _all to _all_novid
+	if (exists($sortedContent{$key."_novid"})) {
+	    $entries = $sortedContent{$key."_novid"};
+	    $entry = $entries->[0];
+	}
+
+	$content .= "RedirectPermanent /".$zimDirectoryName."/".$core.".zim ".substr($entry->{zim}, length($contentDirectory))."\n";
+	$content .= "RedirectPermanent /".$zimDirectoryName."/".$core.".zim.torrent ".substr($entry->{zim}, length($contentDirectory)).".torrent\n";
+	$content .= "RedirectPermanent /".$zimDirectoryName."/".$core.".zim.magnet ".substr($entry->{zim}, length($contentDirectory)).".magnet\n";
+	$content .= "RedirectPermanent /".$zimDirectoryName."/".$core.".zim.md5 ".substr($entry->{zim}, length($contentDirectory)).".md5\n";
 
 	for (@$entries) {
 	    if ($_->{portable}) {
@@ -373,10 +382,10 @@ sub writeHtaccess {
 	    }
 	}
 	if ($entry->{portable}) {
-	    $content .= "RedirectPermanent /".$portableDirectoryName."/".$entry->{core}.".zip ".substr($entry->{portable}, length($contentDirectory))."\n";
-	    $content .= "RedirectPermanent /".$portableDirectoryName."/".$entry->{core}.".zip.torrent ".substr($entry->{portable}, length($contentDirectory)).".torrent\n";
-	    $content .= "RedirectPermanent /".$portableDirectoryName."/".$entry->{core}.".zip.magnet ".substr($entry->{portable}, length($contentDirectory)).".magnet\n";
-	    $content .= "RedirectPermanent /".$portableDirectoryName."/".$entry->{core}.".zip.md5 ".substr($entry->{portable}, length($contentDirectory)).".md5\n";
+	    $content .= "RedirectPermanent /".$portableDirectoryName."/".$core.".zip ".substr($entry->{portable}, length($contentDirectory))."\n";
+	    $content .= "RedirectPermanent /".$portableDirectoryName."/".$core.".zip.torrent ".substr($entry->{portable}, length($contentDirectory)).".torrent\n";
+	    $content .= "RedirectPermanent /".$portableDirectoryName."/".$core.".zip.magnet ".substr($entry->{portable}, length($contentDirectory)).".magnet\n";
+	    $content .= "RedirectPermanent /".$portableDirectoryName."/".$core.".zip.md5 ".substr($entry->{portable}, length($contentDirectory)).".md5\n";
 	}
 	$content .= "\n";
     }
