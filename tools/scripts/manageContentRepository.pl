@@ -224,6 +224,15 @@ if ($writeWiki) {
     writeWiki();
 }
 
+# Delete entries with a corresponding "_novid" entry
+for (keys(%sortedContent)) {
+    my $key = $_;
+    if (exists($sortedContent{$key."_novid"})) {
+	print STDERR $key." has a superseeding _novid entry.\n";
+	delete $sortedContent{$key};
+   }
+}
+
 if ($writeLibrary) {
     writeLibrary();
 }
