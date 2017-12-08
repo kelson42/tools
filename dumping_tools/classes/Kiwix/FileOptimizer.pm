@@ -113,7 +113,7 @@ sub optimizePng {
     if ($self->lossLess()) {
 	`opt-png "$file"`;
     } else {
-	`pngquant --nofs --force --ext=".png" "$file" ; /usr/local/bin/advdef -z -4 -i 5 "$file"`;
+	`pngquant --nofs --force --ext=".png" "$file" ; advdef -z -4 -i 5 "$file"`;
     }
 }
 
@@ -128,9 +128,9 @@ sub optimizeJpg {
     my $file = shift;
     print "Optimzing $file\n";
     if ($self->lossLess()) {
-	`jpegoptim --strip-all -m50 "$file"`;
-    } else {
 	`opt-jpg "$file"`;
+    } else {
+	`jpegoptim --strip-all -m50 "$file"`;
     }
 }
 
