@@ -8,10 +8,12 @@ use strict;
 use warnings;
 use Kiwix::PathExplorer;
 use Getopt::Long;
+use Locale::Language;
 use Data::Dumper;
 use File::stat;
 use Time::localtime;
 use DateTime;
+use Locales;
 use Number::Bytes::Human qw(format_bytes);
 use Mediawiki::Mediawiki;
 
@@ -42,6 +44,14 @@ my $wikiPassword = "";
 my $deleteOutdatedFiles = 0;
 my $checkPortableFiles = 0;
 my $onlyCheck = 0;
+
+# Language lookup
+my %locale_lookup;
+my $locale = Locales->new('en_US');
+for my $code ($locale->get_language_codes) {
+    my $locale = Locales->new($code) // next; # ignore codes w/o locale
+    $locale_lookup{$code} = $locale->get_language_from_code
+}
 
 sub usage() {
     print "manageContentRepository\n";
@@ -287,8 +297,10 @@ sub writeWiki {
 	    }
 	}
 
+	my $lang_name = $locale_lookup{$entry->{lang}} || $entry->{lang};
+	utf8::decode($lang_name);
 	my $line = "{{ZIMdumps/row|{{{2|}}}|{{{3|}}}|".
-	    $entry->{project}."|".
+	    $entry->{project}." (".$lang_name.") |".
 	    $entry->{lang}."|".format_bytes($entry->{size})."|".
 	    $entry->{year}."-".$entry->{month}."|".(beautifyZimOptions($entry->{option} || "all"))."|8={{DownloadLink|".
 	    $entry->{core}."|{{{1}}}|".$zimDirectoryName."/|".($entry->{portable} ? $portableDirectoryName."/" : "")."}} }}\n";
