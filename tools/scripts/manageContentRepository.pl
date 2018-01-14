@@ -495,8 +495,30 @@ sub writeLibrary {
     }
 
     # Move the XML files to its final destination
-    my $cmd = "mv $tmpLibraryPath $libraryDirectory/$libraryName.xml"; `$cmd`;
-    $cmd = "mv $tmpZimLibraryPath $libraryDirectory/${libraryName}_zim.xml"; `$cmd`;
+    if (checkXmlIntegrity($tmpLibraryPath) && checkXmlIntegrity($tmpZimLibraryPath)) {
+	my $cmd = "mv $tmpLibraryPath $libraryDirectory/$libraryName.xml"; `$cmd`;
+	$cmd = "mv $tmpZimLibraryPath $libraryDirectory/${libraryName}_zim.xml"; `$cmd`;
+    }
+}
+
+sub checkXmlIntegrity {
+    my $xml = shift;
+    my $xmllint = findBinary("xmllint");
+    my $cmd = "$xmllint --noout $xml";
+    system($cmd);
+    $? == 0 or die "$xml is not a valid XML file says '$cmd'";
+    1
+}
+
+sub findBinary {
+    my $binary = shift;
+    my $path = `which $binary`;
+    $path =~ s/\n//g;
+    if ($? != 0 || !$path) {
+	print STDERR "Unable to find $binary.\n";
+	exit 1;
+    }
+    $path
 }
 
 # fs functions
