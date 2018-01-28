@@ -243,9 +243,7 @@ for (keys(%sortedContent)) {
     if (exists($sortedContent{$key."_novid"})) {
 	my $novidEntry = $sortedContent{$key."_novid"}->[0];
 	my $novidEntryDate = DateTime->new(year => $novidEntry->{year}, month => $novidEntry->{month});
-
-	last if (DateTime->compare($entryDate, $novidEntryDate) > 0);
-
+	next if (DateTime->compare($entryDate, $novidEntryDate) > 0);
 	print STDERR $key." has a superseeding _novid entry.\n";
 	delete $sortedContent{$key};
    }
