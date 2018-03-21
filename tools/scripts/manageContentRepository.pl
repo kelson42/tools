@@ -367,7 +367,7 @@ sub writeHtaccess {
     $content .= "AddDescription \"All versions of Kiwix, the software (no content is in there)\" bin\n";
     $content .= "AddDescription \"Development stuff (tools & dependencies), for developers\" dev\n";
     $content .= "AddDescription \"Binaries and source code tarballs compiled auto. one time a day, for developers\" nightly\n";
-    $content .= "AddDescription \"Random stuff, mostly mirrored for third part projects\" other\n";
+    $content .= "AddDescription \"Random stuff, mostly mirrored for third party projects\" other\n";
     $content .= "AddDescription \"Kiwix-Plug Raspberry Pi images\" plug\n";
     $content .= "AddDescription \"Portable packages (Kiwix+content), mostly for end-users\" portable\n";
     $content .= "AddDescription \"XML files describing all the content available, for developers\" library\n";
