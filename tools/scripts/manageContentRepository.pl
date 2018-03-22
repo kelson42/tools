@@ -289,7 +289,7 @@ sub writeWiki {
 	    if (!$entry) {
 		$entry = $_;
 		last if $entry->{portable};
-	    } elsif (!$entry->{portable}) {
+	    } elsif ($_->{portable}) {
 		$entry = $_;
 		last;
 	    }
