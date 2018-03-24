@@ -198,7 +198,7 @@ if ($checkPortableFiles || $onlyCheck) {
 	if ($entry->{portable}) {
 	    my $cmd = "unzip -l '".$entry->{portable}."' | egrep '*.zim(aa|)\$'"; `$cmd`;
 	    if ($?) {
-		print STDERR $entry->{portable}." has not ZIM file.\n";
+		print STDERR $entry->{portable}." has no ZIM file in it.\n";
 		$entry->{portable_without_zim} = 1;
 	    }
 	}
@@ -212,7 +212,7 @@ exit if ($onlyCheck);
 for (keys(%sortedContent)) {
     my $entry = $sortedContent{$_}->[0];
     if ($entry->{portable_without_zim}) {
-	my $cmd = "mv ".$entry->{portable}." /var/www/download.kiwix.org.trash/"; `$cmd`;
+	my $cmd = "rm '".$entry->{portable}."'"; `$cmd`;
 	delete($entry->{portable});
     }
 }
@@ -375,20 +375,11 @@ sub writeHtaccess {
     $content .= "AddDescription \"Wikipedia articles key indicators for the WP.10 project\" wp1\n";
     $content .= "AddDescription \"ZIM files, content dumps for offline usage (to be read with Kiwix)\" zim\n";
 
-    # Content redirects
-    for (keys(%sortedContent)) {
-	my $key = $_;
-	my $entries = $sortedContent{$key};
-	my $entry = $entries->[0];
+    sub writeEntryHtaccess {
+	my ($entry, $entries) = @_;
 	my $core = $entry->{core};
-
-	# Redirect _all to _all_novid
-	if (exists($sortedContent{$key."_novid"})) {
-	    $entries = $sortedContent{$key."_novid"};
-	    $entry = $entries->[0];
-	}
-
-	$content .= "RedirectPermanent /".$zimDirectoryName."/".$core.".zim ".substr($entry->{zim}, length($contentDirectory))."\n";
+	
+	my $content .= "RedirectPermanent /".$zimDirectoryName."/".$core.".zim ".substr($entry->{zim}, length($contentDirectory))."\n";
 	$content .= "RedirectPermanent /".$zimDirectoryName."/".$core.".zim.torrent ".substr($entry->{zim}, length($contentDirectory)).".torrent\n";
 	$content .= "RedirectPermanent /".$zimDirectoryName."/".$core.".zim.magnet ".substr($entry->{zim}, length($contentDirectory)).".magnet\n";
 	$content .= "RedirectPermanent /".$zimDirectoryName."/".$core.".zim.md5 ".substr($entry->{zim}, length($contentDirectory)).".md5\n";
@@ -399,13 +390,35 @@ sub writeHtaccess {
 		last;
 	    }
 	}
+
 	if ($entry->{portable}) {
 	    $content .= "RedirectPermanent /".$portableDirectoryName."/".$core.".zip ".substr($entry->{portable}, length($contentDirectory))."\n";
 	    $content .= "RedirectPermanent /".$portableDirectoryName."/".$core.".zip.torrent ".substr($entry->{portable}, length($contentDirectory)).".torrent\n";
 	    $content .= "RedirectPermanent /".$portableDirectoryName."/".$core.".zip.magnet ".substr($entry->{portable}, length($contentDirectory)).".magnet\n";
 	    $content .= "RedirectPermanent /".$portableDirectoryName."/".$core.".zip.md5 ".substr($entry->{portable}, length($contentDirectory)).".md5\n";
 	}
+
 	$content .= "\n";
+    }
+
+    # Content redirects
+    for (keys(%sortedContent)) {
+	my $key = $_;
+	my $entries = $sortedContent{$key};
+	my $entry = $entries->[0];
+
+	# Write normal entry
+	$content .= writeEntryHtaccess($entry, $entries);
+
+	# Redirect _all to _all_novid if _all does not exist
+	if ($key =~ /_novid/) {
+	    my $all_key = $key =~ s/_novid//gr;
+	    unless (exists($sortedContent{$all_key})) {
+		$entry->{core} =~ s/_novid//g;
+		$content .= writeEntryHtaccess($entry, $entries);
+	    }
+	}
+
     }
     writeFile($htaccessPath, $content);
 
