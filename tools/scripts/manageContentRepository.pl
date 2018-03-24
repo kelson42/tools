@@ -10,6 +10,7 @@ use Kiwix::PathExplorer;
 use Getopt::Long;
 use Locale::Language;
 use Data::Dumper;
+use Storable qw(dclone);
 use File::stat;
 use Time::localtime;
 use DateTime;
@@ -392,7 +393,7 @@ sub writeHtaccess {
 	if ($key =~ /_novid/) {
 	    my $all_key = $key =~ s/_novid//gr;
 	    unless (exists($sortedContent{$all_key})) {
-		my $all_entry = $entry;
+		my $all_entry = dclone($entry);
 		$all_entry->{core} =~ s/_novid//g;
 		$content .= writeEntryHtaccess($all_entry, $entries);
 	    }
