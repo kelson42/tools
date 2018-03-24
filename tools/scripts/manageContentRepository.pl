@@ -392,7 +392,8 @@ sub writeHtaccess {
 	if ($key =~ /_novid/) {
 	    my $all_key = $key =~ s/_novid//gr;
 	    unless (exists($sortedContent{$all_key})) {
-		my $all_entry = $entry =~ $entry->{core} =~ s/_novid//gr;
+		my $all_entry = $entry;
+		$all_entry->{core} =~ s/_novid//g;
 		$content .= writeEntryHtaccess($all_entry, $entries);
 	    }
 	}
