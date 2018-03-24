@@ -234,21 +234,6 @@ if ($writeWiki) {
     writeWiki();
 }
 
-# Delete entries with a corresponding "_novid" entry
-for (keys(%sortedContent)) {
-    my $key = $_;
-    my $entry = $sortedContent{$key}->[0];
-    my $entryDate = DateTime->new(year => $entry->{year}, month => $entry->{month});
-
-    if (exists($sortedContent{$key."_novid"})) {
-	my $novidEntry = $sortedContent{$key."_novid"}->[0];
-	my $novidEntryDate = DateTime->new(year => $novidEntry->{year}, month => $novidEntry->{month});
-	next if (DateTime->compare($entryDate, $novidEntryDate) >= 0);
-	print STDERR $key." has a superseeding _novid entry.\n";
-	delete $sortedContent{$key};
-   }
-}
-
 if ($writeLibrary) {
     writeLibrary();
 }
@@ -414,8 +399,8 @@ sub writeHtaccess {
 	if ($key =~ /_novid/) {
 	    my $all_key = $key =~ s/_novid//gr;
 	    unless (exists($sortedContent{$all_key})) {
-		$entry->{core} =~ s/_novid//g;
-		$content .= writeEntryHtaccess($entry, $entries);
+		my $all_entry = $entry =~ $all_entry->{core} =~ s/_novid//gr;
+		$content .= writeEntryHtaccess($all_entry, $entries);
 	    }
 	}
 
