@@ -6,23 +6,21 @@ use lib "$FindBin::Bin/../../dumping_tools/classes/";
 use utf8;
 use strict;
 use warnings;
+use XML::DOM;
 
 use Getopt::Long;
 
 my $showHelp;
-my $directory;
 my $source;
 
 sub usage() {
     print "manageLibraryKiwixOrg.pl\n";
-    print "\t--source=DIRECTORY\n";
-    print "\t--directory=DIRECTORY\n";
+    print "\t--source=XML_PATH\n";
     print "\t--help\n";
 }
 
 GetOptions(
-    'help' => \$showHelp,
-    'directory=s' => \$directory,
+    'help'     => \$showHelp,
     'source=s' => \$source,
 );
 
@@ -31,13 +29,32 @@ if ($showHelp) {
     exit 0;
 }
 
-if (!$directory || !$source) {
+if (!$source) {
     usage();
     exit 0;
 }
 
-# Create new library
-`cat $source/library/library_zim.xml | sed -e "s/http:\\/\\/download.kiwix.org\\///" | sed -e "s/.meta4//" | sed -e "s/url=/path=/" | sed -e "s/tags=.*description/description/" | grep -v nodet | grep -v nopic | egrep -v "wikipedia.*all_2" > $directory/library.kiwix.org.xml`;
+# Read original XML file
+my $parser = new XML::DOM::Parser;
+my $doc = $parser->parsefile($source);
+
+# Modify the DOM
+my $nodes = $doc->getElementsByTagName("book");
+for (my $i = 0; $i < $nodes->getLength; $i++) {
+    my $node = $nodes->item($i);
+
+    # Set path
+    my $path = $node->getAttributeNode("url")->getValue
+	=~ s/http:\/\/download.kiwix.org\///r =~ s/\.meta4//r;
+    $node->setAttribute("path", $path);
+
+    # Remove tag
+    $node->removeAttribute("tags");
+}
+
+# Print to string
+my $xml = $doc->toString;
+utf8::encode($xml);
+print $xml;
 
 exit 0;
-
