@@ -490,6 +490,16 @@ sub writeLibrary {
 	my $cmd = "mv $tmpLibraryPath $libraryDirectory/$libraryName.xml"; `$cmd`;
 	$cmd = "mv $tmpZimLibraryPath $libraryDirectory/${libraryName}_zim.xml"; `$cmd`;
     }
+
+    # Generate the Ideascube library
+    my $ideascube_converter = "/var/www/library-to-catalog/library-to-catalog.sh";
+    my $ideascube_source    = "$libraryDirectory/${libraryName}_zim.xml";
+    my $ideascube_target    = "/var/www/download.kiwix.org/library/ideascube.yml";
+    if (-e $ideascube_converter) {
+	my $cmd = "$ideascube_converter '$ideascube_source' '$ideascube_target'"; `$cmd`;
+    } else {
+	print STDERR "Unable to find $ideascube_converter";
+    }
 }
 
 sub checkXmlIntegrity {
