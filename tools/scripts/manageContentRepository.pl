@@ -471,7 +471,9 @@ sub writeLibrary {
 	my $entry = $sortedContent{$core}->[$i];
 	my $zimPath = $entry->{zim};
 	my $permalink = "http://download.kiwix.org".substr($entry->{zim}, length($contentDirectory)).".meta4";
-	my $cmd = "$kiwixManagePath $tmpZimLibraryPath add $zimPath --zimPathToSave=\"\" --url=$permalink"; `$cmd`;
+	my $cmd = "$kiwixManagePath $tmpZimLibraryPath add $zimPath --zimPathToSave=\"\" --url=$permalink";
+	system($cmd) == 0
+	    or print STDERR "Unable to put $zimPath to XML library";
 
 	# Searching for a recent content with portable version
 	do {
@@ -479,7 +481,9 @@ sub writeLibrary {
 	    if ($entry->{portable}) {
 		$zimPath = $entry->{zim};
 		$permalink = "http://download.kiwix.org".substr($entry->{zim}, length($contentDirectory)).".meta4";
-		$cmd = "$kiwixManagePath $tmpLibraryPath add $zimPath --zimPathToSave=\"\" --url=$permalink"; `$cmd`;
+		$cmd = "$kiwixManagePath $tmpLibraryPath add $zimPath --zimPathToSave=\"\" --url=$permalink";
+		system($cmd) == 0
+		    or print STDERR "Unable to put $zimPath to XML library";
 	    }
 	    $i++;
 	} while ($i<scalar(@{$sortedContent{$core}}) && !($entry->{portable}));
