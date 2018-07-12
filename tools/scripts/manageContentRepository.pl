@@ -326,6 +326,9 @@ sub writeHtaccess {
     $content .= "RedirectPermanent /".$devDirectoryName."/KiwixDev.ova /".$devDirectoryName."/KiwixDevVMv4.ova\n";
     $content .= "RedirectPermanent /".$devDirectoryName."/KiwixDev.ova.torrent /".$devDirectoryName."/KiwixDevVMv4.ova.torrent\n";
 
+    # Wikifundi
+    $content .= "RedirectPermanent /other/wikifundi http://download.openzim.org/wikifundi\n";
+
     # Backward compatibility redirects
     # To get the list of failing requests: cat /var/log/nginx/download.kiwix.org.access.log | grep " 404 " | cut -d ' ' -f 7 | grep -v nightly | grep -v favicon | grep -v robots | sort | uniq -c | sort -b -n -r
     $content .= "RedirectPermanent /zim/0.9/ /zim/wikipedia/\n";
@@ -475,8 +478,8 @@ sub writeLibrary {
 	system($cmd) == 0
 	    or print STDERR "Unable to put $zimPath to XML library";
 
-	# Searching for a recent content with portable version
-	do {
+        # Searching for a recent content with portable version
+        do {
 	    $entry = $sortedContent{$core}->[$i];
 	    if ($entry->{portable}) {
 		$zimPath = $entry->{zim};
