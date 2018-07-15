@@ -263,7 +263,7 @@ sub writeWiki {
     my @lines;
     for (sortKeys(keys(%sortedContent))) {
 	my $entries = $sortedContent{$_};
-	my $entry = shift @$entries;
+	my $entry = $entries->[0];
 	$entry->{portable} ||= scalar(grep { $_->{portable} } @$entries);
 
 	my $lang_name = $locale_lookup{$entry->{lang}} || $entry->{lang};
