@@ -272,7 +272,7 @@ sub writeWiki {
 	    $entry->{project}." (".$lang_name.") |".
 	    $entry->{lang}."|".format_bytes($entry->{size})."|".
 	    $entry->{year}."-".$entry->{month}."|".(beautifyZimOptions($entry->{option} || "all"))."|8={{DownloadLink|".
-	    $entry->{core}."|{{{1}}}|".$zimDirectoryName."/|".($entry->{portable} ? $portableDirectoryName."/" : "")."}} }}\n";
+	    $entry->{core}."|{{{1}}}|".$zimDirectoryName."/}} }}\n";
 	push(@lines, $line);
     }
 
